@@ -1,0 +1,57 @@
+{
+    "plugins": [
+        "prettier"
+    ],
+    "extends": [
+        "airbnb-base",
+        "airbnb-typescript/base",
+        "plugin:prettier/recommended"
+    ],
+    "parserOptions": {
+        "project": "./tsconfig.json"
+    },
+    "rules": {
+        "prettier/prettier": "error",
+        "import/prefer-default-export": "off",
+        // custom overrides
+        "no-underscore-dangle": "off",
+        "no-restricted-syntax": [
+            "error",
+            "LabeledStatement",
+            "WithStatement"
+        ],
+        "@typescript-eslint/no-unused-vars": "warn",
+        "@typescript-eslint/no-use-before-define": "warn",
+        "no-param-reassign": "warn",
+        "no-plusplus": "off",
+        "radix": "warn",
+        "no-continue": "off",
+        "max-classes-per-file": "off",
+        "@typescript-eslint/lines-between-class-members": "off",
+        "prefer-object-spread": "warn",
+        "prefer-destructuring": [
+            "warn",
+            {
+                "VariableDeclarator": {
+                    "array": true,
+                    "object": true
+                },
+                "AssignmentExpression": {
+                    "array": false,
+                    "object": false
+                }
+            }
+        ],
+        "class-methods-use-this": "warn"
+    },
+    "overrides": [
+        {
+            "files": [
+                "**/*.stories.ts"
+            ],
+            "rules": {
+                "import/no-extraneous-dependencies": "off"
+            }
+        }
+    ]
+}

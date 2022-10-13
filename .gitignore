@@ -1,0 +1,16 @@
+node_modules
+.DS_Store
+.idea
+out
+dist
+dist-ssr
+*.local
+.vscode
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vscode/launch.json
+
+protoc.exe
+/generated/*

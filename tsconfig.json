@@ -1,0 +1,33 @@
+{
+    "compilerOptions": {
+        "baseUrl": "./",
+        "target": "ESNext",
+        "useDefineForClassFields": true,
+        "module": "CommonJS",
+        "moduleResolution": "Node",
+        "noEmit": true,
+        "strict": true,
+        "sourceMap": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": false,
+        "noImplicitReturns": true,
+        "rootDir": "./",
+        "types": [
+            "jest"
+        ],
+        "paths": {
+            "@src/*": [
+                "./src/*"
+            ],
+             "@gen/*": [
+                "./generated/*"
+            ]
+        }
+    },
+    "include": [
+        "./src",
+        "./generated",
+    ]
+}
