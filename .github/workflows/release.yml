@@ -16,14 +16,15 @@ jobs:
               with:
                   node-version: "16"
 
-            - name: Reconfigure git to use HTTP authentication
+            - name: Reconfigure git
               run: |
+                  git config user.email "builder@barchart.com"
+                  git config user.name "Barchart Builder"
                   git config --global url.https://${{ secrets.API_TOKEN_GITHUB }}@github.com/.insteadOf ssh://git@github.com/
 
             - name: Build library
               run: |
                   yarn
-                  yarn generate
                   yarn build:clear
                   yarn build:ts
                   yarn build:node
@@ -34,7 +35,7 @@ jobs:
             - name: Publish new build
               run: |
                   export BN="artifacts"
-                  export RELEASE_TAG=${x:6}
+                  export RELEASE_TAG=${GITHUB_REF_NAME:6}
                   git checkout --orphan $BN
                   echo "*\n\!.gitignore\n\!dist/*" > ./.gitignore
                   git commit -m "Automated build (tag $GITHUB_REF_NAME)"
