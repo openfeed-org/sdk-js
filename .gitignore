@@ -13,4 +13,4 @@ yarn-error.log*
 .vscode/launch.json
 
 protoc.exe
-/generated/*
+/generated/version.ts

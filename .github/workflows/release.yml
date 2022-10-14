@@ -16,9 +16,14 @@ jobs:
               with:
                   node-version: "16"
 
+            - name: Reconfigure git to use HTTP authentication
+              run: |
+                  git config --global url.https://${{ secrets.API_TOKEN_GITHUB }}@github.com/.insteadOf ssh://git@github.com/
+
             - name: Build library
               run: |
                   yarn
+                  yarn generate
                   yarn build:clear
                   yarn build:ts
                   yarn build:node
