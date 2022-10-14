@@ -1,0 +1,38 @@
+name: build-and-release
+on:
+    push:
+        tags:
+            - "build-*"
+        paths-ignore:
+            - "**.md"
+
+jobs:
+    main:
+        runs-on: ubuntu-latest
+        steps:
+            # setup
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v2
+              with:
+                  node-version: "16"
+
+            - name: Build library
+              run: |
+                  yarn
+                  yarn build:clear
+                  yarn build:ts
+                  yarn build:node
+                  yarn build:types
+                  ls -al dist
+                  echo $GITHUB_REF_NAME
+
+            - name: Publish new build
+              run: |
+                  export BN="artifacts"
+                  export RELEASE_TAG=${x:6}
+                  git checkout --orphan $BN
+                  echo "*\n\!.gitignore\n\!dist/*" > ./.gitignore
+                  git commit -m "Automated build (tag $GITHUB_REF_NAME)"
+                  git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
+                  git push origin "$RELEASE_TAG"
+                  git push --delete origin "$GITHUB_REF_NAME"

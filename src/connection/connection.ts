@@ -187,7 +187,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
         this.disconnect(new Error(`Socket error: ${error.message}`));
     };
 
-    private onClose = (event: WebSocket.ClosedEvent) => {
+    private onClose = (event: WebSocket.CloseEvent) => {
         this.logger?.warn(`Socket closed: ${event.reason}`);
         this.disconnect(new Error(`Socket closed: ${event.reason}`));
     };
@@ -430,7 +430,7 @@ export class OpenFeedClient implements IOpenFeedClient {
         }
     };
 
-    private onClose = (event: WebSocket.ClosedEvent) => {
+    private onClose = (event: WebSocket.CloseEvent) => {
         this.logger?.log(`Socket closed: ${event.reason}`);
         if (!this.whenConnectedSource.completed) {
             this.whenConnectedSource.reject(new Error(`Socket closed: ${event.reason}`));
@@ -465,13 +465,14 @@ export class OpenFeedClient implements IOpenFeedClient {
                 // eslint-disable-next-line no-await-in-loop
                 await this.loopResetSource.whenCompleted;
             } catch (e) {
+                const socket = this.socket!;
                 // these will fire, even though the connection error means we should be already disconnected
-                this.socket.onerror = () => {};
-                this.socket.onclose = () => {};
-                this.socket.onopen = () => {};
+                socket.onerror = () => {};
+                socket.onclose = () => {};
+                socket.onopen = () => {};
 
-                if (this.socket.readyState !== WebSocket.CLOSED && this.socket.readyState !== WebSocket.CLOSING) {
-                    this.socket.close(1000, "Socket closed");
+                if (socket.readyState !== WebSocket.CLOSED && socket.readyState !== WebSocket.CLOSING) {
+                    socket.close(1000, "Socket closed");
                 }
 
                 if (e instanceof DuplicateLoginError || e instanceof InvalidCredentialsError) {
@@ -528,7 +529,8 @@ export class OpenFeedClient implements IOpenFeedClient {
         cancelSource: ResolutionSource<void>
     ) => {
         for (;;) {
-            let timeoutId: number | null = null;
+            // This is for cross-environment compatibility
+            let timeoutId: any = null;
             try {
                 // eslint-disable-next-line no-await-in-loop
                 const connection = await Promise.any([this.connection, cancelSource.whenCompleted]);
