@@ -44,4 +44,3 @@ jobs:
                   git commit -m "Automated build (tag $GITHUB_REF_NAME)"
                   git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
                   git push origin "$RELEASE_TAG"
-                  git push --delete origin "$GITHUB_REF_NAME"
