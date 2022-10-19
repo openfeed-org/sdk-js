@@ -1,0 +1,58 @@
+import WebSocket from "isomorphic-ws";
+import Long from "long";
+import { ExchangeResponse_Exchange, InstrumentReferenceResponse, InstrumentResponse, SubscriptionType } from "@gen/openfeed_api";
+import { Service } from "@gen/openfeed";
+import { IOpenFeedClient, IOpenFeedConnection, IOpenFeedLogger, OpenFeedInstrumentReferenceRequest, OpenFeedInstrumentRequest } from "./connection_interfaces";
+import { OpenFeedListeners } from "./listeners";
+declare class OpenFeedConnection implements IOpenFeedConnection {
+    private readonly connectionToken;
+    private readonly socket;
+    private readonly listeners;
+    private readonly logger?;
+    private readonly subscriptions;
+    private readonly exchangeRequests;
+    private readonly instrumentRequests;
+    private readonly instrumentReferenceRequests;
+    private readonly whenDisconnectedSource;
+    constructor(connectionToken: string, socket: WebSocket, listeners: OpenFeedListeners, logger?: IOpenFeedLogger | undefined);
+    private messageTriggered;
+    private runConnectionWatchLoop;
+    private onMessage;
+    private disconnect;
+    private onError;
+    private onClose;
+    subscribe: (service: Service, subscriptionType: SubscriptionType, snapshotIntervalSeconds: number, symbols?: string[] | null, marketIds?: Long[] | null, exchanges?: string[] | null, channels?: number[] | null) => Long;
+    unsubscribe: (subscriptionId: Long) => void;
+    getExchanges: () => Promise<ExchangeResponse_Exchange[]>;
+    getInstrument: (request: OpenFeedInstrumentRequest) => Promise<InstrumentResponse>;
+    getInstrumentReference: (request: OpenFeedInstrumentReferenceRequest) => Promise<InstrumentReferenceResponse>;
+    whenDisconnected: () => Promise<void>;
+    dispose: () => void;
+}
+export declare class OpenFeedClient implements IOpenFeedClient {
+    private readonly url;
+    private readonly username;
+    private readonly password;
+    private readonly listeners;
+    private readonly logger?;
+    private readonly clientId?;
+    private socket;
+    private _connection;
+    private whenConnectedSource;
+    private loopResetSource;
+    private subscribeResetSource;
+    private readonly subscriptions;
+    constructor(url: string, username: string, password: string, listeners: OpenFeedListeners, logger?: IOpenFeedLogger | undefined, clientId?: string | undefined);
+    private onOpen;
+    private onMessage;
+    private onError;
+    private onClose;
+    private runConnectLoop;
+    private cleanUp;
+    private runSubscribeLoop;
+    subscribe: (service: Service, subscriptionType: SubscriptionType, snapshotIntervalSeconds: number, symbols?: string[] | null, marketIds?: Long[] | null, exchanges?: string[] | null, channels?: number[] | null) => Long;
+    unsubscribe: (subscriptionId: Long) => void;
+    get connection(): Promise<OpenFeedConnection>;
+    dispose: () => void;
+}
+export {};
