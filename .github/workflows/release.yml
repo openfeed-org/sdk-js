@@ -37,8 +37,10 @@ jobs:
                   export BN="artifacts"
                   export RELEASE_TAG=${GITHUB_REF_NAME:6}
                   git checkout --orphan $BN
-                  echo "*\n\!.gitignore\n\!dist/*\n\!package.json\n\!*.md" > ./.gitignore
+                  echo -e "/*\n!.gitignore\n!dist/*\n!package.json\n!*.md" > ./.gitignore
+                  cat .gitignore
                   git rm -rf --cached .
+                  git add .
                   git commit -m "Automated build (tag $GITHUB_REF_NAME)"
                   git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
                   git push origin "$RELEASE_TAG"
