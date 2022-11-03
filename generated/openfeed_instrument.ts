@@ -155,6 +155,8 @@ export interface InstrumentDefinition {
   subscriptionSymbol: string;
   /** / The Month/ Day of expiration for futures and options. Corresponds to the expiration month. */
   contractMaturity: InstrumentDefinition_MaturityDate | undefined;
+  underlying: string;
+  commodity: string;
 }
 
 /** ############################################# */
@@ -169,6 +171,7 @@ export enum InstrumentDefinition_InstrumentType {
   MUTUAL_FUND = 7,
   MONEY_MARKET_FUND = 8,
   USER_DEFINED_SPREAD = 9,
+  EQUITY_OPTION = 10,
   UNRECOGNIZED = -1,
 }
 
@@ -204,6 +207,9 @@ export function instrumentDefinition_InstrumentTypeFromJSON(object: any): Instru
     case 9:
     case "USER_DEFINED_SPREAD":
       return InstrumentDefinition_InstrumentType.USER_DEFINED_SPREAD;
+    case 10:
+    case "EQUITY_OPTION":
+      return InstrumentDefinition_InstrumentType.EQUITY_OPTION;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -233,6 +239,8 @@ export function instrumentDefinition_InstrumentTypeToJSON(object: InstrumentDefi
       return "MONEY_MARKET_FUND";
     case InstrumentDefinition_InstrumentType.USER_DEFINED_SPREAD:
       return "USER_DEFINED_SPREAD";
+    case InstrumentDefinition_InstrumentType.EQUITY_OPTION:
+      return "EQUITY_OPTION";
     case InstrumentDefinition_InstrumentType.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -428,6 +436,9 @@ export enum InstrumentDefinition_EventType {
   LAST_HOLDING_DATE = 16,
   FIRST_POSITION_DATE = 17,
   LAST_POSITION_DATE = 18,
+  /** DELIVERY_START_DATE - Grain Bids */
+  DELIVERY_START_DATE = 30,
+  DELIVERY_END_DATE = 31,
   UNRECOGNIZED = -1,
 }
 
@@ -469,6 +480,12 @@ export function instrumentDefinition_EventTypeFromJSON(object: any): InstrumentD
     case 18:
     case "LAST_POSITION_DATE":
       return InstrumentDefinition_EventType.LAST_POSITION_DATE;
+    case 30:
+    case "DELIVERY_START_DATE":
+      return InstrumentDefinition_EventType.DELIVERY_START_DATE;
+    case 31:
+    case "DELIVERY_END_DATE":
+      return InstrumentDefinition_EventType.DELIVERY_END_DATE;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -502,6 +519,10 @@ export function instrumentDefinition_EventTypeToJSON(object: InstrumentDefinitio
       return "FIRST_POSITION_DATE";
     case InstrumentDefinition_EventType.LAST_POSITION_DATE:
       return "LAST_POSITION_DATE";
+    case InstrumentDefinition_EventType.DELIVERY_START_DATE:
+      return "DELIVERY_START_DATE";
+    case InstrumentDefinition_EventType.DELIVERY_END_DATE:
+      return "DELIVERY_END_DATE";
     case InstrumentDefinition_EventType.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -685,6 +706,8 @@ function createBaseInstrumentDefinition(): InstrumentDefinition {
     primaryListingMarketParticipantId: "",
     subscriptionSymbol: "",
     contractMaturity: undefined,
+    underlying: "",
+    commodity: "",
   };
 }
 
@@ -856,6 +879,12 @@ export const InstrumentDefinition = {
     }
     if (message.contractMaturity !== undefined) {
       InstrumentDefinition_MaturityDate.encode(message.contractMaturity, writer.uint32(1842).fork()).ldelim();
+    }
+    if (message.underlying !== "") {
+      writer.uint32(1850).string(message.underlying);
+    }
+    if (message.commodity !== "") {
+      writer.uint32(1858).string(message.commodity);
     }
     return writer;
   },
@@ -1039,6 +1068,12 @@ export const InstrumentDefinition = {
         case 230:
           message.contractMaturity = InstrumentDefinition_MaturityDate.decode(reader, reader.uint32());
           break;
+        case 231:
+          message.underlying = reader.string();
+          break;
+        case 232:
+          message.commodity = reader.string();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -1130,6 +1165,8 @@ export const InstrumentDefinition = {
       contractMaturity: isSet(object.contractMaturity)
         ? InstrumentDefinition_MaturityDate.fromJSON(object.contractMaturity)
         : undefined,
+      underlying: isSet(object.underlying) ? String(object.underlying) : "",
+      commodity: isSet(object.commodity) ? String(object.commodity) : "",
     };
   },
 
@@ -1228,6 +1265,8 @@ export const InstrumentDefinition = {
     message.contractMaturity !== undefined && (obj.contractMaturity = message.contractMaturity
       ? InstrumentDefinition_MaturityDate.toJSON(message.contractMaturity)
       : undefined);
+    message.underlying !== undefined && (obj.underlying = message.underlying);
+    message.commodity !== undefined && (obj.commodity = message.commodity);
     return obj;
   },
 
@@ -1315,6 +1354,8 @@ export const InstrumentDefinition = {
     message.contractMaturity = (object.contractMaturity !== undefined && object.contractMaturity !== null)
       ? InstrumentDefinition_MaturityDate.fromPartial(object.contractMaturity)
       : undefined;
+    message.underlying = object.underlying ?? "";
+    message.commodity = object.commodity ?? "";
     return message;
   },
 };
