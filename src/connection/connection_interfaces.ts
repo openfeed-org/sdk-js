@@ -44,6 +44,7 @@ export interface IOpenFeedClient {
         channels: number[] | null
     ) => Long;
     unsubscribe: (subscriptionId: Long) => void;
+    dispose: () => void;
 }
 
 export interface IOpenFeedLogger {
