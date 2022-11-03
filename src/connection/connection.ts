@@ -95,9 +95,12 @@ class OpenFeedConnection implements IOpenFeedConnection {
                 timeoutId = setTimeout(resolve, 15_000);
             });
 
-            // eslint-disable-next-line no-await-in-loop
-            await Promise.any([waitPromise, this.whenDisconnectedSource.whenCompleted]);
-
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                await Promise.race([waitPromise, this.whenDisconnectedSource.whenCompleted]);
+            } catch {
+                // This does not need to do anything
+            }
             if (timeoutId) {
                 clearTimeout(timeoutId);
             }
@@ -117,7 +120,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
         }
     };
 
-    private onMessage = (event: WebSocket.MessageEvent) => {
+    private onMessage = async (event: WebSocket.MessageEvent) => {
         try {
             this.messageTriggered = true;
 
@@ -156,7 +159,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
                 return;
             }
 
-            this.listeners.onMessage(message);
+            await this.listeners.onMessage(message);
         } catch (error) {
             this.logger?.error(error);
         }
@@ -395,7 +398,7 @@ export class OpenFeedClient implements IOpenFeedClient {
         if (message.loginResponse?.token && this.socket) {
             this._connection = new OpenFeedConnection(message.loginResponse?.token, this.socket, this.listeners, this.logger);
             this.whenConnectedSource.resolve(this._connection);
-            this.listeners.onConnected(this._connection);
+            await this.listeners.onConnected(this._connection);
             // this can't be caught in subscriptions,
             // we need to be able to catch disconnects even if there are no subscribers
             try {
@@ -410,7 +413,7 @@ export class OpenFeedClient implements IOpenFeedClient {
                     this.loopResetSource.reject(e);
                 }
             } finally {
-                this.listeners.onDisconnected();
+                await this.listeners.onDisconnected();
                 this.loopResetSource.resolve();
             }
         } else if (
@@ -477,14 +480,16 @@ export class OpenFeedClient implements IOpenFeedClient {
 
                 if (e instanceof DuplicateLoginError || e instanceof InvalidCredentialsError) {
                     this.logger?.warn("Stopping the client because of unrecoverable error");
-                    this.listeners.onCredentialsRejected();
+                    // eslint-disable-next-line no-await-in-loop
+                    await this.listeners.onCredentialsRejected();
                     this.cleanUp();
                     break;
                 }
 
                 if (e instanceof ConnectionDisposedError) {
                     this.logger?.warn("Stopping the client because of disposal");
-                    this.listeners.onDisconnected();
+                    // eslint-disable-next-line no-await-in-loop
+                    await this.listeners.onDisconnected();
                     this.cleanUp();
                     break;
                 }
@@ -532,8 +537,9 @@ export class OpenFeedClient implements IOpenFeedClient {
             // This is for cross-environment compatibility
             let timeoutId: any = null;
             try {
+                // race will trigger even if rejected
                 // eslint-disable-next-line no-await-in-loop
-                const connection = await Promise.any([this.connection, cancelSource.whenCompleted]);
+                const connection = await Promise.race([this.connection, cancelSource.whenCompleted]);
                 if (cancelSource.completed || /* can't actually happen */ !(connection instanceof OpenFeedConnection)) {
                     return;
                 }
@@ -549,7 +555,7 @@ export class OpenFeedClient implements IOpenFeedClient {
                 );
 
                 // eslint-disable-next-line no-await-in-loop
-                await Promise.any([this.subscribeResetSource.whenCompleted, cancelSource.whenCompleted]);
+                await Promise.race([this.subscribeResetSource.whenCompleted, cancelSource.whenCompleted]);
 
                 if (cancelSource.completed) {
                     try {
