@@ -3162,9 +3162,9 @@ prompts@^2.0.1:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
-"proto@git+ssh://git@github.com/openfeed-org/proto.git":
+"proto@git+ssh://git@github.com/openfeed-org/proto.git#master":
   version "0.0.0"
-  resolved "git+ssh://git@github.com/openfeed-org/proto.git#e6a233c8dd80e63e38b7d07c54e97a0b424c25de"
+  resolved "git+ssh://git@github.com/openfeed-org/proto.git#49b2f86e0ea7486b72161564cde20951ee49523e"
 
 protobufjs@^6.11.3, protobufjs@^6.8.8:
   version "6.11.3"
