@@ -212,4 +212,6 @@ This program is a simple amalgamation of what we learned before. We first set up
 
 ## More Information
 
-TBD
+To learn more about subscribing to symbols and exchanges click [here](SYMBOLS_EXCHANGES.md).
+
+To learn more about various subscription types, click [here](SUBSCRIPTION_TYPES.md).
