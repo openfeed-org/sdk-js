@@ -361,6 +361,8 @@ export class OpenFeedClient implements IOpenFeedClient {
     private socket: WebSocket | null = null;
     private _connection: OpenFeedConnection | null = null;
 
+    // We are going to throw errors internally, outside needs to know only when disposed
+    private whenConnectedInternalSource = new ResolutionSource<OpenFeedConnection>();
     private whenConnectedSource = new ResolutionSource<OpenFeedConnection>();
     private loopResetSource = new ResolutionSource<void>();
     private subscribeResetSource = new ResolutionSource<void>();
@@ -397,7 +399,9 @@ export class OpenFeedClient implements IOpenFeedClient {
         const message = receive(event);
         if (message.loginResponse?.token && this.socket) {
             this._connection = new OpenFeedConnection(message.loginResponse?.token, this.socket, this.listeners, this.logger);
+            this.whenConnectedInternalSource.resolve(this._connection);
             this.whenConnectedSource.resolve(this._connection);
+
             await this.listeners.onConnected(this._connection);
             // this can't be caught in subscriptions,
             // we need to be able to catch disconnects even if there are no subscribers
@@ -422,21 +426,23 @@ export class OpenFeedClient implements IOpenFeedClient {
             )
         ) {
             this.logger?.warn("Received authentication error, disconnecting...");
-            this.whenConnectedSource.reject(new InvalidCredentialsError("Invalid credentials provided. Please update credentials and try again."));
+            this.whenConnectedInternalSource.reject(
+                new InvalidCredentialsError("Invalid credentials provided. Please update credentials and try again.")
+            );
         }
     };
 
     private onError = (error: WebSocket.ErrorEvent) => {
         this.logger?.log(`Socket error: ${error.message}`);
-        if (!this.whenConnectedSource.completed) {
-            this.whenConnectedSource.reject(new Error(`Error when connecting to socket: ${error.message}`));
+        if (!this.whenConnectedInternalSource.completed) {
+            this.whenConnectedInternalSource.reject(new Error(`Error when connecting to socket: ${error.message}`));
         }
     };
 
     private onClose = (event: WebSocket.CloseEvent) => {
         this.logger?.log(`Socket closed: ${event.reason}`);
-        if (!this.whenConnectedSource.completed) {
-            this.whenConnectedSource.reject(new Error(`Socket closed: ${event.reason}`));
+        if (!this.whenConnectedInternalSource.completed) {
+            this.whenConnectedInternalSource.reject(new Error(`Socket closed: ${event.reason}`));
         }
     };
 
@@ -463,7 +469,7 @@ export class OpenFeedClient implements IOpenFeedClient {
                 this.socket.onclose = this.onClose;
 
                 // eslint-disable-next-line no-await-in-loop
-                await this.whenConnectedSource.whenCompleted;
+                await this.whenConnectedInternalSource.whenCompleted;
 
                 // eslint-disable-next-line no-await-in-loop
                 await this.loopResetSource.whenCompleted;
@@ -496,6 +502,9 @@ export class OpenFeedClient implements IOpenFeedClient {
             }
 
             this._connection = null;
+            if (this.whenConnectedInternalSource.completed) {
+                this.whenConnectedInternalSource = new ResolutionSource<OpenFeedConnection>();
+            }
             if (this.whenConnectedSource.completed) {
                 this.whenConnectedSource = new ResolutionSource<OpenFeedConnection>();
             }
@@ -521,6 +530,7 @@ export class OpenFeedClient implements IOpenFeedClient {
             sub.resolve();
         }
         this.subscriptions.clear();
+        this.whenConnectedSource.reject(new Error("Connection disposed"));
     };
 
     private runSubscribeLoop = async (
@@ -620,7 +630,7 @@ export class OpenFeedClient implements IOpenFeedClient {
         if (this._connection) {
             this._connection.dispose();
         } else {
-            this.whenConnectedSource.reject(new ConnectionDisposedError("Connection disposed"));
+            this.whenConnectedInternalSource.reject(new ConnectionDisposedError("Connection disposed"));
         }
     };
 }
