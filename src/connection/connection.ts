@@ -41,7 +41,10 @@ const receive = (msgEvent: WebSocket.MessageEvent): OpenfeedGatewayMessage => {
 class CorrelationId {
     private static correlationId = Long.fromNumber(-1);
 
-    public static create = () => this.correlationId.add(1);
+    public static create = () => {
+        this.correlationId = this.correlationId.add(1);
+        return this.correlationId;
+    };
 }
 
 class DuplicateLoginError extends Error {
