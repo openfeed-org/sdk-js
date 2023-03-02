@@ -152,9 +152,18 @@ export interface InstrumentDefinition {
   /** / */
   subscriptionSymbol: string;
   /** / The Month/ Day of expiration for futures and options. Corresponds to the expiration month. */
-  contractMaturity: InstrumentDefinition_MaturityDate | undefined;
+  contractMaturity:
+    | InstrumentDefinition_MaturityDate
+    | undefined;
+  /** / Barchart Underlying Symbol */
   underlying: string;
   commodity: string;
+  /** / Barchart Exchange Id */
+  exchangeId: number;
+  /** / Barchart Price Scaling Exponent */
+  priceScalingExponent: number;
+  /** / The Openfeed marketId of the underlying asset. */
+  underlyingOpenfeedMarketId: Long;
 }
 
 /** ############################################# */
@@ -547,6 +556,7 @@ export interface InstrumentDefinition_Calendar {
 
 export interface InstrumentDefinition_Event {
   type: InstrumentDefinition_EventType;
+  /** / Epoch time in ms */
   date: Long;
 }
 
@@ -706,6 +716,9 @@ function createBaseInstrumentDefinition(): InstrumentDefinition {
     contractMaturity: undefined,
     underlying: "",
     commodity: "",
+    exchangeId: 0,
+    priceScalingExponent: 0,
+    underlyingOpenfeedMarketId: Long.ZERO,
   };
 }
 
@@ -883,6 +896,15 @@ export const InstrumentDefinition = {
     }
     if (message.commodity !== "") {
       writer.uint32(1858).string(message.commodity);
+    }
+    if (message.exchangeId !== 0) {
+      writer.uint32(1864).sint32(message.exchangeId);
+    }
+    if (message.priceScalingExponent !== 0) {
+      writer.uint32(1872).sint32(message.priceScalingExponent);
+    }
+    if (!message.underlyingOpenfeedMarketId.isZero()) {
+      writer.uint32(1880).sint64(message.underlyingOpenfeedMarketId);
     }
     return writer;
   },
@@ -1072,6 +1094,15 @@ export const InstrumentDefinition = {
         case 232:
           message.commodity = reader.string();
           break;
+        case 233:
+          message.exchangeId = reader.sint32();
+          break;
+        case 234:
+          message.priceScalingExponent = reader.sint32();
+          break;
+        case 235:
+          message.underlyingOpenfeedMarketId = reader.sint64() as Long;
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -1165,6 +1196,11 @@ export const InstrumentDefinition = {
         : undefined,
       underlying: isSet(object.underlying) ? String(object.underlying) : "",
       commodity: isSet(object.commodity) ? String(object.commodity) : "",
+      exchangeId: isSet(object.exchangeId) ? Number(object.exchangeId) : 0,
+      priceScalingExponent: isSet(object.priceScalingExponent) ? Number(object.priceScalingExponent) : 0,
+      underlyingOpenfeedMarketId: isSet(object.underlyingOpenfeedMarketId)
+        ? Long.fromValue(object.underlyingOpenfeedMarketId)
+        : Long.ZERO,
     };
   },
 
@@ -1265,6 +1301,10 @@ export const InstrumentDefinition = {
       : undefined);
     message.underlying !== undefined && (obj.underlying = message.underlying);
     message.commodity !== undefined && (obj.commodity = message.commodity);
+    message.exchangeId !== undefined && (obj.exchangeId = Math.round(message.exchangeId));
+    message.priceScalingExponent !== undefined && (obj.priceScalingExponent = Math.round(message.priceScalingExponent));
+    message.underlyingOpenfeedMarketId !== undefined &&
+      (obj.underlyingOpenfeedMarketId = (message.underlyingOpenfeedMarketId || Long.ZERO).toString());
     return obj;
   },
 
@@ -1354,6 +1394,12 @@ export const InstrumentDefinition = {
       : undefined;
     message.underlying = object.underlying ?? "";
     message.commodity = object.commodity ?? "";
+    message.exchangeId = object.exchangeId ?? 0;
+    message.priceScalingExponent = object.priceScalingExponent ?? 0;
+    message.underlyingOpenfeedMarketId =
+      (object.underlyingOpenfeedMarketId !== undefined && object.underlyingOpenfeedMarketId !== null)
+        ? Long.fromValue(object.underlyingOpenfeedMarketId)
+        : Long.ZERO;
     return message;
   },
 };

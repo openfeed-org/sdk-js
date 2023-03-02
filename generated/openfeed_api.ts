@@ -324,6 +324,7 @@ export interface InstrumentResponse {
   marketId: Long;
   exchange: string;
   channelId: number;
+  exchangeId: number;
 }
 
 /** / Instrument References, returns InstrumentReferenceResponse(s) */
@@ -349,6 +350,7 @@ export interface InstrumentReferenceResponse {
   ddfExchange: string;
   ddfBaseCode: string;
   exchangeSymbol: string;
+  exchangeId: number;
 }
 
 /** / Exchange Request, returns ExchangeResponse.  Gives available exchanges. */
@@ -367,6 +369,7 @@ export interface ExchangeResponse_Exchange {
   code: string;
   description: string;
   aliases: string[];
+  exchangeId: number;
 }
 
 /** / Bulk subscription filter. */
@@ -1240,6 +1243,7 @@ function createBaseInstrumentResponse(): InstrumentResponse {
     marketId: Long.ZERO,
     exchange: "",
     channelId: 0,
+    exchangeId: 0,
   };
 }
 
@@ -1265,6 +1269,9 @@ export const InstrumentResponse = {
     }
     if (message.channelId !== 0) {
       writer.uint32(56).sint32(message.channelId);
+    }
+    if (message.exchangeId !== 0) {
+      writer.uint32(64).sint32(message.exchangeId);
     }
     return writer;
   },
@@ -1297,6 +1304,9 @@ export const InstrumentResponse = {
         case 7:
           message.channelId = reader.sint32();
           break;
+        case 8:
+          message.exchangeId = reader.sint32();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -1314,6 +1324,7 @@ export const InstrumentResponse = {
       marketId: isSet(object.marketId) ? Long.fromValue(object.marketId) : Long.ZERO,
       exchange: isSet(object.exchange) ? String(object.exchange) : "",
       channelId: isSet(object.channelId) ? Number(object.channelId) : 0,
+      exchangeId: isSet(object.exchangeId) ? Number(object.exchangeId) : 0,
     };
   },
 
@@ -1326,6 +1337,7 @@ export const InstrumentResponse = {
     message.marketId !== undefined && (obj.marketId = (message.marketId || Long.ZERO).toString());
     message.exchange !== undefined && (obj.exchange = message.exchange);
     message.channelId !== undefined && (obj.channelId = Math.round(message.channelId));
+    message.exchangeId !== undefined && (obj.exchangeId = Math.round(message.exchangeId));
     return obj;
   },
 
@@ -1344,6 +1356,7 @@ export const InstrumentResponse = {
       : Long.ZERO;
     message.exchange = object.exchange ?? "";
     message.channelId = object.channelId ?? 0;
+    message.exchangeId = object.exchangeId ?? 0;
     return message;
   },
 };
@@ -1466,6 +1479,7 @@ function createBaseInstrumentReferenceResponse(): InstrumentReferenceResponse {
     ddfExchange: "",
     ddfBaseCode: "",
     exchangeSymbol: "",
+    exchangeId: 0,
   };
 }
 
@@ -1503,6 +1517,9 @@ export const InstrumentReferenceResponse = {
     }
     if (message.exchangeSymbol !== "") {
       writer.uint32(90).string(message.exchangeSymbol);
+    }
+    if (message.exchangeId !== 0) {
+      writer.uint32(96).sint32(message.exchangeId);
     }
     return writer;
   },
@@ -1547,6 +1564,9 @@ export const InstrumentReferenceResponse = {
         case 11:
           message.exchangeSymbol = reader.string();
           break;
+        case 12:
+          message.exchangeId = reader.sint32();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -1568,6 +1588,7 @@ export const InstrumentReferenceResponse = {
       ddfExchange: isSet(object.ddfExchange) ? String(object.ddfExchange) : "",
       ddfBaseCode: isSet(object.ddfBaseCode) ? String(object.ddfBaseCode) : "",
       exchangeSymbol: isSet(object.exchangeSymbol) ? String(object.exchangeSymbol) : "",
+      exchangeId: isSet(object.exchangeId) ? Number(object.exchangeId) : 0,
     };
   },
 
@@ -1584,6 +1605,7 @@ export const InstrumentReferenceResponse = {
     message.ddfExchange !== undefined && (obj.ddfExchange = message.ddfExchange);
     message.ddfBaseCode !== undefined && (obj.ddfBaseCode = message.ddfBaseCode);
     message.exchangeSymbol !== undefined && (obj.exchangeSymbol = message.exchangeSymbol);
+    message.exchangeId !== undefined && (obj.exchangeId = Math.round(message.exchangeId));
     return obj;
   },
 
@@ -1606,6 +1628,7 @@ export const InstrumentReferenceResponse = {
     message.ddfExchange = object.ddfExchange ?? "";
     message.ddfBaseCode = object.ddfBaseCode ?? "";
     message.exchangeSymbol = object.exchangeSymbol ?? "";
+    message.exchangeId = object.exchangeId ?? 0;
     return message;
   },
 };
@@ -1748,7 +1771,7 @@ export const ExchangeResponse = {
 };
 
 function createBaseExchangeResponse_Exchange(): ExchangeResponse_Exchange {
-  return { code: "", description: "", aliases: [] };
+  return { code: "", description: "", aliases: [], exchangeId: 0 };
 }
 
 export const ExchangeResponse_Exchange = {
@@ -1761,6 +1784,9 @@ export const ExchangeResponse_Exchange = {
     }
     for (const v of message.aliases) {
       writer.uint32(26).string(v!);
+    }
+    if (message.exchangeId !== 0) {
+      writer.uint32(32).sint32(message.exchangeId);
     }
     return writer;
   },
@@ -1781,6 +1807,9 @@ export const ExchangeResponse_Exchange = {
         case 3:
           message.aliases.push(reader.string());
           break;
+        case 4:
+          message.exchangeId = reader.sint32();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -1794,6 +1823,7 @@ export const ExchangeResponse_Exchange = {
       code: isSet(object.code) ? String(object.code) : "",
       description: isSet(object.description) ? String(object.description) : "",
       aliases: Array.isArray(object?.aliases) ? object.aliases.map((e: any) => String(e)) : [],
+      exchangeId: isSet(object.exchangeId) ? Number(object.exchangeId) : 0,
     };
   },
 
@@ -1806,6 +1836,7 @@ export const ExchangeResponse_Exchange = {
     } else {
       obj.aliases = [];
     }
+    message.exchangeId !== undefined && (obj.exchangeId = Math.round(message.exchangeId));
     return obj;
   },
 
@@ -1814,6 +1845,7 @@ export const ExchangeResponse_Exchange = {
     message.code = object.code ?? "";
     message.description = object.description ?? "";
     message.aliases = object.aliases?.map((e) => e) || [];
+    message.exchangeId = object.exchangeId ?? 0;
     return message;
   },
 };
