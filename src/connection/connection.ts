@@ -33,9 +33,20 @@ import { OpenFeedListeners } from "./listeners";
 const send = (socket: WebSocket, message: OptionalUndefined<OpenfeedGatewayRequest>) => {
     socket.send(OpenfeedGatewayRequest.encode(toT(message)).finish());
 };
+// eslint-disable-next-line no-bitwise
+const getShort = (a: number, b: number) => (a << 8) | (b << 0);
 
-const receive = (msgEvent: WebSocket.MessageEvent): OpenfeedGatewayMessage => {
-    return OpenfeedGatewayMessage.decode(new Uint8Array(msgEvent.data as ArrayBuffer));
+const receive = (msgEvent: WebSocket.MessageEvent): OpenfeedGatewayMessage[] => {
+    const array = new Uint8Array(msgEvent.data as ArrayBuffer);
+    let currentIndex = 0;
+    const res: OpenfeedGatewayMessage[] = [];
+    while (getShort(array[currentIndex], array[currentIndex + 1])) {
+        const shortVal = getShort(array[currentIndex], array[currentIndex + 1]) + 2;
+        const currentArray = array.subarray(currentIndex + 2, currentIndex + shortVal);
+        currentIndex += shortVal;
+        res.push(OpenfeedGatewayMessage.decode(currentArray));
+    }
+    return res;
 };
 
 class CorrelationId {
@@ -127,42 +138,47 @@ class OpenFeedConnection implements IOpenFeedConnection {
         try {
             this.messageTriggered = true;
 
-            const message = receive(event);
-            if (message.heartBeat) {
-                return;
-            }
+            const messages = receive(event);
 
-            if (message.logoutResponse?.status?.result === Result.DUPLICATE_LOGIN) {
-                this.logger?.warn("Duplicate login");
-                this.disconnect(new DuplicateLoginError("Duplicate login"));
-                return;
-            }
+            for (const message of messages) {
+                if (message.heartBeat) {
+                    return;
+                }
 
-            if (message.instrumentResponse) {
-                const { correlationId } = message.instrumentResponse;
-                const request = this.instrumentRequests.get(correlationId.toString());
-                if (!request) throw new Error(`Instrument request ID ${correlationId} not found`);
-                request.resolve(message.instrumentResponse);
-                return;
-            }
+                if (message.logoutResponse?.status?.result === Result.DUPLICATE_LOGIN) {
+                    this.logger?.warn("Duplicate login");
+                    this.disconnect(new DuplicateLoginError("Duplicate login"));
+                    return;
+                }
 
-            if (message.instrumentReferenceResponse) {
-                const { correlationId } = message.instrumentReferenceResponse;
-                const request = this.instrumentReferenceRequests.get(correlationId.toString());
-                if (!request) throw new Error(`Exchange request ID ${correlationId} not found`);
-                request.resolve(message.instrumentReferenceResponse);
-                return;
-            }
+                if (message.instrumentResponse) {
+                    const { correlationId } = message.instrumentResponse;
+                    const request = this.instrumentRequests.get(correlationId.toString());
+                    if (!request) throw new Error(`Instrument request ID ${correlationId} not found`);
+                    request.resolve(message.instrumentResponse);
+                    return;
+                }
 
-            if (message.exchangeResponse) {
-                const { correlationId } = message.exchangeResponse;
-                const request = this.exchangeRequests.get(correlationId.toString());
-                if (!request) throw new Error(`Exchange request ID ${correlationId} not found`);
-                request.resolve(message.exchangeResponse);
-                return;
-            }
+                if (message.instrumentReferenceResponse) {
+                    const { correlationId } = message.instrumentReferenceResponse;
+                    const request = this.instrumentReferenceRequests.get(correlationId.toString());
+                    if (!request) throw new Error(`Exchange request ID ${correlationId} not found`);
+                    request.resolve(message.instrumentReferenceResponse);
+                    return;
+                }
 
-            await this.listeners.onMessage(message);
+                if (message.exchangeResponse) {
+                    const { correlationId } = message.exchangeResponse;
+                    const request = this.exchangeRequests.get(correlationId.toString());
+                    if (!request) throw new Error(`Exchange request ID ${correlationId} not found`);
+                    request.resolve(message.exchangeResponse);
+                    return;
+                }
+
+                // We want the messages processed in sequence
+                // eslint-disable-next-line no-await-in-loop
+                await this.listeners.onMessage(message);
+            }
         } catch (error) {
             this.logger?.error(error);
         }
@@ -392,14 +408,14 @@ export class OpenFeedClient implements IOpenFeedClient {
                 username: this.username,
                 password: this.password,
                 clientVersion,
-                protocolVersion: 0,
+                protocolVersion: 1,
             },
         };
         send(this.socket, loginRequest);
     };
 
     private onMessage = async (event: WebSocket.MessageEvent) => {
-        const message = receive(event);
+        const [message] = receive(event);
         if (message.loginResponse?.token && this.socket) {
             this._connection = new OpenFeedConnection(message.loginResponse?.token, this.socket, this.listeners, this.logger);
             this.whenConnectedInternalSource.resolve(this._connection);
