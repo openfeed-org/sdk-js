@@ -134,7 +134,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
         }
     };
 
-    private onMessage = async (event: WebSocket.MessageEvent) => {
+    private onMessage = (event: WebSocket.MessageEvent) => {
         try {
             this.messageTriggered = true;
 
@@ -175,9 +175,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
                     return;
                 }
 
-                // We want the messages processed in sequence
-                // eslint-disable-next-line no-await-in-loop
-                await this.listeners.onMessage(message);
+                this.listeners.onMessage(message);
             }
         } catch (error) {
             this.logger?.error(error);
