@@ -3,6 +3,12 @@ import { InstrumentDefinition } from "@gen/openfeed_instrument";
 import Long from "long";
 import { IOpenFeedConnection } from "./connection_interfaces";
 
+const IDGetters: ((msg: OpenfeedGatewayMessage) => Long | undefined)[] = [
+    (msg) => msg.marketSnapshot?.marketId,
+    (msg) => msg.marketUpdate?.marketId,
+    (msg) => msg.ohlc?.marketId,
+    (msg) => msg.volumeAtPrice?.marketId,
+];
 export class OpenFeedListeners {
     private readonly instrumentBySymbol: Map<string, InstrumentDefinition> = new Map<string, InstrumentDefinition>();
     private readonly instrumentByMarketId: Map<string, [InstrumentDefinition?, string[]?]> = new Map<string, [InstrumentDefinition?, string[]?]>();
@@ -31,20 +37,20 @@ export class OpenFeedListeners {
                 }
                 this.instrumentByMarketId.set(message.subscriptionResponse.marketId.toString(), [def, symbols]);
             }
-        }
-        if (message.instrumentDefinition) {
+        } else if (message.instrumentDefinition) {
             [def, symbols] = getInstrumentDefinition(message.instrumentDefinition.marketId);
             this.instrumentByMarketId.set(message.instrumentDefinition.marketId.toString(), [message.instrumentDefinition, symbols]);
             this.instrumentBySymbol.set(message.instrumentDefinition.symbol, message.instrumentDefinition);
-        }
-        if (message.marketSnapshot) {
-            [def, symbols] = getInstrumentDefinition(message.marketSnapshot.marketId);
-        }
-        if (message.marketUpdate) {
-            [def, symbols] = getInstrumentDefinition(message.marketUpdate.marketId);
-        }
-        if (message.ohlc) {
-            [def, symbols] = getInstrumentDefinition(message.ohlc.marketId);
+        } else if (message.instrumentAction) {
+            // TODO
+        } else {
+            for (const getter of IDGetters) {
+                const id = getter(message);
+                if (id !== undefined) {
+                    [def, symbols] = getInstrumentDefinition(id);
+                    break;
+                }
+            }
         }
 
         return this.onMessageWithMetadata(message, symbols ?? [], def);
