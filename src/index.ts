@@ -2,6 +2,6 @@ export * from "./connection/connection";
 export * from "./connection/connection_interfaces";
 export * from "./connection/listeners";
 
-export * from "../generated/openfeed";
-export * from "../generated/openfeed_api";
-export * from "../generated/openfeed_instrument";
+export type * from "../generated/openfeed";
+export type * from "../generated/openfeed_api";
+export type * from "../generated/openfeed_instrument";

@@ -3,7 +3,7 @@ import Long from "long";
 import platform from "platform";
 
 import { OptionalUndefined, toT } from "@src/utilities/messages";
-import {
+import type {
     ExchangeRequest,
     ExchangeResponse,
     ExchangeResponse_Exchange,
@@ -11,14 +11,12 @@ import {
     InstrumentReferenceResponse,
     InstrumentRequest,
     InstrumentResponse,
-    OpenfeedGatewayMessage,
-    OpenfeedGatewayRequest,
-    Result,
     SubscriptionRequest,
     SubscriptionRequest_Request,
     SubscriptionType,
 } from "@gen/openfeed_api";
-import { Service } from "@gen/openfeed";
+import { OpenfeedGatewayMessage, OpenfeedGatewayRequest, Result } from "@gen/openfeed_api";
+import type { Service } from "@gen/openfeed";
 import { ResolutionSource } from "@src/utilities/async";
 import { version } from "@gen/version";
 import {

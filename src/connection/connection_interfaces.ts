@@ -1,7 +1,7 @@
 import Long from "long";
 
-import { Service } from "@gen/openfeed";
-import {
+import type { Service } from "@gen/openfeed";
+import type {
     ExchangeResponse_Exchange,
     InstrumentReferenceRequest,
     InstrumentReferenceResponse,
