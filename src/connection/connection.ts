@@ -1,6 +1,5 @@
 import WebSocket from "isomorphic-ws";
 import Long from "long";
-import platform from "platform";
 
 import { OptionalUndefined, toT } from "@src/utilities/messages";
 import type {
@@ -397,9 +396,22 @@ export class OpenFeedClient implements IOpenFeedClient {
         this.runConnectLoop();
     }
 
-    private onOpen = () => {
+    private onOpen = async () => {
         if (!this.socket) return;
-        const clientVersion = `sdk-js:${version};client-id:${this.clientId ?? "default"};platform:${platform.description}`;
+        let platformDescription: string;
+        if (typeof window !== "undefined") {
+            // Browser environment
+            platformDescription = navigator.userAgent;
+        } else {
+            // Node.js environment
+            const os = await import("os");
+            try {
+                platformDescription = `Node.js ${process.version}; ${os.version?.()} ${os.release?.()}; ${os.arch?.()};`;
+            } catch (e) {
+                platformDescription = `Unknown OS; ${os.version?.() ?? ""} ${os.release?.() ?? ""}; ${os.arch?.() ?? ""};`;
+            }
+        }
+        const clientVersion = `sdk-js:${version};client-id:${this.clientId ?? "default"};platform:${platformDescription}`;
         const loginRequest: OptionalUndefined<OpenfeedGatewayRequest> = {
             loginRequest: {
                 correlationId: CorrelationId.create(),

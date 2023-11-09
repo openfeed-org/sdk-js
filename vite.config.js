@@ -35,6 +35,7 @@ export default defineConfig({
         alias: {
             "@src": path.resolve(process.cwd(), "src"),
             "@gen": path.resolve(process.cwd(), "generated"),
+            os: path.resolve(process.cwd(), "src/utilities/empty.ts"),
         },
     },
 });
