@@ -14,20 +14,11 @@
         "noUnusedParameters": false,
         "noImplicitReturns": true,
         "rootDir": "./",
-        "types": [
-            "jest"
-        ],
+        "types": ["jest"],
         "paths": {
-            "@src/*": [
-                "./src/*"
-            ],
-             "@gen/*": [
-                "./generated/*"
-            ]
+            "@src/*": ["./src/*"],
+            "@gen/*": ["./generated/*"]
         }
     },
-    "include": [
-        "./src",
-        "./generated",
-    ]
+    "include": ["./src", "./generated", "./scripts/"]
 }

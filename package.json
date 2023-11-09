@@ -10,8 +10,10 @@
     "author": "Dejan Maksimovic <maximovic.d@gmail.com>",
     "private": true,
     "scripts": {
-        "generate": "cd node_modules\\proto && ..\\..\\protoc --plugin=..\\..\\node_modules\\.bin\\protoc-gen-ts_proto --ts_proto_opt=outputJsonMethods=false --ts_proto_opt=outputPartialMethods=false --ts_proto_opt=exportCommonSymbols=false --ts_proto_opt=esModuleInterop=true --ts_proto_opt=forceLong=long --ts_proto_opt=useExactTypes=false --ts_proto_out=../../generated *.proto",
+        "generate:proto": "cd node_modules\\proto && ..\\..\\protoc --plugin=..\\..\\node_modules\\.bin\\protoc-gen-ts_proto --ts_proto_opt=outputJsonMethods=false --ts_proto_opt=outputPartialMethods=false --ts_proto_opt=exportCommonSymbols=false --ts_proto_opt=esModuleInterop=true --ts_proto_opt=forceLong=long --ts_proto_opt=useExactTypes=false --ts_proto_out=../../generated *.proto",
         "generate:version": "genversion --es6 -s -d ./generated/version.ts",
+        "generate:process": "tsx ./scripts/process.ts",
+        "generate": "yarn generate:proto && yarn generate:process",
         "build:clear": "rimraf dist",
         "build:node": "esbuild --bundle --outfile=dist/node.js --platform=node --target=node16 --format=esm --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" src/index.ts",
         "build:ts": "yarn generate:version && vite build",

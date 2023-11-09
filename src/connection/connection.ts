@@ -14,8 +14,10 @@ import type {
     SubscriptionRequest,
     SubscriptionRequest_Request,
     SubscriptionType,
+    OpenfeedGatewayMessage,
+    OpenfeedGatewayRequest,
 } from "@gen/openfeed_api";
-import { OpenfeedGatewayMessage, OpenfeedGatewayRequest, Result } from "@gen/openfeed_api";
+import { OpenfeedGatewayMessageDecode, OpenfeedGatewayRequestEncode, Result } from "@gen/openfeed_api";
 import type { Service } from "@gen/openfeed";
 import { ResolutionSource } from "@src/utilities/async";
 import { version } from "@gen/version";
@@ -29,7 +31,7 @@ import {
 import { OpenFeedListeners } from "./listeners";
 
 const send = (socket: WebSocket, message: OptionalUndefined<OpenfeedGatewayRequest>) => {
-    socket.send(OpenfeedGatewayRequest.encode(toT(message)).finish());
+    socket.send(OpenfeedGatewayRequestEncode.encode(toT(message)).finish());
 };
 // eslint-disable-next-line no-bitwise
 const getShort = (a: number, b: number) => (a << 8) | (b << 0);
@@ -42,7 +44,7 @@ const receive = (msgEvent: WebSocket.MessageEvent): OpenfeedGatewayMessage[] => 
         const shortVal = getShort(array[currentIndex], array[currentIndex + 1]) + 2;
         const currentArray = array.subarray(currentIndex + 2, currentIndex + shortVal);
         currentIndex += shortVal;
-        res.push(OpenfeedGatewayMessage.decode(currentArray));
+        res.push(OpenfeedGatewayMessageDecode.decode(currentArray));
     }
     return res;
 };
