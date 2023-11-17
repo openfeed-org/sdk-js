@@ -385,6 +385,7 @@ export interface MarketUpdate {
     marketSummary?: MarketSummary | undefined;
     highRolling?: HighRolling | undefined;
     lowRolling?: LowRolling | undefined;
+    requestForQuote?: RequestForQuote | undefined;
 }
 /** / Depth Price Level */
 export interface DepthPriceLevel {
@@ -992,6 +993,15 @@ export interface InstrumentAction {
     message: string;
     instrument: InstrumentDefinition | undefined;
     newInstrument: InstrumentDefinition | undefined;
+}
+/** / Request For Quote */
+export interface RequestForQuote {
+    quoteRequestId: string;
+    symbol: string;
+    securityId: Long;
+    orderQuantity: number;
+    quoteType: number;
+    side: number;
 }
 function createBaseOpenfeedMessage(): OpenfeedMessage {
     return {
@@ -2198,6 +2208,7 @@ function createBaseMarketUpdate(): MarketUpdate {
         marketSummary: undefined,
         highRolling: undefined,
         lowRolling: undefined,
+        requestForQuote: undefined,
     };
 }
 export const MarketUpdateEncode = {
@@ -2330,6 +2341,9 @@ export const MarketUpdateEncode = {
         }
         if (message.lowRolling !== undefined) {
             LowRollingEncode.encode(message.lowRolling, writer.uint32(386).fork()).ldelim();
+        }
+        if (message.requestForQuote !== undefined) {
+            RequestForQuoteEncode.encode(message.requestForQuote, writer.uint32(394).fork()).ldelim();
         }
         return writer;
     }
@@ -2598,6 +2612,12 @@ export const MarketUpdateEncode = {
                         break;
                     }
                     message.lowRolling = LowRollingDecode.decode(reader, reader.uint32());
+                    continue;
+                case 49:
+                    if (tag !== 394) {
+                        break;
+                    }
+                    message.requestForQuote = RequestForQuoteDecode.decode(reader, reader.uint32());
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {
@@ -6931,6 +6951,84 @@ export const InstrumentActionEncode = {
                         break;
                     }
                     message.newInstrument = InstrumentDefinitionDecode.decode(reader, reader.uint32());
+                    continue;
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skipType(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseRequestForQuote(): RequestForQuote {
+    return { quoteRequestId: "", symbol: "", securityId: Long.ZERO, orderQuantity: 0, quoteType: 0, side: 0 };
+}
+export const RequestForQuoteEncode = {
+    encode(message: RequestForQuote, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+        if (message.quoteRequestId !== "") {
+            writer.uint32(10).string(message.quoteRequestId);
+        }
+        if (message.symbol !== "") {
+            writer.uint32(18).string(message.symbol);
+        }
+        if (!message.securityId.isZero()) {
+            writer.uint32(24).sint64(message.securityId);
+        }
+        if (message.orderQuantity !== 0) {
+            writer.uint32(32).sint32(message.orderQuantity);
+        }
+        if (message.quoteType !== 0) {
+            writer.uint32(40).sint32(message.quoteType);
+        }
+        if (message.side !== 0) {
+            writer.uint32(48).sint32(message.side);
+        }
+        return writer;
+    }
+}, RequestForQuoteDecode = {
+    decode(input: _m0.Reader | Uint8Array, length?: number): RequestForQuote {
+        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+        let end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseRequestForQuote();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1:
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.quoteRequestId = reader.string();
+                    continue;
+                case 2:
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.symbol = reader.string();
+                    continue;
+                case 3:
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.securityId = reader.sint64() as Long;
+                    continue;
+                case 4:
+                    if (tag !== 32) {
+                        break;
+                    }
+                    message.orderQuantity = reader.sint32();
+                    continue;
+                case 5:
+                    if (tag !== 40) {
+                        break;
+                    }
+                    message.quoteType = reader.sint32();
+                    continue;
+                case 6:
+                    if (tag !== 48) {
+                        break;
+                    }
+                    message.side = reader.sint32();
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {

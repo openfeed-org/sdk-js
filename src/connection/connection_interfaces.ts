@@ -6,12 +6,12 @@ import type {
     InstrumentReferenceRequest,
     InstrumentReferenceResponse,
     InstrumentRequest,
-    InstrumentResponse,
     SubscriptionType,
 } from "@gen/openfeed_api";
 import { OptionalUndefined } from "@src/utilities/messages";
+import type { InstrumentDefinition } from "@gen/openfeed_instrument";
 
-export type OpenFeedInstrumentRequest = Omit<OptionalUndefined<InstrumentRequest>, "correlationId" | "token">;
+export type OpenFeedInstrumentRequest = Omit<OptionalUndefined<InstrumentRequest>, "correlationId" | "token" | "version">;
 export type OpenFeedInstrumentReferenceRequest = Omit<OptionalUndefined<InstrumentReferenceRequest>, "correlationId" | "token">;
 
 export interface IOpenFeedConnection {
@@ -27,7 +27,7 @@ export interface IOpenFeedConnection {
     unsubscribe: (subscriptionId: Long) => void;
     whenDisconnected: () => Promise<void>;
     getExchanges: () => Promise<ExchangeResponse_Exchange[]>;
-    getInstrument: (request: OpenFeedInstrumentRequest) => Promise<InstrumentResponse>;
+    getInstrument: (request: OpenFeedInstrumentRequest) => Promise<InstrumentDefinition[]>;
     getInstrumentReference: (request: OpenFeedInstrumentReferenceRequest) => Promise<InstrumentReferenceResponse>;
 }
 

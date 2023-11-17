@@ -9,7 +9,6 @@ import type {
     InstrumentReferenceRequest,
     InstrumentReferenceResponse,
     InstrumentRequest,
-    InstrumentResponse,
     SubscriptionRequest,
     SubscriptionRequest_Request,
     SubscriptionType,
@@ -17,6 +16,7 @@ import type {
     OpenfeedGatewayRequest,
 } from "@gen/openfeed_api";
 import { OpenfeedGatewayMessageDecode, OpenfeedGatewayRequestEncode, Result } from "@gen/openfeed_api";
+import type { InstrumentDefinition } from "@gen/openfeed_instrument";
 import type { Service } from "@gen/openfeed";
 import { ResolutionSource } from "@src/utilities/async";
 import { version } from "@gen/version";
@@ -76,13 +76,11 @@ class ConnectionDisposedError extends Error {
 }
 
 class OpenFeedConnection implements IOpenFeedConnection {
-    private readonly subscriptions: Map<string, SubscriptionRequest> = new Map<string, SubscriptionRequest>();
-    private readonly exchangeRequests: Map<string, ResolutionSource<ExchangeResponse>> = new Map<string, ResolutionSource<ExchangeResponse>>();
-    private readonly instrumentRequests: Map<string, ResolutionSource<InstrumentResponse>> = new Map<string, ResolutionSource<InstrumentResponse>>();
-    private readonly instrumentReferenceRequests: Map<string, ResolutionSource<InstrumentReferenceResponse>> = new Map<
-        string,
-        ResolutionSource<InstrumentReferenceResponse>
-    >();
+    private readonly subscriptions: Map<string, SubscriptionRequest> = new Map();
+    private readonly exchangeRequests: Map<string, ResolutionSource<ExchangeResponse>> = new Map();
+    private readonly instrumentRequests: Map<string, ResolutionSource<InstrumentDefinition[]>> = new Map();
+    private readonly definitionsInFlight: Map<string, InstrumentDefinition[]> = new Map();
+    private readonly instrumentReferenceRequests: Map<string, ResolutionSource<InstrumentReferenceResponse>> = new Map();
 
     private readonly whenDisconnectedSource = new ResolutionSource<void>();
 
@@ -151,11 +149,24 @@ class OpenFeedConnection implements IOpenFeedConnection {
                 }
 
                 if (message.instrumentResponse) {
-                    const { correlationId } = message.instrumentResponse;
-                    const request = this.instrumentRequests.get(correlationId.toString());
-                    if (!request) throw new Error(`Instrument request ID ${correlationId} not found`);
-                    request.resolve(message.instrumentResponse);
-                    return;
+                    const { correlationId, instrumentDefinition, numberOfDefinitions } = message.instrumentResponse;
+                    const idString = correlationId.toString();
+                    const request = this.instrumentRequests.get(idString);
+                    if (!request) throw new Error(`Instrument request ID ${idString} not found`);
+                    if (!instrumentDefinition) throw new Error(`Instrument definition not found in response ID ${idString}`);
+                    let definitions = this.definitionsInFlight.get(idString);
+                    if (!definitions) {
+                        definitions = [instrumentDefinition];
+                    } else {
+                        definitions.push(instrumentDefinition);
+                    }
+                    if (definitions.length === numberOfDefinitions) {
+                        this.definitionsInFlight.delete(idString);
+                        request.resolve(definitions);
+                    } else {
+                        this.definitionsInFlight.set(idString, definitions);
+                    }
+                    continue;
                 }
 
                 if (message.instrumentReferenceResponse) {
@@ -163,7 +174,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
                     const request = this.instrumentReferenceRequests.get(correlationId.toString());
                     if (!request) throw new Error(`Exchange request ID ${correlationId} not found`);
                     request.resolve(message.instrumentReferenceResponse);
-                    return;
+                    continue;
                 }
 
                 if (message.exchangeResponse) {
@@ -171,7 +182,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
                     const request = this.exchangeRequests.get(correlationId.toString());
                     if (!request) throw new Error(`Exchange request ID ${correlationId} not found`);
                     request.resolve(message.exchangeResponse);
-                    return;
+                    continue;
                 }
 
                 this.listeners.onMessage(message);
@@ -232,6 +243,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
             snapshotIntervalSeconds,
             instrumentType: [],
             bulkSubscriptionFilter: [],
+            spreadTypeFilter: [],
         };
 
         if (symbols) {
@@ -324,16 +336,21 @@ class OpenFeedConnection implements IOpenFeedConnection {
         }
     };
 
-    getInstrument = async (request: OpenFeedInstrumentRequest): Promise<InstrumentResponse> => {
+    getInstrument = async (request: OpenFeedInstrumentRequest): Promise<InstrumentDefinition[]> => {
         if (this.whenDisconnectedSource.completed) {
             throw new ConnectionDisposedError("This connection was closed");
         }
         const correlationId = CorrelationId.create();
-        const source = new ResolutionSource<InstrumentResponse>();
+        const source = new ResolutionSource<InstrumentDefinition[]>();
 
         this.instrumentRequests.set(correlationId.toString(), source);
         try {
-            const instrumentRequest = toT<InstrumentRequest>({ ...request, correlationId, token: this.connectionToken });
+            const instrumentRequest = toT<InstrumentRequest>({
+                ...request,
+                correlationId,
+                token: this.connectionToken,
+                version: 1,
+            });
 
             send(this.socket, { instrumentRequest });
             const result = await source.whenCompleted;
@@ -419,6 +436,7 @@ export class OpenFeedClient implements IOpenFeedClient {
                 password: this.password,
                 clientVersion,
                 protocolVersion: 1,
+                jwt: "",
             },
         };
         send(this.socket, loginRequest);

@@ -6,6 +6,9 @@ import { InstrumentDefinition, InstrumentDefinitionEncode, InstrumentDefinitionD
 export enum Result {
     UNKNOWN_RESULT = 0,
     SUCCESS = 1,
+    INSTRUMENTS_NOT_FOUND = 112,
+    JWT_EXPIRED = 113,
+    JWT_INVALID = 114,
     DUPLICATE_LOGIN = 115,
     INVALID_SYMBOL = 116,
     INVALID_MARKET_ID = 117,
@@ -82,6 +85,8 @@ export interface LoginRequest {
     password: string;
     clientVersion: string;
     protocolVersion: number;
+    /** / JSON Web Token */
+    jwt: string;
 }
 export interface LoginResponse {
     correlationId: Long;
@@ -101,6 +106,12 @@ export interface LogoutResponse {
 export interface InstrumentRequest {
     correlationId: Long;
     token: string;
+    /** / Filter on these instrument types */
+    instrumentType: InstrumentDefinition_InstrumentType[];
+    /** / Filter on these spread types */
+    spreadType: string[];
+    /** / If version >= 1 then will send InstrumentDefinition in the InstrumentResponse */
+    version: number;
     symbol?: string | undefined;
     marketId?: Long | undefined;
     exchange?: string | undefined;
@@ -116,6 +127,8 @@ export interface InstrumentResponse {
     exchange: string;
     channelId: number;
     exchangeId: number;
+    /** / Will be set if InstrumentRequest.version >= 1 */
+    instrumentDefinition: InstrumentDefinition | undefined;
 }
 /** / Instrument References, returns InstrumentReferenceResponse(s) */
 export interface InstrumentReferenceRequest {
@@ -159,7 +172,7 @@ export interface ExchangeResponse_Exchange {
 }
 /** / Bulk subscription filter. */
 export interface BulkSubscriptionFilter {
-    /** / Type of the symbol: Barchart of Exchange. Barchart is the default. */
+    /** / Type of the symbol: Barchart or Exchange. Barchart is the default. */
     symbolType: SymbolType;
     /** / regular expression pattern for the symbol */
     symbolPattern: string;
@@ -169,7 +182,7 @@ export interface SubscriptionRequest {
     /** / Client-assigned id for this request.  Response will include same id */
     correlationId: Long;
     token: string;
-    /** / Preferred service (realtime or delayed). */
+    /** / Preferred service (realtime or delayed). REAL_TIME is the default. */
     service: Service;
     unsubscribe: boolean;
     requests: SubscriptionRequest_Request[];
@@ -186,6 +199,8 @@ export interface SubscriptionRequest_Request {
     instrumentType: InstrumentDefinition_InstrumentType[];
     /** / Filter for the exchange and channel subscriptions. */
     bulkSubscriptionFilter: BulkSubscriptionFilter[];
+    /** / Filter for Spread Types */
+    spreadTypeFilter: string[];
 }
 export interface SubscriptionResponse {
     correlationId: Long;
@@ -501,7 +516,7 @@ export const StatusEncode = {
     }
 };
 function createBaseLoginRequest(): LoginRequest {
-    return { correlationId: Long.ZERO, username: "", password: "", clientVersion: "", protocolVersion: 0 };
+    return { correlationId: Long.ZERO, username: "", password: "", clientVersion: "", protocolVersion: 0, jwt: "" };
 }
 export const LoginRequestEncode = {
     encode(message: LoginRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
@@ -519,6 +534,9 @@ export const LoginRequestEncode = {
         }
         if (message.protocolVersion !== 0) {
             writer.uint32(40).sint32(message.protocolVersion);
+        }
+        if (message.jwt !== "") {
+            writer.uint32(50).string(message.jwt);
         }
         return writer;
     }
@@ -559,6 +577,12 @@ export const LoginRequestEncode = {
                         break;
                     }
                     message.protocolVersion = reader.sint32();
+                    continue;
+                case 6:
+                    if (tag !== 50) {
+                        break;
+                    }
+                    message.jwt = reader.string();
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {
@@ -708,6 +732,9 @@ function createBaseInstrumentRequest(): InstrumentRequest {
     return {
         correlationId: Long.ZERO,
         token: "",
+        instrumentType: [],
+        spreadType: [],
+        version: 0,
         symbol: undefined,
         marketId: undefined,
         exchange: undefined,
@@ -721,6 +748,17 @@ export const InstrumentRequestEncode = {
         }
         if (message.token !== "") {
             writer.uint32(18).string(message.token);
+        }
+        writer.uint32(26).fork();
+        for (const v of message.instrumentType) {
+            writer.int32(v);
+        }
+        writer.ldelim();
+        for (const v of message.spreadType) {
+            writer.uint32(34).string(v!);
+        }
+        if (message.version !== 0) {
+            writer.uint32(40).sint32(message.version);
         }
         if (message.symbol !== undefined) {
             writer.uint32(82).string(message.symbol);
@@ -755,6 +793,31 @@ export const InstrumentRequestEncode = {
                         break;
                     }
                     message.token = reader.string();
+                    continue;
+                case 3:
+                    if (tag === 24) {
+                        message.instrumentType.push(reader.int32() as any);
+                        continue;
+                    }
+                    if (tag === 26) {
+                        const end2 = reader.uint32() + reader.pos;
+                        while (reader.pos < end2) {
+                            message.instrumentType.push(reader.int32() as any);
+                        }
+                        continue;
+                    }
+                    break;
+                case 4:
+                    if (tag !== 34) {
+                        break;
+                    }
+                    message.spreadType.push(reader.string());
+                    continue;
+                case 5:
+                    if (tag !== 40) {
+                        break;
+                    }
+                    message.version = reader.sint32();
                     continue;
                 case 10:
                     if (tag !== 82) {
@@ -799,6 +862,7 @@ function createBaseInstrumentResponse(): InstrumentResponse {
         exchange: "",
         channelId: 0,
         exchangeId: 0,
+        instrumentDefinition: undefined,
     };
 }
 export const InstrumentResponseEncode = {
@@ -826,6 +890,9 @@ export const InstrumentResponseEncode = {
         }
         if (message.exchangeId !== 0) {
             writer.uint32(64).sint32(message.exchangeId);
+        }
+        if (message.instrumentDefinition !== undefined) {
+            InstrumentDefinitionEncode.encode(message.instrumentDefinition, writer.uint32(122).fork()).ldelim();
         }
         return writer;
     }
@@ -884,6 +951,12 @@ export const InstrumentResponseEncode = {
                         break;
                     }
                     message.exchangeId = reader.sint32();
+                    continue;
+                case 15:
+                    if (tag !== 122) {
+                        break;
+                    }
+                    message.instrumentDefinition = InstrumentDefinitionDecode.decode(reader, reader.uint32());
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {
@@ -1398,6 +1471,7 @@ function createBaseSubscriptionRequest_Request(): SubscriptionRequest_Request {
         snapshotIntervalSeconds: 0,
         instrumentType: [],
         bulkSubscriptionFilter: [],
+        spreadTypeFilter: [],
     };
 }
 export const SubscriptionRequest_RequestEncode = {
@@ -1429,6 +1503,9 @@ export const SubscriptionRequest_RequestEncode = {
         writer.ldelim();
         for (const v of message.bulkSubscriptionFilter) {
             BulkSubscriptionFilterEncode.encode(v!, writer.uint32(106).fork()).ldelim();
+        }
+        for (const v of message.spreadTypeFilter) {
+            writer.uint32(114).string(v!);
         }
         return writer;
     }
@@ -1501,6 +1578,12 @@ export const SubscriptionRequest_RequestEncode = {
                         break;
                     }
                     message.bulkSubscriptionFilter.push(BulkSubscriptionFilterDecode.decode(reader, reader.uint32()));
+                    continue;
+                case 14:
+                    if (tag !== 114) {
+                        break;
+                    }
+                    message.spreadTypeFilter.push(reader.string());
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {

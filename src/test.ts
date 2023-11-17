@@ -43,6 +43,8 @@ const connect = async () => {
             try {
                 const instrument = await connection.getInstrument({
                     symbol: "MSFT",
+                    instrumentType: [],
+                    spreadType: [],
                 });
                 logger.log(`Got the Instrument: ${JSON.stringify(instrument)}`);
             } catch (e) {
@@ -51,6 +53,8 @@ const connect = async () => {
             try {
                 const reference = await connection.getInstrument({
                     symbol: "MSFT",
+                    instrumentType: [],
+                    spreadType: [],
                 });
                 logger.log(`Got the Instrument Reference: ${JSON.stringify(reference)}`);
             } catch (e) {
