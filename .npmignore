@@ -1,0 +1,10 @@
+# Negative selection
+# Disable everything 
+*
+
+# Allow just specific things to others
+!dist/
+!*.md
+!package.json
+!LICENSE
+!tsconfig.json

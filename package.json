@@ -1,6 +1,6 @@
 {
-    "name": "sdk-js",
-    "version": "0.1.1",
+    "name": "@openfeed/sdk-js",
+    "version": "0.2.0",
     "description": "JavaScript SDK for Barchart OpenFeed",
     "main": "dist/node.js",
     "browser": "dist/index.js",
@@ -8,7 +8,7 @@
     "types": "dist/src/index.d.ts",
     "repository": "https://github.com/openfeed-org/sdk-js",
     "author": "Dejan Maksimovic <maximovic.d@gmail.com>",
-    "private": true,
+    "license": "MIT",
     "scripts": {
         "generate:proto": "cd node_modules\\proto && ..\\..\\protoc --plugin=..\\..\\node_modules\\.bin\\protoc-gen-ts_proto --ts_proto_opt=outputJsonMethods=false --ts_proto_opt=outputPartialMethods=false --ts_proto_opt=exportCommonSymbols=false --ts_proto_opt=esModuleInterop=true --ts_proto_opt=forceLong=long --ts_proto_opt=useExactTypes=false --ts_proto_out=../../generated *.proto",
         "generate:version": "genversion --es6 -s -d ./generated/version.ts",
@@ -49,5 +49,12 @@
         "isomorphic-ws": "^5.0.0",
         "long": "^5.2.3",
         "ws": "^8.13.0"
-    }
+    },
+    "files": [
+        "dist",
+        "package.json",
+        "*.md",
+        "LICENSE",
+        "tsconfig.json"
+    ]
 }

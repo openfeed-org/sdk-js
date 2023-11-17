@@ -2,7 +2,7 @@ name: build-and-release
 on:
     push:
         tags:
-            - "build-*"
+            - "*"
         paths-ignore:
             - "**.md"
 
@@ -14,7 +14,8 @@ jobs:
             - uses: actions/checkout@v2
             - uses: actions/setup-node@v2
               with:
-                  node-version: "16"
+                  node-version: "18"
+                  registry-url: "https://registry.npmjs.org"
 
             - name: Reconfigure git
               run: |
@@ -34,13 +35,6 @@ jobs:
 
             - name: Publish new build
               run: |
-                  export BN="artifacts"
-                  export RELEASE_TAG=${GITHUB_REF_NAME:6}
-                  git checkout --orphan $BN
-                  echo -e "/*\n!.gitignore\n!dist/\n!package.json\n!*.md" > ./.gitignore
-                  cat .gitignore
-                  git rm -rf --cached .
-                  git add .
-                  git commit -m "Automated build (tag $GITHUB_REF_NAME)"
-                  git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
-                  git push origin "$RELEASE_TAG"
+                  yarn publish
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
