@@ -396,7 +396,7 @@ export class OpenFeedClient implements IOpenFeedClient {
 
     // We are going to throw errors internally, outside needs to know only when disposed
     private whenConnectedInternalSource = new ResolutionSource<OpenFeedConnection>();
-    private whenConnectedSource = new ResolutionSource<OpenFeedConnection>();
+    private whenConnectedSource = new ResolutionSource<IOpenFeedConnection>();
     private loopResetSource = new ResolutionSource<void>();
     private subscribeResetSource = new ResolutionSource<void>();
 
@@ -553,7 +553,7 @@ export class OpenFeedClient implements IOpenFeedClient {
                 this.whenConnectedInternalSource = new ResolutionSource<OpenFeedConnection>();
             }
             if (this.whenConnectedSource.completed) {
-                this.whenConnectedSource = new ResolutionSource<OpenFeedConnection>();
+                this.whenConnectedSource = new ResolutionSource<IOpenFeedConnection>();
             }
             this.loopResetSource = new ResolutionSource<void>();
             this.subscribeResetSource.resolve();

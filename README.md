@@ -7,13 +7,13 @@ TypeScript and JavaScript SDK for Barchart OpenFeed is a library that can be use
 Using npm:
 
 ```shell
-$ npm i --save <TBD>
+$ npm i --save @openfeed/sdk-js
 ```
 
 Using yarn:
 
 ```shell
-$ yarn add <TBD>
+$ yarn add @openfeed/sdk-js
 ```
 
 ## User Guide
