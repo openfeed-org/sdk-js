@@ -1,4 +1,4 @@
-# TS/JS SDK for Barchart OpenFeed
+# TS/JS SDK for Barchart Openfeed
 
 TypeScript and JavaScript SDK for Barchart Openfeed is a library that can be used to subscribe to market data messages served by the Barchart [Openfeed](https://openfeed.com/) servers.
 
