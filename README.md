@@ -26,7 +26,7 @@ This library uses [Conventional Commits](https://www.conventionalcommits.org/en/
 
 ### Preparing a new version
 
-For updating the version, run:
+For updating the version and automatically collecting changes, run:
 
 ```shell
 yarn build:prepare-release
