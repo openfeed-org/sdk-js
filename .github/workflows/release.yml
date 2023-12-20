@@ -41,21 +41,7 @@ jobs:
             - name: List files
               run: ls -al
             - name: Create Release
-              id: create_release
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-              run: |
-                  changelog=$(cat CHANGELOG.md)
-                  release_response=$(curl \
-                      -X POST \
-                      -H "Accept: application/vnd.github.v3+json" \
-                      -H "Authorization: token $GITHUB_TOKEN" \
-                      https://api.github.com/repos/${{ github.repository }}/releases \
-                      -d '{
-                      "tag_name": "'"$GITHUB_REF_NAME"'",
-                      "name": "Release '"$GITHUB_REF_NAME"'",
-                      "body": "'"$changelog"'",
-                      "draft": false,
-                      "prerelease": false
-                      }')
-                  echo "::set-output name=release_upload_url::$(echo "$release_response" | jq -r .upload_url | sed -e "s/{?name,label}//")"
+              uses: softprops/action-gh-release@v1
+              if: startsWith(github.ref, 'refs/tags/')
+              with:
+                  body_path: CHANGELOG.md
