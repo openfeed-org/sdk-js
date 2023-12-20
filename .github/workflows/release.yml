@@ -38,12 +38,14 @@ jobs:
                   yarn publish --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: List files
+              run: ls -al
             - name: Create Release
               id: create_release
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  changelog=$(cat changelog.md)
+                  changelog=$(cat CHANGELOG.md)
                   release_response=$(curl \
                       -X POST \
                       -H "Accept: application/vnd.github.v3+json" \
