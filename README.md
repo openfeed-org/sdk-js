@@ -2,6 +2,10 @@
 
 TypeScript and JavaScript SDK for Barchart Openfeed is a library that can be used to subscribe to market data messages served by the Barchart [Openfeed](https://openfeed.com/) servers.
 
+## Development
+
+This library uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for clarity, tracking changes and versioning. It's recommended to install [Conventional Commits Extension for VS Code](https://marketplace.visualstudio.com/items?itemName=vivaxy.vscode-conventional-commits) when contributing to the library.
+
 ## Obtaining the Library
 
 Using npm:
