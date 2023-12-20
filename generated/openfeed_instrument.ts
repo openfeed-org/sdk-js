@@ -163,6 +163,7 @@ export enum InstrumentDefinition_InstrumentType {
     MONEY_MARKET_FUND = 8,
     USER_DEFINED_SPREAD = 9,
     EQUITY_OPTION = 10,
+    OTHER = 99,
     UNRECOGNIZED = -1
 }
 /** / Market depth implementation type */

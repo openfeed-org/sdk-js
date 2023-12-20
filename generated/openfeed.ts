@@ -117,6 +117,7 @@ export enum ActionType {
     LISTING = 1,
     DELISTING = 2,
     EXCHANGE_MOVE = 3,
+    ALIAS_CHANGED = 4,
     UNRECOGNIZED = -1
 }
 /**

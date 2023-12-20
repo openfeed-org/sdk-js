@@ -4545,7 +4545,7 @@ prompts@^2.0.1:
 
 "proto@git+ssh://git@github.com/openfeed-org/proto.git#master":
   version "0.0.0"
-  resolved "git+ssh://git@github.com/openfeed-org/proto.git#d6ede51b92dce28fb1406ddba3f373b2cc0ba6e2"
+  resolved "git+ssh://git@github.com/openfeed-org/proto.git#67885c572d1f4c564d86dc437d3d3ad7e8ba3e53"
 
 protobufjs@^7.2.4:
   version "7.2.5"
