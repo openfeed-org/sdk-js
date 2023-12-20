@@ -20,7 +20,7 @@
         "build:ts": "yarn generate:version && vite build",
         "build:types": "tsc -p tsconfig.types.json",
         "build:test-release": "standard-version --dry-run",
-        "build:prepare-release": "standard-version -t",
+        "build:prepare-release": "standard-version -t ''",
         "run:browser": "yarn generate:version && vite dev",
         "run:node": "yarn generate:version && tsx ./src/test.ts"
     },
