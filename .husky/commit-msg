@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# export node
+# note - this might not work for everyone
+eval "$(fnm env --use-on-cd)"
+# export node_modules
+export PATH="$PATH:./node_modules/.bin"
+commitlint --edit ${1}
