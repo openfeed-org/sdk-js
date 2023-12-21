@@ -63,5 +63,11 @@
         "*.md",
         "LICENSE",
         "tsconfig.json"
-    ]
+    ],
+    "standard-version": {
+        "scripts": {
+            "prechangelog": "node -e \"const fs = require('fs'), path = require('path'); const version = JSON.parse(fs.readFileSync('package.json')).version; fs.mkdirSync('.releases', { recursive: true }); fs.renameSync('CHANGELOG.md', path.join('.releases', 'CHANGELOG-' + version + '.md'));\"",
+            "postcommit": "git add .releases/CHANGELOG-*.md && git commit --amend --no-edit"
+        }
+    }
 }
