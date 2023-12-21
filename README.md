@@ -30,7 +30,7 @@ For updating the version and automatically collecting changes, run:
 
 ```shell
 yarn build:prepare-release
-git push --follow-tags
+git push --follow-tags origin master
 ```
 
 ### Updating the Dependencies
