@@ -1,6 +1,7 @@
 import { OpenfeedGatewayMessage } from "@gen/openfeed_api";
 import { InstrumentDefinition } from "@gen/openfeed_instrument";
 import Long from "long";
+import { ActionType } from "@gen/openfeed";
 import { IOpenFeedConnection } from "./connection_interfaces";
 
 const IDGetters: ((msg: OpenfeedGatewayMessage) => Long | undefined)[] = [
@@ -39,10 +40,30 @@ export class OpenFeedListeners {
             }
         } else if (message.instrumentDefinition) {
             [def, symbols] = getInstrumentDefinition(message.instrumentDefinition.marketId);
+            const { instrumentDefinition } = message;
             this.instrumentByMarketId.set(message.instrumentDefinition.marketId.toString(), [message.instrumentDefinition, symbols]);
-            this.instrumentBySymbol.set(message.instrumentDefinition.symbol, message.instrumentDefinition);
+            this.instrumentBySymbol.set(message.instrumentDefinition.symbol, instrumentDefinition);
+            symbols?.forEach((s) => this.instrumentBySymbol.set(s, instrumentDefinition));
         } else if (message.instrumentAction) {
-            // TODO
+            const { marketId } = message.instrumentAction?.instrument ?? {};
+            if (message.instrumentAction.action === ActionType.ALIAS_CHANGED && marketId) {
+                [def, symbols] = getInstrumentDefinition(marketId);
+                const newSymbols = symbols?.filter((s) => !s.includes("*")) ?? [];
+                if (!newSymbols.length) {
+                    this.instrumentByMarketId.delete(marketId.toString());
+                } else {
+                    this.instrumentByMarketId.set(marketId.toString(), [def, newSymbols]);
+                }
+            }
+            // In the event of exchange move, we just remove the instrument subscription and let the subscription response do the rest
+            if (message.instrumentAction.action === ActionType.EXCHANGE_MOVE && marketId) {
+                [def, symbols] = getInstrumentDefinition(marketId);
+                this.instrumentByMarketId.delete(marketId.toString());
+                const newMarketId = message.instrumentAction.newInstrument?.marketId?.toString();
+                if (newMarketId) {
+                    this.instrumentByMarketId.set(newMarketId, [def, symbols]);
+                }
+            }
         } else {
             for (const getter of IDGetters) {
                 const id = getter(message);
