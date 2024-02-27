@@ -29,14 +29,22 @@ export class OpenFeedListeners {
         };
 
         if (message.subscriptionResponse) {
-            if (message.subscriptionResponse != null && message.subscriptionResponse.marketId !== Long.ZERO) {
-                [def, symbols] = getInstrumentDefinition(message.subscriptionResponse.marketId);
-                if (!symbols) {
-                    symbols = [message.subscriptionResponse.symbol];
-                } else if (!symbols.includes(message.subscriptionResponse.symbol)) {
-                    symbols = [...symbols, message.subscriptionResponse.symbol];
+            const { marketId, symbol, unsubscribe } = message.subscriptionResponse;
+            if (marketId !== Long.ZERO) {
+                [def, symbols] = getInstrumentDefinition(marketId);
+                if (!unsubscribe) {
+                    if (!symbols) {
+                        symbols = [symbol];
+                    } else if (!symbols.includes(symbol)) {
+                        symbols = [...symbols, symbol];
+                    }
+                } else {
+                    if (symbols) {
+                        symbols = symbols.filter((s) => s !== symbol);
+                    }
+                    this.instrumentBySymbol.delete(symbol);
                 }
-                this.instrumentByMarketId.set(message.subscriptionResponse.marketId.toString(), [def, symbols]);
+                this.instrumentByMarketId.set(marketId.toString(), [def, symbols]);
             }
         } else if (message.instrumentDefinition) {
             [def, symbols] = getInstrumentDefinition(message.instrumentDefinition.marketId);

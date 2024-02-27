@@ -76,7 +76,7 @@ class ConnectionDisposedError extends Error {
 }
 
 class OpenFeedConnection implements IOpenFeedConnection {
-    private readonly subscriptions: Map<string, SubscriptionRequest> = new Map();
+    private readonly subscriptionRequests: Map<string, [SubscriptionRequest, ResolutionSource<void>]> = new Map();
     private readonly exchangeRequests: Map<string, ResolutionSource<ExchangeResponse>> = new Map();
     private readonly instrumentRequests: Map<string, ResolutionSource<InstrumentDefinition[]>> = new Map();
     private readonly definitionsInFlight: Map<string, InstrumentDefinition[]> = new Map();
@@ -185,6 +185,16 @@ class OpenFeedConnection implements IOpenFeedConnection {
                     continue;
                 }
 
+                if (message.subscriptionResponse) {
+                    const { correlationId, unsubscribe } = message.subscriptionResponse;
+                    if (!unsubscribe) {
+                        const request = this.subscriptionRequests.get(correlationId.toString());
+                        if (!request) throw new Error(`Subscription response ID ${correlationId} not found`);
+                        const [, sub] = request;
+                        sub.resolve();
+                    }
+                }
+
                 this.listeners.onMessage(message);
             }
         } catch (error) {
@@ -291,7 +301,8 @@ class OpenFeedConnection implements IOpenFeedConnection {
             unsubscribe: false,
         };
 
-        this.subscriptions.set(correlationId.toString(), subscriptionRequest);
+        const source = new ResolutionSource<void>();
+        this.subscriptionRequests.set(correlationId.toString(), [subscriptionRequest, source]);
         send(this.socket, { subscriptionRequest });
         return correlationId;
     };
@@ -301,15 +312,29 @@ class OpenFeedConnection implements IOpenFeedConnection {
             throw new ConnectionDisposedError("This connection was closed");
         }
 
-        const subscription = this.subscriptions.get(subscriptionId.toString());
+        const subscription = this.subscriptionRequests.get(subscriptionId.toString());
         if (!subscription) {
             throw new Error(`Subscription ID ${subscriptionId} does not exist.`);
         }
-        const subscriptionRequest = { ...subscription, unsubscribe: true };
-        send(this.socket, { subscriptionRequest });
+        const [originalRequest, sub] = subscription;
 
-        this.subscriptions.delete(subscriptionId.toString());
+        this.fireUnsubscribeWhenReady(originalRequest, sub);
     };
+
+    // We are keeping this fire and forget, because our problems
+    // would be caused by disconnection, and reconnect will clean up the rest
+    private async fireUnsubscribeWhenReady(originalRequest: SubscriptionRequest, sub: ResolutionSource<void>) {
+        try {
+            await sub.whenCompleted;
+            // the response message will cause symbol to be removed in listeners
+            const subscriptionRequest = { ...originalRequest, unsubscribe: true };
+            send(this.socket, { subscriptionRequest });
+        } catch (e) {
+            // This is expected
+        } finally {
+            this.subscriptionRequests.delete(originalRequest.correlationId.toString());
+        }
+    }
 
     getExchanges = async (): Promise<ExchangeResponse_Exchange[]> => {
         if (this.whenDisconnectedSource.completed) {
