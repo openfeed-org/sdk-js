@@ -22,6 +22,7 @@ export enum Result {
     INSUFFICIENT_PRIVILEGES = 125,
     AUTHENTICATION_REQUIRED = 126,
     GENERIC_FAILURE = 127,
+    INVALID_USERNAME = 128,
     UNRECOGNIZED = -1
 }
 export enum SubscriptionType {
@@ -50,6 +51,7 @@ export interface OpenfeedGatewayRequest {
     instrumentRequest?: InstrumentRequest | undefined;
     instrumentReferenceRequest?: InstrumentReferenceRequest | undefined;
     exchangeRequest?: ExchangeRequest | undefined;
+    listSubscriptionsRequest?: ListSubscriptionsRequest | undefined;
 }
 /** / Openfeed Server Response */
 export interface OpenfeedGatewayMessage {
@@ -67,6 +69,7 @@ export interface OpenfeedGatewayMessage {
     ohlc?: Ohlc | undefined;
     exchangeResponse?: ExchangeResponse | undefined;
     instrumentAction?: InstrumentAction | undefined;
+    listSubscriptionsResponse?: ListSubscriptionsResponse | undefined;
 }
 /**
  * //////////////////
@@ -214,6 +217,34 @@ export interface SubscriptionResponse {
     unsubscribe: boolean;
     snapshotIntervalSeconds: number;
 }
+/** / List Subscriptions for a user */
+export interface ListSubscriptionsRequest {
+    correlationId: Long;
+    token: string;
+    username: string;
+}
+export interface ListSubscriptionsResponse {
+    correlationId: Long;
+    status: Status | undefined;
+    username: string;
+    sessions: ListSubscriptionsResponse_Session[];
+}
+export interface ListSubscriptionsResponse_Session {
+    /** / Nano second unix epoch */
+    loginTime: Long;
+    token: string;
+    clientVersion: string;
+    marketSubscriptions: ListSubscriptionsResponse_Subscription[];
+    exchangeSubscriptions: ListSubscriptionsResponse_Subscription[];
+}
+export interface ListSubscriptionsResponse_Subscription {
+    subscriptionId: string;
+    symbolId: string;
+    marketId: Long;
+    symbols: string[];
+    exchange: string;
+    root: string;
+}
 function createBaseOpenfeedGatewayRequest(): OpenfeedGatewayRequest {
     return {
         loginRequest: undefined,
@@ -222,6 +253,7 @@ function createBaseOpenfeedGatewayRequest(): OpenfeedGatewayRequest {
         instrumentRequest: undefined,
         instrumentReferenceRequest: undefined,
         exchangeRequest: undefined,
+        listSubscriptionsRequest: undefined,
     };
 }
 export const OpenfeedGatewayRequestEncode = {
@@ -243,6 +275,9 @@ export const OpenfeedGatewayRequestEncode = {
         }
         if (message.exchangeRequest !== undefined) {
             ExchangeRequestEncode.encode(message.exchangeRequest, writer.uint32(50).fork()).ldelim();
+        }
+        if (message.listSubscriptionsRequest !== undefined) {
+            ListSubscriptionsRequestEncode.encode(message.listSubscriptionsRequest, writer.uint32(58).fork()).ldelim();
         }
         return writer;
     }
@@ -290,6 +325,12 @@ export const OpenfeedGatewayRequestEncode = {
                     }
                     message.exchangeRequest = ExchangeRequestDecode.decode(reader, reader.uint32());
                     continue;
+                case 7:
+                    if (tag !== 58) {
+                        break;
+                    }
+                    message.listSubscriptionsRequest = ListSubscriptionsRequestDecode.decode(reader, reader.uint32());
+                    continue;
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -315,6 +356,7 @@ function createBaseOpenfeedGatewayMessage(): OpenfeedGatewayMessage {
         ohlc: undefined,
         exchangeResponse: undefined,
         instrumentAction: undefined,
+        listSubscriptionsResponse: undefined,
     };
 }
 export const OpenfeedGatewayMessageEncode = {
@@ -360,6 +402,9 @@ export const OpenfeedGatewayMessageEncode = {
         }
         if (message.instrumentAction !== undefined) {
             InstrumentActionEncode.encode(message.instrumentAction, writer.uint32(114).fork()).ldelim();
+        }
+        if (message.listSubscriptionsResponse !== undefined) {
+            ListSubscriptionsResponseEncode.encode(message.listSubscriptionsResponse, writer.uint32(122).fork()).ldelim();
         }
         return writer;
     }
@@ -454,6 +499,12 @@ export const OpenfeedGatewayMessageEncode = {
                         break;
                     }
                     message.instrumentAction = InstrumentActionDecode.decode(reader, reader.uint32());
+                    continue;
+                case 15:
+                    if (tag !== 122) {
+                        break;
+                    }
+                    message.listSubscriptionsResponse = ListSubscriptionsResponseDecode.decode(reader, reader.uint32());
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {
@@ -1709,6 +1760,264 @@ export const SubscriptionResponseEncode = {
                         break;
                     }
                     message.snapshotIntervalSeconds = reader.sint32();
+                    continue;
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skipType(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseListSubscriptionsRequest(): ListSubscriptionsRequest {
+    return { correlationId: Long.ZERO, token: "", username: "" };
+}
+export const ListSubscriptionsRequestEncode = {
+    encode(message: ListSubscriptionsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+        if (!message.correlationId.isZero()) {
+            writer.uint32(8).sint64(message.correlationId);
+        }
+        if (message.token !== "") {
+            writer.uint32(18).string(message.token);
+        }
+        if (message.username !== "") {
+            writer.uint32(26).string(message.username);
+        }
+        return writer;
+    }
+}, ListSubscriptionsRequestDecode = {
+    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsRequest {
+        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+        let end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseListSubscriptionsRequest();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1:
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.correlationId = reader.sint64() as Long;
+                    continue;
+                case 2:
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.token = reader.string();
+                    continue;
+                case 3:
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.username = reader.string();
+                    continue;
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skipType(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseListSubscriptionsResponse(): ListSubscriptionsResponse {
+    return { correlationId: Long.ZERO, status: undefined, username: "", sessions: [] };
+}
+export const ListSubscriptionsResponseEncode = {
+    encode(message: ListSubscriptionsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+        if (!message.correlationId.isZero()) {
+            writer.uint32(8).sint64(message.correlationId);
+        }
+        if (message.status !== undefined) {
+            StatusEncode.encode(message.status, writer.uint32(18).fork()).ldelim();
+        }
+        if (message.username !== "") {
+            writer.uint32(26).string(message.username);
+        }
+        for (const v of message.sessions) {
+            ListSubscriptionsResponse_SessionEncode.encode(v!, writer.uint32(82).fork()).ldelim();
+        }
+        return writer;
+    }
+}, ListSubscriptionsResponseDecode = {
+    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsResponse {
+        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+        let end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseListSubscriptionsResponse();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1:
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.correlationId = reader.sint64() as Long;
+                    continue;
+                case 2:
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.status = StatusDecode.decode(reader, reader.uint32());
+                    continue;
+                case 3:
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.username = reader.string();
+                    continue;
+                case 10:
+                    if (tag !== 82) {
+                        break;
+                    }
+                    message.sessions.push(ListSubscriptionsResponse_SessionDecode.decode(reader, reader.uint32()));
+                    continue;
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skipType(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseListSubscriptionsResponse_Session(): ListSubscriptionsResponse_Session {
+    return { loginTime: Long.ZERO, token: "", clientVersion: "", marketSubscriptions: [], exchangeSubscriptions: [] };
+}
+export const ListSubscriptionsResponse_SessionEncode = {
+    encode(message: ListSubscriptionsResponse_Session, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+        if (!message.loginTime.isZero()) {
+            writer.uint32(8).sint64(message.loginTime);
+        }
+        if (message.token !== "") {
+            writer.uint32(18).string(message.token);
+        }
+        if (message.clientVersion !== "") {
+            writer.uint32(26).string(message.clientVersion);
+        }
+        for (const v of message.marketSubscriptions) {
+            ListSubscriptionsResponse_SubscriptionEncode.encode(v!, writer.uint32(82).fork()).ldelim();
+        }
+        for (const v of message.exchangeSubscriptions) {
+            ListSubscriptionsResponse_SubscriptionEncode.encode(v!, writer.uint32(90).fork()).ldelim();
+        }
+        return writer;
+    }
+}, ListSubscriptionsResponse_SessionDecode = {
+    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsResponse_Session {
+        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+        let end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseListSubscriptionsResponse_Session();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1:
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.loginTime = reader.sint64() as Long;
+                    continue;
+                case 2:
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.token = reader.string();
+                    continue;
+                case 3:
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.clientVersion = reader.string();
+                    continue;
+                case 10:
+                    if (tag !== 82) {
+                        break;
+                    }
+                    message.marketSubscriptions.push(ListSubscriptionsResponse_SubscriptionDecode.decode(reader, reader.uint32()));
+                    continue;
+                case 11:
+                    if (tag !== 90) {
+                        break;
+                    }
+                    message.exchangeSubscriptions.push(ListSubscriptionsResponse_SubscriptionDecode.decode(reader, reader.uint32()));
+                    continue;
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skipType(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseListSubscriptionsResponse_Subscription(): ListSubscriptionsResponse_Subscription {
+    return { subscriptionId: "", symbolId: "", marketId: Long.ZERO, symbols: [], exchange: "", root: "" };
+}
+export const ListSubscriptionsResponse_SubscriptionEncode = {
+    encode(message: ListSubscriptionsResponse_Subscription, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+        if (message.subscriptionId !== "") {
+            writer.uint32(10).string(message.subscriptionId);
+        }
+        if (message.symbolId !== "") {
+            writer.uint32(18).string(message.symbolId);
+        }
+        if (!message.marketId.isZero()) {
+            writer.uint32(24).sint64(message.marketId);
+        }
+        for (const v of message.symbols) {
+            writer.uint32(34).string(v!);
+        }
+        if (message.exchange !== "") {
+            writer.uint32(82).string(message.exchange);
+        }
+        if (message.root !== "") {
+            writer.uint32(90).string(message.root);
+        }
+        return writer;
+    }
+}, ListSubscriptionsResponse_SubscriptionDecode = {
+    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsResponse_Subscription {
+        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+        let end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseListSubscriptionsResponse_Subscription();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1:
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.subscriptionId = reader.string();
+                    continue;
+                case 2:
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.symbolId = reader.string();
+                    continue;
+                case 3:
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.marketId = reader.sint64() as Long;
+                    continue;
+                case 4:
+                    if (tag !== 34) {
+                        break;
+                    }
+                    message.symbols.push(reader.string());
+                    continue;
+                case 10:
+                    if (tag !== 82) {
+                        break;
+                    }
+                    message.exchange = reader.string();
+                    continue;
+                case 11:
+                    if (tag !== 90) {
+                        break;
+                    }
+                    message.root = reader.string();
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {

@@ -125,7 +125,7 @@ export enum ActionType {
  * message types
  */
 export interface OpenfeedMessage {
-    /** / Nanoecond unix epoch at time of message transmission (UTC) */
+    /** / Nano second unix epoch at time of message transmission (UTC) */
     sendingTime: Long;
     /**
      * / The total number of markets available on this channel
@@ -992,6 +992,7 @@ export interface InstrumentAction {
     tradeDate: number;
     action: ActionType;
     message: string;
+    oldAlias: string;
     instrument: InstrumentDefinition | undefined;
     newInstrument: InstrumentDefinition | undefined;
 }
@@ -6883,6 +6884,7 @@ function createBaseInstrumentAction(): InstrumentAction {
         tradeDate: 0,
         action: 0,
         message: "",
+        oldAlias: "",
         instrument: undefined,
         newInstrument: undefined,
     };
@@ -6900,6 +6902,9 @@ export const InstrumentActionEncode = {
         }
         if (message.message !== "") {
             writer.uint32(34).string(message.message);
+        }
+        if (message.oldAlias !== "") {
+            writer.uint32(42).string(message.oldAlias);
         }
         if (message.instrument !== undefined) {
             InstrumentDefinitionEncode.encode(message.instrument, writer.uint32(82).fork()).ldelim();
@@ -6940,6 +6945,12 @@ export const InstrumentActionEncode = {
                         break;
                     }
                     message.message = reader.string();
+                    continue;
+                case 5:
+                    if (tag !== 42) {
+                        break;
+                    }
+                    message.oldAlias = reader.string();
                     continue;
                 case 10:
                     if (tag !== 82) {
