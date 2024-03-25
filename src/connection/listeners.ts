@@ -42,6 +42,9 @@ export class OpenFeedListeners {
                     if (symbols) {
                         symbols = symbols.filter((s) => s !== symbol);
                     }
+                    if (!symbols) {
+                        this.instrumentByMarketId.delete(marketId.toString());
+                    }
                     this.instrumentBySymbol.delete(symbol);
                 }
                 this.instrumentByMarketId.set(marketId.toString(), [def, symbols]);
@@ -55,12 +58,29 @@ export class OpenFeedListeners {
         } else if (message.instrumentAction) {
             const { marketId } = message.instrumentAction?.instrument ?? {};
             if (message.instrumentAction.action === ActionType.ALIAS_CHANGED && marketId) {
+                const { oldAlias } = message.instrumentAction;
+                const [root, num] = oldAlias.split("*");
+                const newAliasNum = oldAlias.endsWith("*0") ? 0 : Number.parseInt(num, 10) + 1;
+                const newAlias = `${root}*${newAliasNum}`;
+                // remove the old symbol in the source
                 [def, symbols] = getInstrumentDefinition(marketId);
-                const newSymbols = symbols?.filter((s) => !s.includes("*")) ?? [];
+                const newSymbols = symbols?.filter((s) => s !== oldAlias) ?? [];
                 if (!newSymbols.length) {
                     this.instrumentByMarketId.delete(marketId.toString());
                 } else {
                     this.instrumentByMarketId.set(marketId.toString(), [def, newSymbols]);
+                }
+
+                const { marketId: newMarketId } = message.instrumentAction.newInstrument ?? {};
+                // remove new alias from the destination, unless it's *0
+                if (newMarketId) {
+                    const [newDef, newSym] = getInstrumentDefinition(newMarketId);
+                    const newSymbolsFiltered = (newAlias === oldAlias ? newSym : newSym?.filter((s) => s !== newAlias)) ?? [];
+                    if (!newSymbolsFiltered.length) {
+                        this.instrumentByMarketId.delete(newMarketId.toString());
+                    } else {
+                        this.instrumentByMarketId.set(newMarketId.toString(), [newDef, newSymbolsFiltered]);
+                    }
                 }
             }
             // In the event of exchange move, we just remove the instrument subscription and let the subscription response do the rest
