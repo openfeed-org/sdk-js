@@ -318,7 +318,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
         }
         const [originalRequest, sub] = subscription;
 
-        this.fireUnsubscribeWhenReady(originalRequest, sub);
+        return this.fireUnsubscribeWhenReady(originalRequest, sub);
     };
 
     // We are keeping this fire and forget, because our problems
