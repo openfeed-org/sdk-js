@@ -139,6 +139,7 @@ class OpenFeedConnection implements IOpenFeedConnection {
 
             for (const message of messages) {
                 if (message.heartBeat) {
+                    this.listeners.onHeartBeat(message.heartBeat);
                     continue;
                 }
 

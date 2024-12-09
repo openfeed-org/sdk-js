@@ -1,7 +1,7 @@
 import { OpenfeedGatewayMessage } from "@gen/openfeed_api";
 import { InstrumentDefinition } from "@gen/openfeed_instrument";
 import Long from "long";
-import { ActionType } from "@gen/openfeed";
+import { ActionType, HeartBeat } from "@gen/openfeed";
 import { IOpenFeedConnection } from "./connection_interfaces";
 
 const IDGetters: ((msg: OpenfeedGatewayMessage) => Long | undefined)[] = [
@@ -115,5 +115,6 @@ export class OpenFeedListeners {
         symbolNames: string[],
         instrument?: InstrumentDefinition
     ) => void | Promise<void> = () => {};
+    public onHeartBeat: (heartBeat: HeartBeat) => void | Promise<void> = () => {};
     /* eslint-enable class-methods-use-this */
 }
