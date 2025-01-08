@@ -32,9 +32,10 @@ export enum SubscriptionType {
     DEPTH_PRICE = 3,
     DEPTH_ORDER = 4,
     TRADES = 5,
-    CUMLATIVE_VOLUME = 6,
+    CUMULATIVE_VOLUME = 6,
     OHLC = 7,
     OHLC_NON_REGULAR = 8,
+    SETTLEMENT = 9,
     UNRECOGNIZED = -1
 }
 /** / Symbol type for the subscription filter. */
@@ -204,6 +205,10 @@ export interface SubscriptionRequest_Request {
     bulkSubscriptionFilter: BulkSubscriptionFilter[];
     /** / Filter for Spread Types */
     spreadTypeFilter: string[];
+    /** / Do not send instrument(s) on successful subscription */
+    subscriptionDoNotSendInstruments: boolean;
+    /** / Do not send market snapshot(s) on successful subscription */
+    subscriptionDoNotSendSnapshots: boolean;
 }
 export interface SubscriptionResponse {
     correlationId: Long;
@@ -241,9 +246,13 @@ export interface ListSubscriptionsResponse_Subscription {
     subscriptionId: string;
     symbolId: string;
     marketId: Long;
-    symbols: string[];
+    symbolCounts: ListSubscriptionsResponse_SymbolCount[];
     exchange: string;
     root: string;
+}
+export interface ListSubscriptionsResponse_SymbolCount {
+    symbol: string;
+    count: number;
 }
 function createBaseOpenfeedGatewayRequest(): OpenfeedGatewayRequest {
     return {
@@ -1523,6 +1532,8 @@ function createBaseSubscriptionRequest_Request(): SubscriptionRequest_Request {
         instrumentType: [],
         bulkSubscriptionFilter: [],
         spreadTypeFilter: [],
+        subscriptionDoNotSendInstruments: false,
+        subscriptionDoNotSendSnapshots: false,
     };
 }
 export const SubscriptionRequest_RequestEncode = {
@@ -1557,6 +1568,12 @@ export const SubscriptionRequest_RequestEncode = {
         }
         for (const v of message.spreadTypeFilter) {
             writer.uint32(114).string(v!);
+        }
+        if (message.subscriptionDoNotSendInstruments === true) {
+            writer.uint32(120).bool(message.subscriptionDoNotSendInstruments);
+        }
+        if (message.subscriptionDoNotSendSnapshots === true) {
+            writer.uint32(128).bool(message.subscriptionDoNotSendSnapshots);
         }
         return writer;
     }
@@ -1635,6 +1652,18 @@ export const SubscriptionRequest_RequestEncode = {
                         break;
                     }
                     message.spreadTypeFilter.push(reader.string());
+                    continue;
+                case 15:
+                    if (tag !== 120) {
+                        break;
+                    }
+                    message.subscriptionDoNotSendInstruments = reader.bool();
+                    continue;
+                case 16:
+                    if (tag !== 128) {
+                        break;
+                    }
+                    message.subscriptionDoNotSendSnapshots = reader.bool();
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {
@@ -1951,7 +1980,7 @@ export const ListSubscriptionsResponse_SessionEncode = {
     }
 };
 function createBaseListSubscriptionsResponse_Subscription(): ListSubscriptionsResponse_Subscription {
-    return { subscriptionId: "", symbolId: "", marketId: Long.ZERO, symbols: [], exchange: "", root: "" };
+    return { subscriptionId: "", symbolId: "", marketId: Long.ZERO, symbolCounts: [], exchange: "", root: "" };
 }
 export const ListSubscriptionsResponse_SubscriptionEncode = {
     encode(message: ListSubscriptionsResponse_Subscription, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
@@ -1964,8 +1993,8 @@ export const ListSubscriptionsResponse_SubscriptionEncode = {
         if (!message.marketId.isZero()) {
             writer.uint32(24).sint64(message.marketId);
         }
-        for (const v of message.symbols) {
-            writer.uint32(34).string(v!);
+        for (const v of message.symbolCounts) {
+            ListSubscriptionsResponse_SymbolCountEncode.encode(v!, writer.uint32(34).fork()).ldelim();
         }
         if (message.exchange !== "") {
             writer.uint32(82).string(message.exchange);
@@ -2005,7 +2034,7 @@ export const ListSubscriptionsResponse_SubscriptionEncode = {
                     if (tag !== 34) {
                         break;
                     }
-                    message.symbols.push(reader.string());
+                    message.symbolCounts.push(ListSubscriptionsResponse_SymbolCountDecode.decode(reader, reader.uint32()));
                     continue;
                 case 10:
                     if (tag !== 82) {
@@ -2018,6 +2047,48 @@ export const ListSubscriptionsResponse_SubscriptionEncode = {
                         break;
                     }
                     message.root = reader.string();
+                    continue;
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skipType(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseListSubscriptionsResponse_SymbolCount(): ListSubscriptionsResponse_SymbolCount {
+    return { symbol: "", count: 0 };
+}
+export const ListSubscriptionsResponse_SymbolCountEncode = {
+    encode(message: ListSubscriptionsResponse_SymbolCount, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+        if (message.symbol !== "") {
+            writer.uint32(10).string(message.symbol);
+        }
+        if (message.count !== 0) {
+            writer.uint32(16).sint32(message.count);
+        }
+        return writer;
+    }
+}, ListSubscriptionsResponse_SymbolCountDecode = {
+    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsResponse_SymbolCount {
+        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+        let end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseListSubscriptionsResponse_SymbolCount();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1:
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.symbol = reader.string();
+                    continue;
+                case 2:
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.count = reader.sint32();
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {

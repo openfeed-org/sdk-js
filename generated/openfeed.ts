@@ -425,6 +425,7 @@ export interface ClearBook {
 export interface InstrumentStatus {
     /** UTC Timestamp, nano seconds since Unix epoch */
     transactionTime: Long;
+    /** / Trading status. */
     tradingStatus: InstrumentTradingStatus;
     /** UTC Timestamp, nano seconds since Unix epoch */
     openingTime: Long;
@@ -432,6 +433,8 @@ export interface InstrumentStatus {
     /** / Date only, format 2012-07-04 -> 20120704 */
     tradeDate: number;
     regulationSHOShortSalePriceTest: RegulationSHOShortSalePriceTest;
+    /** / Prior trading status for the instrument. */
+    priorTradingStatus: InstrumentTradingStatus;
 }
 /**
  * / Best Bid and Offer.
@@ -2926,6 +2929,7 @@ function createBaseInstrumentStatus(): InstrumentStatus {
         note: "",
         tradeDate: 0,
         regulationSHOShortSalePriceTest: 0,
+        priorTradingStatus: 0,
     };
 }
 export const InstrumentStatusEncode = {
@@ -2947,6 +2951,9 @@ export const InstrumentStatusEncode = {
         }
         if (message.regulationSHOShortSalePriceTest !== 0) {
             writer.uint32(112).int32(message.regulationSHOShortSalePriceTest);
+        }
+        if (message.priorTradingStatus !== 0) {
+            writer.uint32(120).int32(message.priorTradingStatus);
         }
         return writer;
     }
@@ -2993,6 +3000,12 @@ export const InstrumentStatusEncode = {
                         break;
                     }
                     message.regulationSHOShortSalePriceTest = reader.int32() as any;
+                    continue;
+                case 15:
+                    if (tag !== 120) {
+                        break;
+                    }
+                    message.priorTradingStatus = reader.int32() as any;
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {
