@@ -249,12 +249,14 @@ class OpenFeedConnection implements IOpenFeedConnection {
 
         const requests: OptionalUndefined<SubscriptionRequest_Request>[] = [];
 
-        const common = {
+        const common: Omit<SubscriptionRequest_Request, "symbols" | "marketId" | "exchange" | "channelId"> = {
             subscriptionType: [subscriptionType],
             snapshotIntervalSeconds,
             instrumentType: [],
             bulkSubscriptionFilter: [],
             spreadTypeFilter: [],
+            subscriptionDoNotSendInstruments: false,
+            subscriptionDoNotSendSnapshots: false,
         };
 
         if (symbols) {
