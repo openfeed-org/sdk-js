@@ -20,5 +20,5 @@
             "@gen/*": ["./generated/*"]
         }
     },
-    "include": ["./src", "./generated", "./scripts/"]
+    "include": ["./src", "./generated", "./scripts/", "./test/"]
 }

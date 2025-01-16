@@ -2,7 +2,7 @@ import { OpenfeedGatewayMessage } from "@gen/openfeed_api";
 import { InstrumentDefinition } from "@gen/openfeed_instrument";
 import Long from "long";
 import { ActionType, HeartBeat } from "@gen/openfeed";
-import { IOpenFeedConnection } from "./connection_interfaces";
+import { IOpenFeedConnection } from "./interfaces";
 
 const IDGetters: ((msg: OpenfeedGatewayMessage) => Long | undefined)[] = [
     (msg) => msg.marketSnapshot?.marketId,

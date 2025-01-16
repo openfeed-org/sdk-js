@@ -1,9 +1,9 @@
-import { OpenFeedClient } from "./connection/connection";
+import { OpenFeedClient } from "@src/connection/client";
 
-import { Service } from "../generated/openfeed";
-import { SubscriptionType } from "../generated/openfeed_api";
-import { OpenFeedListeners } from "./connection/listeners";
-import { IOpenFeedLogger } from "./connection/connection_interfaces";
+import { Service } from "@gen/openfeed";
+import { SubscriptionType } from "@gen/openfeed_api";
+import { OpenFeedListeners } from "@src/connection/listeners";
+import { IOpenFeedLogger } from "@src/connection/interfaces";
 
 const connect = async () => {
     const logger: IOpenFeedLogger = console;

@@ -1,0 +1,5 @@
+export const TIME = {
+    RECONNECT: 5_000,
+    CONNECTION_TIMEOUT: 15_000,
+    SUBSCRIPTION_RETRY: 100,
+};

@@ -147,7 +147,7 @@ enum SubscriptionType {
     DEPTH_PRICE = 3,
     DEPTH_ORDER = 4,
     TRADES = 5,
-    CUMLATIVE_VOLUME = 6,
+    CUMULATIVE_VOLUME = 6,
     OHLC = 7,
     OHLC_NON_REGULAR = 8,
 }
@@ -158,12 +158,12 @@ enum SubscriptionType {
 Now that we know how to use the listener and client objects, let's put together a little demo that subscribes to all MSFT messages and prints what's happening to the console:
 
 ```ts
-import { OpenFeedClient } from "./connection/connection";
+import { OpenFeedClient } from "./connection/client";
 
 import { Service } from "../generated/openfeed";
 import { SubscriptionType } from "../generated/openfeed_api";
 import { OpenFeedListeners } from "./connection/listeners";
-import { IOpenFeedLogger } from "./connection/connection_interfaces";
+import { IOpenFeedLogger } from "./connection/interfaces";
 
 const connect = async () => {
     const logger: IOpenFeedLogger = console;
