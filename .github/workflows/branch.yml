@@ -1,0 +1,33 @@
+name: branch-push
+
+on:
+    push:
+        branches:
+            - "**" # Match all branches
+        paths-ignore:
+            - "**.md"
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            # Setup
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v2
+              with:
+                  node-version: "18"
+                  registry-url: "https://registry.npmjs.org"
+
+            - name: Reconfigure git
+              run: |
+                  git config user.email "builder@barchart.com"
+                  git config user.name "Barchart Builder"
+                  git config --global url.https://${{ secrets.API_TOKEN_GITHUB }}@github.com/.insteadOf ssh://git@github.com/
+
+            - name: Install dependencies
+              run: |
+                  yarn
+                  yarn generate:version
+
+            - name: Run tests
+              run: yarn test
