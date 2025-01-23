@@ -1,4 +1,4 @@
-import { OpenfeedGatewayMessage } from "@gen/openfeed_api";
+import { OpenfeedGatewayMessage, Result, SubscriptionType } from "@gen/openfeed_api";
 import { InstrumentDefinition } from "@gen/openfeed_instrument";
 import Long from "long";
 import { ActionType, HeartBeat } from "@gen/openfeed";
@@ -11,8 +11,10 @@ const IDGetters: ((msg: OpenfeedGatewayMessage) => Long | undefined)[] = [
     (msg) => msg.volumeAtPrice?.marketId,
 ];
 export class OpenFeedListeners {
-    private readonly instrumentBySymbol: Map<string, InstrumentDefinition> = new Map<string, InstrumentDefinition>();
-    private readonly instrumentByMarketId: Map<string, [InstrumentDefinition?, string[]?]> = new Map<string, [InstrumentDefinition?, string[]?]>();
+    private readonly instrumentByMarketId: Map<string, [InstrumentDefinition?, [string, SubscriptionType][]?]> = new Map<
+        string,
+        [InstrumentDefinition?, [string, SubscriptionType][]?]
+    >();
 
     constructor() {
         this.onMessage = this.addDetails;
@@ -20,7 +22,7 @@ export class OpenFeedListeners {
 
     private addDetails = (message: OpenfeedGatewayMessage) => {
         let def: InstrumentDefinition | undefined;
-        let symbols: string[] | undefined;
+        let symbols: [string, SubscriptionType][] | undefined;
 
         const getInstrumentDefinition = (marketId: Long) => {
             const res = this.instrumentByMarketId.get(marketId.toString());
@@ -28,33 +30,36 @@ export class OpenFeedListeners {
             return res ?? [undefined, undefined];
         };
 
+        const includesSymbolSubscription = (arr: [string, SubscriptionType][], item: [string, SubscriptionType]) => {
+            return arr.some(([symbol, type]) => symbol === item[0] && type === item[1]);
+        };
+
         if (message.subscriptionResponse) {
-            const { marketId, symbol, unsubscribe } = message.subscriptionResponse;
+            const { marketId, symbol, unsubscribe, status, subscriptionType } = message.subscriptionResponse;
             if (marketId !== Long.ZERO) {
                 [def, symbols] = getInstrumentDefinition(marketId);
-                if (!unsubscribe) {
-                    if (!symbols) {
-                        symbols = [symbol];
-                    } else if (!symbols.includes(symbol)) {
-                        symbols = [...symbols, symbol];
+                if (status?.result === Result.SUCCESS) {
+                    const currentEntry: [string, SubscriptionType] = [symbol, subscriptionType];
+                    if (!unsubscribe) {
+                        if (!symbols) {
+                            symbols = [currentEntry];
+                        } else if (!includesSymbolSubscription(symbols, currentEntry)) {
+                            symbols = [...symbols, currentEntry];
+                        }
+                    } else {
+                        if (symbols) {
+                            symbols = symbols.filter(([s, t]) => !(s === symbol && t === subscriptionType));
+                        }
+                        if (!symbols) {
+                            this.instrumentByMarketId.delete(marketId.toString());
+                        }
                     }
-                } else {
-                    if (symbols) {
-                        symbols = symbols.filter((s) => s !== symbol);
-                    }
-                    if (!symbols) {
-                        this.instrumentByMarketId.delete(marketId.toString());
-                    }
-                    this.instrumentBySymbol.delete(symbol);
+                    this.instrumentByMarketId.set(marketId.toString(), [def, symbols]);
                 }
-                this.instrumentByMarketId.set(marketId.toString(), [def, symbols]);
             }
         } else if (message.instrumentDefinition) {
             [def, symbols] = getInstrumentDefinition(message.instrumentDefinition.marketId);
-            const { instrumentDefinition } = message;
             this.instrumentByMarketId.set(message.instrumentDefinition.marketId.toString(), [message.instrumentDefinition, symbols]);
-            this.instrumentBySymbol.set(message.instrumentDefinition.symbol, instrumentDefinition);
-            symbols?.forEach((s) => this.instrumentBySymbol.set(s, instrumentDefinition));
         } else if (message.instrumentAction) {
             const { marketId } = message.instrumentAction?.instrument ?? {};
             if (message.instrumentAction.action === ActionType.ALIAS_CHANGED && marketId) {
@@ -64,7 +69,7 @@ export class OpenFeedListeners {
                 const newAlias = `${root}*${newAliasNum}`;
                 // remove the old symbol in the source
                 [def, symbols] = getInstrumentDefinition(marketId);
-                const newSymbols = symbols?.filter((s) => s !== oldAlias) ?? [];
+                const newSymbols = symbols?.filter(([s]) => s !== oldAlias) ?? [];
                 if (!newSymbols.length) {
                     this.instrumentByMarketId.delete(marketId.toString());
                 } else {
@@ -75,7 +80,7 @@ export class OpenFeedListeners {
                 // remove new alias from the destination, unless it's *0
                 if (newMarketId) {
                     const [newDef, newSym] = getInstrumentDefinition(newMarketId);
-                    const newSymbolsFiltered = (newAlias === oldAlias ? newSym : newSym?.filter((s) => s !== newAlias)) ?? [];
+                    const newSymbolsFiltered = (newAlias === oldAlias ? newSym : newSym?.filter(([s]) => s !== newAlias)) ?? [];
                     if (!newSymbolsFiltered.length) {
                         this.instrumentByMarketId.delete(newMarketId.toString());
                     } else {
@@ -102,7 +107,10 @@ export class OpenFeedListeners {
             }
         }
 
-        return this.onMessageWithMetadata(message, symbols ?? [], def);
+        // Ensure unique symbols from symbol/subscription array
+        const uniqueSymbols = Array.from(new Set(symbols?.map(([symbol]) => symbol) ?? []));
+
+        return this.onMessageWithMetadata(message, uniqueSymbols, def);
     };
 
     /* eslint-disable class-methods-use-this */
