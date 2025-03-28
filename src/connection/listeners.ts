@@ -1,4 +1,4 @@
-import { OpenfeedGatewayMessage, Result, SubscriptionType } from "@gen/openfeed_api";
+import { OpenfeedGatewayMessage, Result } from "@gen/openfeed_api";
 import { InstrumentDefinition } from "@gen/openfeed_instrument";
 import Long from "long";
 import { ActionType, HeartBeat } from "@gen/openfeed";
@@ -11,9 +11,9 @@ const IDGetters: ((msg: OpenfeedGatewayMessage) => Long | undefined)[] = [
     (msg) => msg.volumeAtPrice?.marketId,
 ];
 export class OpenFeedListeners {
-    private readonly instrumentByMarketId: Map<string, [InstrumentDefinition?, [string, SubscriptionType][]?]> = new Map<
+    private readonly instrumentByMarketId: Map<string, [InstrumentDefinition?, [string, string][]?]> = new Map<
         string,
-        [InstrumentDefinition?, [string, SubscriptionType][]?]
+        [InstrumentDefinition?, [string, string][]?]
     >();
 
     constructor() {
@@ -22,7 +22,7 @@ export class OpenFeedListeners {
 
     private addDetails = (message: OpenfeedGatewayMessage) => {
         let def: InstrumentDefinition | undefined;
-        let symbols: [string, SubscriptionType][] | undefined;
+        let symbols: [string, string][] | undefined;
 
         const getInstrumentDefinition = (marketId: Long) => {
             const res = this.instrumentByMarketId.get(marketId.toString());
@@ -30,31 +30,36 @@ export class OpenFeedListeners {
             return res ?? [undefined, undefined];
         };
 
-        const includesSymbolSubscription = (arr: [string, SubscriptionType][], item: [string, SubscriptionType]) => {
-            return arr.some(([symbol, type]) => symbol === item[0] && type === item[1]);
+        const includesSymbolSubscription = (arr: [string, string][], item: [string, string]) => {
+            return arr.some(([symbol, correlationId]) => symbol === item[0] && correlationId === item[1]);
         };
 
         if (message.subscriptionResponse) {
-            const { marketId, symbol, unsubscribe, status, subscriptionType } = message.subscriptionResponse;
+            const { marketId, symbol, unsubscribe, status, correlationId } = message.subscriptionResponse;
+            const corIdStr = correlationId.toString();
             if (marketId !== Long.ZERO) {
                 [def, symbols] = getInstrumentDefinition(marketId);
                 if (status?.result === Result.SUCCESS) {
-                    const currentEntry: [string, SubscriptionType] = [symbol, subscriptionType];
+                    const currentEntry: [string, string] = [symbol, corIdStr];
+
                     if (!unsubscribe) {
                         if (!symbols) {
                             symbols = [currentEntry];
                         } else if (!includesSymbolSubscription(symbols, currentEntry)) {
                             symbols = [...symbols, currentEntry];
                         }
+                        this.instrumentByMarketId.set(marketId.toString(), [def, symbols]);
                     } else {
+                        let symbolsToSave: [string, string][] | undefined;
                         if (symbols) {
-                            symbols = symbols.filter(([s, t]) => !(s === symbol && t === subscriptionType));
+                            symbolsToSave = symbols.filter(([s, t]) => !(s === symbol && t === corIdStr));
                         }
-                        if (!symbols) {
+                        if (!symbolsToSave?.length) {
                             this.instrumentByMarketId.delete(marketId.toString());
+                        } else {
+                            this.instrumentByMarketId.set(marketId.toString(), [def, symbolsToSave]);
                         }
                     }
-                    this.instrumentByMarketId.set(marketId.toString(), [def, symbols]);
                 }
             }
         } else if (message.instrumentDefinition) {

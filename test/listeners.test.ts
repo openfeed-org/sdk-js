@@ -10,6 +10,7 @@ const ALIAS_REGULAR_NEW = "SYM*5";
 const MESSAGES = {
     SUBSCRIPTION_RESPONSE_MESSAGE_OLD: {
         subscriptionResponse: {
+            correlationId: Long.fromNumber(1),
             marketId: MARKET_ID,
             symbol: ALIAS_REGULAR_OLD,
             unsubscribe: false,
@@ -21,6 +22,7 @@ const MESSAGES = {
     } as Partial<OpenfeedGatewayMessage> as OpenfeedGatewayMessage,
     SUBSCRIPTION_RESPONSE_DEPTH_OLD: {
         subscriptionResponse: {
+            correlationId: Long.fromNumber(2),
             marketId: MARKET_ID,
             symbol: ALIAS_REGULAR_OLD,
             unsubscribe: false,
@@ -51,6 +53,7 @@ const MESSAGES = {
     } as Partial<OpenfeedGatewayMessage> as OpenfeedGatewayMessage,
     SUBSCRIPTION_RESPONSE_MESSAGE_NEW: {
         subscriptionResponse: {
+            correlationId: Long.fromNumber(3),
             marketId: MARKET_ID,
             symbol: ALIAS_REGULAR_NEW,
             unsubscribe: false,
@@ -83,6 +86,7 @@ const MESSAGES = {
     } as Partial<OpenfeedGatewayMessage> as OpenfeedGatewayMessage,
     DUMMY_SUBSCRIPTION_UNAUTHORIZED: {
         subscriptionResponse: {
+            correlationId: Long.fromNumber(1),
             marketId: MARKET_ID,
             symbol: ALIAS_REGULAR_OLD,
             unsubscribe: false,
@@ -94,6 +98,7 @@ const MESSAGES = {
     } as Partial<OpenfeedGatewayMessage> as OpenfeedGatewayMessage,
     DUMMY_UNSUBSCRIPTION_UNSUBSCRIBED: {
         subscriptionResponse: {
+            correlationId: Long.fromNumber(1),
             marketId: MARKET_ID,
             symbol: ALIAS_REGULAR_OLD,
             unsubscribe: true,
@@ -105,6 +110,7 @@ const MESSAGES = {
     } as Partial<OpenfeedGatewayMessage> as OpenfeedGatewayMessage,
     DUMMY_UNSUBSCRIPTION_DEPTH: {
         subscriptionResponse: {
+            correlationId: Long.fromNumber(2),
             marketId: MARKET_ID,
             symbol: ALIAS_REGULAR_OLD,
             unsubscribe: true,
@@ -234,6 +240,23 @@ describe("OpenFeedListeners", () => {
             [ALIAS_REGULAR_NEW],
             MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW.instrumentDefinition
         );
+    });
+
+    it("should handle unsubscription messages correctly", () => {
+        // We require the subscriptionResponse and instrumentDefinition message to arrive first
+        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD);
+        listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_OLD);
+        listeners.onMessage(MESSAGES.DUMMY_UNSUBSCRIPTION_DEPTH);
+        listeners.onMessage(MESSAGES.DUMMY_SNAPSHOT_MESSAGE);
+
+        expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD, [ALIAS_REGULAR_OLD], undefined);
+        expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_OLD, [ALIAS_REGULAR_OLD], undefined);
+        expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(
+            MESSAGES.DUMMY_UNSUBSCRIPTION_DEPTH,
+            [ALIAS_REGULAR_OLD],
+            MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_OLD.instrumentDefinition
+        );
+        expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.DUMMY_SNAPSHOT_MESSAGE, [], undefined);
     });
 
     it("should handle alias_changed instrument action correctly", () => {
