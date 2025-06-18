@@ -132,6 +132,7 @@ export class OpenFeedClient implements IOpenFeedClient {
                 // eslint-disable-next-line no-await-in-loop
                 await this.loopResetSource.whenCompleted;
             } catch (e) {
+                this.logger?.error("Error when connecting to socket:", e);
                 const socket = this.socket!;
                 // these will fire, even though the connection error means we should be already disconnected
                 socket.onerror = () => {};
