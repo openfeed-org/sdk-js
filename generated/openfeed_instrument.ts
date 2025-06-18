@@ -149,6 +149,11 @@ export interface InstrumentDefinition {
     priceScalingExponent: number;
     /** / The Openfeed marketId of the underlying asset. */
     underlyingOpenfeedMarketId: Long;
+    /** / Barchart Exchange Name */
+    barchartExchange: string;
+    contractSize: Long;
+    contractSizeDescription: string;
+    exchangeMetadata: InstrumentDefinition_ExchangeMetadata | undefined;
 }
 /** ############################################# */
 export enum InstrumentDefinition_InstrumentType {
@@ -293,6 +298,13 @@ export interface InstrumentDefinition_CurrencyPair {
     currency1: string;
     currency2: string;
 }
+/** / Exchange Metadata */
+export interface InstrumentDefinition_ExchangeMetadata {
+    securityId: Long;
+    channelId: string;
+    sbeId: number;
+    underlyingSecurityId: Long;
+}
 function createBaseInstrumentDefinition(): InstrumentDefinition {
     return {
         marketId: Long.ZERO,
@@ -355,6 +367,10 @@ function createBaseInstrumentDefinition(): InstrumentDefinition {
         exchangeId: 0,
         priceScalingExponent: 0,
         underlyingOpenfeedMarketId: Long.ZERO,
+        barchartExchange: "",
+        contractSize: Long.ZERO,
+        contractSizeDescription: "",
+        exchangeMetadata: undefined,
     };
 }
 export const InstrumentDefinitionEncode = {
@@ -540,6 +556,18 @@ export const InstrumentDefinitionEncode = {
         }
         if (!message.underlyingOpenfeedMarketId.isZero()) {
             writer.uint32(1880).sint64(message.underlyingOpenfeedMarketId);
+        }
+        if (message.barchartExchange !== "") {
+            writer.uint32(1890).string(message.barchartExchange);
+        }
+        if (!message.contractSize.isZero()) {
+            writer.uint32(1896).sint64(message.contractSize);
+        }
+        if (message.contractSizeDescription !== "") {
+            writer.uint32(1906).string(message.contractSizeDescription);
+        }
+        if (message.exchangeMetadata !== undefined) {
+            InstrumentDefinition_ExchangeMetadataEncode.encode(message.exchangeMetadata, writer.uint32(1914).fork()).ldelim();
         }
         return writer;
     }
@@ -917,6 +945,30 @@ export const InstrumentDefinitionEncode = {
                         break;
                     }
                     message.underlyingOpenfeedMarketId = reader.sint64() as Long;
+                    continue;
+                case 236:
+                    if (tag !== 1890) {
+                        break;
+                    }
+                    message.barchartExchange = reader.string();
+                    continue;
+                case 237:
+                    if (tag !== 1896) {
+                        break;
+                    }
+                    message.contractSize = reader.sint64() as Long;
+                    continue;
+                case 238:
+                    if (tag !== 1906) {
+                        break;
+                    }
+                    message.contractSizeDescription = reader.string();
+                    continue;
+                case 239:
+                    if (tag !== 1914) {
+                        break;
+                    }
+                    message.exchangeMetadata = InstrumentDefinition_ExchangeMetadataDecode.decode(reader, reader.uint32());
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {
@@ -1349,6 +1401,66 @@ export const InstrumentDefinition_CurrencyPairEncode = {
                         break;
                     }
                     message.currency2 = reader.string();
+                    continue;
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skipType(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseInstrumentDefinition_ExchangeMetadata(): InstrumentDefinition_ExchangeMetadata {
+    return { securityId: Long.ZERO, channelId: "", sbeId: 0, underlyingSecurityId: Long.ZERO };
+}
+export const InstrumentDefinition_ExchangeMetadataEncode = {
+    encode(message: InstrumentDefinition_ExchangeMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+        if (!message.securityId.isZero()) {
+            writer.uint32(8).sint64(message.securityId);
+        }
+        if (message.channelId !== "") {
+            writer.uint32(18).string(message.channelId);
+        }
+        if (message.sbeId !== 0) {
+            writer.uint32(24).sint32(message.sbeId);
+        }
+        if (!message.underlyingSecurityId.isZero()) {
+            writer.uint32(32).sint64(message.underlyingSecurityId);
+        }
+        return writer;
+    }
+}, InstrumentDefinition_ExchangeMetadataDecode = {
+    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_ExchangeMetadata {
+        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+        let end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseInstrumentDefinition_ExchangeMetadata();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1:
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.securityId = reader.sint64() as Long;
+                    continue;
+                case 2:
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.channelId = reader.string();
+                    continue;
+                case 3:
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.sbeId = reader.sint32();
+                    continue;
+                case 4:
+                    if (tag !== 32) {
+                        break;
+                    }
+                    message.underlyingSecurityId = reader.sint64() as Long;
                     continue;
             }
             if ((tag & 7) === 4 || tag === 0) {
