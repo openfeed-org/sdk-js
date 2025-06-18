@@ -24,6 +24,17 @@ The User Guide for this project can be found in the [documentation](DOCUMENTATIO
 
 This library uses [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for clarity, tracking changes and versioning. It's recommended to install [Conventional Commits Extension for VS Code](https://marketplace.visualstudio.com/items?itemName=vivaxy.vscode-conventional-commits) when contributing to the library.
 
+### Updating proto
+
+To update the proto files, run:
+
+```shell
+yarn add git+ssh://git@github.com/openfeed-org/proto.git#master -D
+yarn generate
+```
+
+Then commit the changes.
+
 ### Preparing a new version
 
 For updating the version and automatically collecting changes, run:
