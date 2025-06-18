@@ -7,8 +7,5 @@
         "emitDeclarationOnly": true,
         "disableSizeLimit": true
     },
-    "exclude": [
-        "node_modules",
-        "generated"
-    ]
+    "exclude": ["node_modules", "generated"]
 }
