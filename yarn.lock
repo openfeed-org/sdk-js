@@ -1978,9 +1978,9 @@ baseline-browser-mapping@^2.9.0:
   integrity sha512-agD0MgJFUP/4nvjqzIB29zRPUuCF7Ge6mEv9s8dHrtYD7QWXRcx75rOADE/d5ah1NI+0vkDl0yorDd5U852IQQ==
 
 brace-expansion@^1.1.7:
-  version "1.1.11"
-  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.11.tgz#3c7fcbf529d87226f3d2f52b966ff5271eb441dd"
-  integrity sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==
+  version "1.1.12"
+  resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.12.tgz#ab9b454466e5a8cc3a187beaad580412a9c5b843"
+  integrity sha512-9T9UjW3r0UW5c1Q7GTwllptXwhvYmEzFhzMfZ9H7FQWt+uZePjZPjBP/W1ZEyZ1twGWom5/56TF4lPcqjnDHcg==
   dependencies:
     balanced-match "^1.0.0"
     concat-map "0.0.1"
@@ -5334,7 +5334,7 @@ process-nextick-args@~2.0.0:
 
 "proto@git+ssh://git@github.com/openfeed-org/proto.git#master":
   version "0.0.0"
-  resolved "git+ssh://git@github.com/openfeed-org/proto.git#3a2fa0787f0cf9d980aa7746cf1d42379e2a128a"
+  resolved "git+ssh://git@github.com/openfeed-org/proto.git#123c76eae34f20cb75e2b399ce405f0d6e161809"
 
 punycode@^2.1.0:
   version "2.1.1"
