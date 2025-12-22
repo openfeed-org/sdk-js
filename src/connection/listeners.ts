@@ -18,7 +18,12 @@ export class OpenFeedListeners {
 
     constructor() {
         this.onMessage = this.addDetails;
+        this.onCleanup = this.cleanUp;
     }
+
+    private cleanUp = () => {
+        this.instrumentByMarketId.clear();
+    };
 
     private addDetails = (message: OpenfeedGatewayMessage) => {
         let def: InstrumentDefinition | undefined;
@@ -119,6 +124,7 @@ export class OpenFeedListeners {
     };
 
     /* eslint-disable class-methods-use-this */
+    public onCleanup: () => void | Promise<void> = () => {};
     public onConnected: (connection: IOpenFeedConnection) => void | Promise<void> = () => {};
     public onCredentialsRejected: () => void | Promise<void> = () => {};
     public onDisconnected: () => void | Promise<void> = () => {};

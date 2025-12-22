@@ -77,6 +77,7 @@ export class OpenFeedClient implements IOpenFeedClient {
                     this.loopResetSource.reject(e);
                 }
             } finally {
+                await this.listeners.onCleanup();
                 await this.listeners.onDisconnected();
                 this.loopResetSource.resolve();
             }
@@ -153,8 +154,10 @@ export class OpenFeedClient implements IOpenFeedClient {
 
                 if (e instanceof ConnectionDisposedError) {
                     this.logger?.warn("Stopping the client because of disposal");
-                    // eslint-disable-next-line no-await-in-loop
+                    /* eslint-disable no-await-in-loop */
+                    await this.listeners.onCleanup();
                     await this.listeners.onDisconnected();
+                    /* eslint-enable no-await-in-loop */
                     this.cleanUp();
                     break;
                 }
