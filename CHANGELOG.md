@@ -2,14 +2,9 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [1.4.0](https://github.com/openfeed-org/sdk-js/compare/1.3.3...1.4.0) (2025-06-18)
-
-
-### Features
-
-* regenarate files from proto ([14f3cad](https://github.com/openfeed-org/sdk-js/commit/14f3cad8a50cc31281ab21f9b701a1d997c4b65a))
+### [1.4.1](https://github.com/openfeed-org/sdk-js/compare/1.4.0...1.4.1) (2025-12-22)
 
 
 ### Bug Fixes
 
-* extend error logging ([2c31557](https://github.com/openfeed-org/sdk-js/commit/2c315576f871abcaef985ae4a81c7f98b969e692))
+* add clean up of state on disconnect ([9cf3452](https://github.com/openfeed-org/sdk-js/commit/9cf345218d3f6386e3a9189bc543ab5236e0c958))
