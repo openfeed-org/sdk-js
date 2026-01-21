@@ -172,20 +172,26 @@ const createImportsTransformer = (originalName: string, newNameEncode: string, n
     return visitImportsTransformer;
 };
 
+const INTERFACE_TO_REMOVE = "MessageFns";
+
 sourceFiles.forEach((sourceFile) => {
     const res1 = ts.transform(sourceFile, [createTransformer]);
-
     const printer = ts.createPrinter();
 
     const res2 = ts.transform(res1.transformed[0] as ts.SourceFile, [
         ...names.map(([oldName, newNameEncode, newNameDecode]) => createImportsTransformer(oldName, newNameEncode, newNameDecode)),
     ]);
 
-    const transformedSourceCode = printer.printFile(res2.transformed[0] as ts.SourceFile);
+    // Remove interface by name
+    let transformed = res2.transformed[0] as ts.SourceFile;
+    const filteredStatements = transformed.statements.filter((stmt) => !(ts.isInterfaceDeclaration(stmt) && stmt.name.text === INTERFACE_TO_REMOVE));
+    transformed = ts.factory.updateSourceFile(transformed, filteredStatements);
+
+    // Prepend /* eslint-disable */ to the output
+    const transformedSourceCode = ["/* eslint-disable */", printer.printFile(transformed)].join("\n");
 
     fs.writeFileSync(sourceFile.fileName, transformedSourceCode);
 });
-
 // Re-read the TypeScript files for third transformer and creating an index file that exports everything as types except the enums which need to be exported as values
 // This index will only be used for src index file to export to the user of the library
 // (this is done as regular exports can't be mixed with types in an automatic way to export enums as values and everything else as types)
