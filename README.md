@@ -29,7 +29,6 @@ This library uses [Conventional Commits](https://www.conventionalcommits.org/en/
 To update the proto files, run:
 
 ```shell
-yarn add git+ssh://git@github.com/openfeed-org/proto.git#master -D
 yarn generate
 ```
 
