@@ -14,7 +14,7 @@ jobs:
             - uses: actions/checkout@v2
             - uses: actions/setup-node@v2
               with:
-                  node-version: "18"
+                  node-version: "24"
                   registry-url: "https://registry.npmjs.org"
 
             - name: Reconfigure git
@@ -26,7 +26,6 @@ jobs:
             - name: Build library
               run: |
                   yarn
-                  yarn build:clear
                   yarn build:ts
                   yarn build:node
                   yarn build:types

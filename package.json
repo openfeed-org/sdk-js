@@ -16,7 +16,6 @@
         "generate:version": "genversion --es6 -s -d ./generated/version.ts",
         "generate:process": "tsx ./scripts/process.ts",
         "generate": "yarn upgrade:proto && yarn generate:proto && yarn generate:process",
-        "build:clear": "rimraf dist",
         "build:node": "esbuild --bundle --outfile=dist/node.js --platform=node --target=node16 --format=esm --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" src/index.ts",
         "build:ts": "yarn generate:version && vite build",
         "build:types": "tsc -p tsconfig.types.json",
