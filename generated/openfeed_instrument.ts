@@ -1,6 +1,6 @@
 /* eslint-disable */
+import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import Long from "long";
-import _m0 from "protobufjs/minimal";
 export interface InstrumentDefinition {
     /** / Unique ID used in the data feed. */
     marketId: Long;
@@ -154,6 +154,7 @@ export interface InstrumentDefinition {
     contractSize: Long;
     contractSizeDescription: string;
     exchangeMetadata: InstrumentDefinition_ExchangeMetadata | undefined;
+    roundLotSize: number;
 }
 /** ############################################# */
 export enum InstrumentDefinition_InstrumentType {
@@ -304,6 +305,8 @@ export interface InstrumentDefinition_ExchangeMetadata {
     channelId: string;
     sbeId: number;
     underlyingSecurityId: Long;
+    securitySymbol: string;
+    underlyingSymbol: string;
 }
 function createBaseInstrumentDefinition(): InstrumentDefinition {
     return {
@@ -371,12 +374,13 @@ function createBaseInstrumentDefinition(): InstrumentDefinition {
         contractSize: Long.ZERO,
         contractSizeDescription: "",
         exchangeMetadata: undefined,
+        roundLotSize: 0,
     };
 }
 export const InstrumentDefinitionEncode = {
-    encode(message: InstrumentDefinition, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.marketId.isZero()) {
-            writer.uint32(8).sint64(message.marketId);
+    encode(message: InstrumentDefinition, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.marketId.toString());
         }
         if (message.instrumentType !== 0) {
             writer.uint32(16).int32(message.instrumentType);
@@ -385,7 +389,7 @@ export const InstrumentDefinitionEncode = {
         for (const v of message.supportBookTypes) {
             writer.int32(v);
         }
-        writer.ldelim();
+        writer.join();
         if (message.bookDepth !== 0) {
             writer.uint32(32).sint32(message.bookDepth);
         }
@@ -414,16 +418,16 @@ export const InstrumentDefinitionEncode = {
             writer.uint32(101).float(message.contractPointValue);
         }
         if (message.schedule !== undefined) {
-            InstrumentDefinition_ScheduleEncode.encode(message.schedule, writer.uint32(106).fork()).ldelim();
+            InstrumentDefinition_ScheduleEncode.encode(message.schedule, writer.uint32(106).fork()).join();
         }
         if (message.calendar !== undefined) {
-            InstrumentDefinition_CalendarEncode.encode(message.calendar, writer.uint32(114).fork()).ldelim();
+            InstrumentDefinition_CalendarEncode.encode(message.calendar, writer.uint32(114).fork()).join();
         }
-        if (!message.recordCreateTime.isZero()) {
-            writer.uint32(120).sint64(message.recordCreateTime);
+        if (!message.recordCreateTime.equals(Long.ZERO)) {
+            writer.uint32(120).sint64(message.recordCreateTime.toString());
         }
-        if (!message.recordUpdateTime.isZero()) {
-            writer.uint32(128).sint64(message.recordUpdateTime);
+        if (!message.recordUpdateTime.equals(Long.ZERO)) {
+            writer.uint32(128).sint64(message.recordUpdateTime.toString());
         }
         if (message.timeZoneName !== "") {
             writer.uint32(138).string(message.timeZoneName);
@@ -432,7 +436,7 @@ export const InstrumentDefinitionEncode = {
             writer.uint32(146).string(message.instrumentGroup);
         }
         if (message.symbolExpiration !== undefined) {
-            InstrumentDefinition_MaturityDateEncode.encode(message.symbolExpiration, writer.uint32(154).fork()).ldelim();
+            InstrumentDefinition_MaturityDateEncode.encode(message.symbolExpiration, writer.uint32(154).fork()).join();
         }
         if (message.state !== 0) {
             writer.uint32(160).int32(message.state);
@@ -440,14 +444,14 @@ export const InstrumentDefinitionEncode = {
         if (message.channel !== 0) {
             writer.uint32(168).sint32(message.channel);
         }
-        if (!message.underlyingMarketId.isZero()) {
-            writer.uint32(176).sint64(message.underlyingMarketId);
+        if (!message.underlyingMarketId.equals(Long.ZERO)) {
+            writer.uint32(176).sint64(message.underlyingMarketId.toString());
         }
         if (message.priceFormat !== undefined) {
-            InstrumentDefinition_PriceFormatEncode.encode(message.priceFormat, writer.uint32(186).fork()).ldelim();
+            InstrumentDefinition_PriceFormatEncode.encode(message.priceFormat, writer.uint32(186).fork()).join();
         }
         if (message.optionStrikePriceFormat !== undefined) {
-            InstrumentDefinition_PriceFormatEncode.encode(message.optionStrikePriceFormat, writer.uint32(194).fork()).ldelim();
+            InstrumentDefinition_PriceFormatEncode.encode(message.optionStrikePriceFormat, writer.uint32(194).fork()).join();
         }
         if (message.priceDenominator !== 0) {
             writer.uint32(224).sint32(message.priceDenominator);
@@ -455,20 +459,20 @@ export const InstrumentDefinitionEncode = {
         if (message.quantityDenominator !== 0) {
             writer.uint32(232).sint32(message.quantityDenominator);
         }
-        if (message.isTradable === true) {
+        if (message.isTradable !== false) {
             writer.uint32(240).bool(message.isTradable);
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(400).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(400).sint64(message.transactionTime.toString());
         }
         if (message.auxiliaryData.length !== 0) {
             writer.uint32(794).bytes(message.auxiliaryData);
         }
         for (const v of message.symbols) {
-            InstrumentDefinition_SymbolEncode.encode(v!, writer.uint32(802).fork()).ldelim();
+            InstrumentDefinition_SymbolEncode.encode(v!, writer.uint32(802).fork()).join();
         }
-        if (!message.optionStrike.isZero()) {
-            writer.uint32(1600).sint64(message.optionStrike);
+        if (!message.optionStrike.equals(Long.ZERO)) {
+            writer.uint32(1600).sint64(message.optionStrike.toString());
         }
         if (message.optionType !== 0) {
             writer.uint32(1616).int32(message.optionType);
@@ -483,9 +487,9 @@ export const InstrumentDefinitionEncode = {
             writer.uint32(1682).string(message.spreadCode);
         }
         for (const v of message.spreadLeg) {
-            InstrumentDefinition_SpreadLegEncode.encode(v!, writer.uint32(1690).fork()).ldelim();
+            InstrumentDefinition_SpreadLegEncode.encode(v!, writer.uint32(1690).fork()).join();
         }
-        if (message.userDefinedSpread === true) {
+        if (message.userDefinedSpread !== false) {
             writer.uint32(1696).bool(message.userDefinedSpread);
         }
         if (message.marketTier !== "") {
@@ -498,27 +502,27 @@ export const InstrumentDefinitionEncode = {
             writer.uint32(1722).string(message.isin);
         }
         if (message.currencyPair !== undefined) {
-            InstrumentDefinition_CurrencyPairEncode.encode(message.currencyPair, writer.uint32(1730).fork()).ldelim();
+            InstrumentDefinition_CurrencyPairEncode.encode(message.currencyPair, writer.uint32(1730).fork()).join();
         }
-        if (message.exchangeSendsVolume === true) {
+        if (message.exchangeSendsVolume !== false) {
             writer.uint32(1736).bool(message.exchangeSendsVolume);
         }
-        if (message.exchangeSendsHigh === true) {
+        if (message.exchangeSendsHigh !== false) {
             writer.uint32(1744).bool(message.exchangeSendsHigh);
         }
-        if (message.exchangeSendsLow === true) {
+        if (message.exchangeSendsLow !== false) {
             writer.uint32(1752).bool(message.exchangeSendsLow);
         }
-        if (message.exchangeSendsOpen === true) {
+        if (message.exchangeSendsOpen !== false) {
             writer.uint32(1760).bool(message.exchangeSendsOpen);
         }
-        if (message.consolidatedFeedInstrument === true) {
+        if (message.consolidatedFeedInstrument !== false) {
             writer.uint32(1768).bool(message.consolidatedFeedInstrument);
         }
-        if (message.openOutcryInstrument === true) {
+        if (message.openOutcryInstrument !== false) {
             writer.uint32(1776).bool(message.openOutcryInstrument);
         }
-        if (message.syntheticAmericanOptionInstrument === true) {
+        if (message.syntheticAmericanOptionInstrument !== false) {
             writer.uint32(1784).bool(message.syntheticAmericanOptionInstrument);
         }
         if (message.barchartExchangeCode !== "") {
@@ -540,7 +544,7 @@ export const InstrumentDefinitionEncode = {
             writer.uint32(1834).string(message.subscriptionSymbol);
         }
         if (message.contractMaturity !== undefined) {
-            InstrumentDefinition_MaturityDateEncode.encode(message.contractMaturity, writer.uint32(1842).fork()).ldelim();
+            InstrumentDefinition_MaturityDateEncode.encode(message.contractMaturity, writer.uint32(1842).fork()).join();
         }
         if (message.underlying !== "") {
             writer.uint32(1850).string(message.underlying);
@@ -554,44 +558,49 @@ export const InstrumentDefinitionEncode = {
         if (message.priceScalingExponent !== 0) {
             writer.uint32(1872).sint32(message.priceScalingExponent);
         }
-        if (!message.underlyingOpenfeedMarketId.isZero()) {
-            writer.uint32(1880).sint64(message.underlyingOpenfeedMarketId);
+        if (!message.underlyingOpenfeedMarketId.equals(Long.ZERO)) {
+            writer.uint32(1880).sint64(message.underlyingOpenfeedMarketId.toString());
         }
         if (message.barchartExchange !== "") {
             writer.uint32(1890).string(message.barchartExchange);
         }
-        if (!message.contractSize.isZero()) {
-            writer.uint32(1896).sint64(message.contractSize);
+        if (!message.contractSize.equals(Long.ZERO)) {
+            writer.uint32(1896).sint64(message.contractSize.toString());
         }
         if (message.contractSizeDescription !== "") {
             writer.uint32(1906).string(message.contractSizeDescription);
         }
         if (message.exchangeMetadata !== undefined) {
-            InstrumentDefinition_ExchangeMetadataEncode.encode(message.exchangeMetadata, writer.uint32(1914).fork()).ldelim();
+            InstrumentDefinition_ExchangeMetadataEncode.encode(message.exchangeMetadata, writer.uint32(1914).fork()).join();
+        }
+        if (message.roundLotSize !== 0) {
+            writer.uint32(1920).sint32(message.roundLotSize);
         }
         return writer;
     }
 }, InstrumentDefinitionDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.instrumentType = reader.int32() as any;
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag === 24) {
                         message.supportBookTypes.push(reader.int32() as any);
                         continue;
@@ -604,377 +613,446 @@ export const InstrumentDefinitionEncode = {
                         continue;
                     }
                     break;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.bookDepth = reader.sint32();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.vendorId = reader.string();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 50) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 58) {
                         break;
                     }
                     message.description = reader.string();
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 66) {
                         break;
                     }
                     message.cfiCode = reader.string();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 74) {
                         break;
                     }
                     message.currencyCode = reader.string();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.exchangeCode = reader.string();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 93) {
                         break;
                     }
                     message.minimumPriceIncrement = reader.float();
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 101) {
                         break;
                     }
                     message.contractPointValue = reader.float();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.schedule = InstrumentDefinition_ScheduleDecode.decode(reader, reader.uint32());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 114) {
                         break;
                     }
                     message.calendar = InstrumentDefinition_CalendarDecode.decode(reader, reader.uint32());
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
-                    message.recordCreateTime = reader.sint64() as Long;
+                    message.recordCreateTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 128) {
                         break;
                     }
-                    message.recordUpdateTime = reader.sint64() as Long;
+                    message.recordUpdateTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 17:
+                }
+                case 17: {
                     if (tag !== 138) {
                         break;
                     }
                     message.timeZoneName = reader.string();
                     continue;
-                case 18:
+                }
+                case 18: {
                     if (tag !== 146) {
                         break;
                     }
                     message.instrumentGroup = reader.string();
                     continue;
-                case 19:
+                }
+                case 19: {
                     if (tag !== 154) {
                         break;
                     }
                     message.symbolExpiration = InstrumentDefinition_MaturityDateDecode.decode(reader, reader.uint32());
                     continue;
-                case 20:
+                }
+                case 20: {
                     if (tag !== 160) {
                         break;
                     }
                     message.state = reader.int32() as any;
                     continue;
-                case 21:
+                }
+                case 21: {
                     if (tag !== 168) {
                         break;
                     }
                     message.channel = reader.sint32();
                     continue;
-                case 22:
+                }
+                case 22: {
                     if (tag !== 176) {
                         break;
                     }
-                    message.underlyingMarketId = reader.sint64() as Long;
+                    message.underlyingMarketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 23:
+                }
+                case 23: {
                     if (tag !== 186) {
                         break;
                     }
                     message.priceFormat = InstrumentDefinition_PriceFormatDecode.decode(reader, reader.uint32());
                     continue;
-                case 24:
+                }
+                case 24: {
                     if (tag !== 194) {
                         break;
                     }
                     message.optionStrikePriceFormat = InstrumentDefinition_PriceFormatDecode.decode(reader, reader.uint32());
                     continue;
-                case 28:
+                }
+                case 28: {
                     if (tag !== 224) {
                         break;
                     }
                     message.priceDenominator = reader.sint32();
                     continue;
-                case 29:
+                }
+                case 29: {
                     if (tag !== 232) {
                         break;
                     }
                     message.quantityDenominator = reader.sint32();
                     continue;
-                case 30:
+                }
+                case 30: {
                     if (tag !== 240) {
                         break;
                     }
                     message.isTradable = reader.bool();
                     continue;
-                case 50:
+                }
+                case 50: {
                     if (tag !== 400) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 99:
+                }
+                case 99: {
                     if (tag !== 794) {
                         break;
                     }
                     message.auxiliaryData = reader.bytes();
                     continue;
-                case 100:
+                }
+                case 100: {
                     if (tag !== 802) {
                         break;
                     }
                     message.symbols.push(InstrumentDefinition_SymbolDecode.decode(reader, reader.uint32()));
                     continue;
-                case 200:
+                }
+                case 200: {
                     if (tag !== 1600) {
                         break;
                     }
-                    message.optionStrike = reader.sint64() as Long;
+                    message.optionStrike = Long.fromString(reader.sint64().toString());
                     continue;
-                case 202:
+                }
+                case 202: {
                     if (tag !== 1616) {
                         break;
                     }
                     message.optionType = reader.int32() as any;
                     continue;
-                case 203:
+                }
+                case 203: {
                     if (tag !== 1624) {
                         break;
                     }
                     message.optionStyle = reader.int32() as any;
                     continue;
-                case 204:
+                }
+                case 204: {
                     if (tag !== 1632) {
                         break;
                     }
                     message.optionStrikeDenominator = reader.sint32();
                     continue;
-                case 210:
+                }
+                case 210: {
                     if (tag !== 1682) {
                         break;
                     }
                     message.spreadCode = reader.string();
                     continue;
-                case 211:
+                }
+                case 211: {
                     if (tag !== 1690) {
                         break;
                     }
                     message.spreadLeg.push(InstrumentDefinition_SpreadLegDecode.decode(reader, reader.uint32()));
                     continue;
-                case 212:
+                }
+                case 212: {
                     if (tag !== 1696) {
                         break;
                     }
                     message.userDefinedSpread = reader.bool();
                     continue;
-                case 213:
+                }
+                case 213: {
                     if (tag !== 1706) {
                         break;
                     }
                     message.marketTier = reader.string();
                     continue;
-                case 214:
+                }
+                case 214: {
                     if (tag !== 1714) {
                         break;
                     }
                     message.financialStatusIndicator = reader.string();
                     continue;
-                case 215:
+                }
+                case 215: {
                     if (tag !== 1722) {
                         break;
                     }
                     message.isin = reader.string();
                     continue;
-                case 216:
+                }
+                case 216: {
                     if (tag !== 1730) {
                         break;
                     }
                     message.currencyPair = InstrumentDefinition_CurrencyPairDecode.decode(reader, reader.uint32());
                     continue;
-                case 217:
+                }
+                case 217: {
                     if (tag !== 1736) {
                         break;
                     }
                     message.exchangeSendsVolume = reader.bool();
                     continue;
-                case 218:
+                }
+                case 218: {
                     if (tag !== 1744) {
                         break;
                     }
                     message.exchangeSendsHigh = reader.bool();
                     continue;
-                case 219:
+                }
+                case 219: {
                     if (tag !== 1752) {
                         break;
                     }
                     message.exchangeSendsLow = reader.bool();
                     continue;
-                case 220:
+                }
+                case 220: {
                     if (tag !== 1760) {
                         break;
                     }
                     message.exchangeSendsOpen = reader.bool();
                     continue;
-                case 221:
+                }
+                case 221: {
                     if (tag !== 1768) {
                         break;
                     }
                     message.consolidatedFeedInstrument = reader.bool();
                     continue;
-                case 222:
+                }
+                case 222: {
                     if (tag !== 1776) {
                         break;
                     }
                     message.openOutcryInstrument = reader.bool();
                     continue;
-                case 223:
+                }
+                case 223: {
                     if (tag !== 1784) {
                         break;
                     }
                     message.syntheticAmericanOptionInstrument = reader.bool();
                     continue;
-                case 224:
+                }
+                case 224: {
                     if (tag !== 1794) {
                         break;
                     }
                     message.barchartExchangeCode = reader.string();
                     continue;
-                case 225:
+                }
+                case 225: {
                     if (tag !== 1802) {
                         break;
                     }
                     message.barchartBaseCode = reader.string();
                     continue;
-                case 226:
+                }
+                case 226: {
                     if (tag !== 1808) {
                         break;
                     }
                     message.volumeDenominator = reader.sint32();
                     continue;
-                case 227:
+                }
+                case 227: {
                     if (tag !== 1816) {
                         break;
                     }
                     message.bidOfferQuantityDenominator = reader.sint32();
                     continue;
-                case 228:
+                }
+                case 228: {
                     if (tag !== 1826) {
                         break;
                     }
                     message.primaryListingMarketParticipantId = reader.string();
                     continue;
-                case 229:
+                }
+                case 229: {
                     if (tag !== 1834) {
                         break;
                     }
                     message.subscriptionSymbol = reader.string();
                     continue;
-                case 230:
+                }
+                case 230: {
                     if (tag !== 1842) {
                         break;
                     }
                     message.contractMaturity = InstrumentDefinition_MaturityDateDecode.decode(reader, reader.uint32());
                     continue;
-                case 231:
+                }
+                case 231: {
                     if (tag !== 1850) {
                         break;
                     }
                     message.underlying = reader.string();
                     continue;
-                case 232:
+                }
+                case 232: {
                     if (tag !== 1858) {
                         break;
                     }
                     message.commodity = reader.string();
                     continue;
-                case 233:
+                }
+                case 233: {
                     if (tag !== 1864) {
                         break;
                     }
                     message.exchangeId = reader.sint32();
                     continue;
-                case 234:
+                }
+                case 234: {
                     if (tag !== 1872) {
                         break;
                     }
                     message.priceScalingExponent = reader.sint32();
                     continue;
-                case 235:
+                }
+                case 235: {
                     if (tag !== 1880) {
                         break;
                     }
-                    message.underlyingOpenfeedMarketId = reader.sint64() as Long;
+                    message.underlyingOpenfeedMarketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 236:
+                }
+                case 236: {
                     if (tag !== 1890) {
                         break;
                     }
                     message.barchartExchange = reader.string();
                     continue;
-                case 237:
+                }
+                case 237: {
                     if (tag !== 1896) {
                         break;
                     }
-                    message.contractSize = reader.sint64() as Long;
+                    message.contractSize = Long.fromString(reader.sint64().toString());
                     continue;
-                case 238:
+                }
+                case 238: {
                     if (tag !== 1906) {
                         break;
                     }
                     message.contractSizeDescription = reader.string();
                     continue;
-                case 239:
+                }
+                case 239: {
                     if (tag !== 1914) {
                         break;
                     }
                     message.exchangeMetadata = InstrumentDefinition_ExchangeMetadataDecode.decode(reader, reader.uint32());
                     continue;
+                }
+                case 240: {
+                    if (tag !== 1920) {
+                        break;
+                    }
+                    message.roundLotSize = reader.sint32();
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -983,31 +1061,32 @@ function createBaseInstrumentDefinition_Schedule(): InstrumentDefinition_Schedul
     return { sessions: [] };
 }
 export const InstrumentDefinition_ScheduleEncode = {
-    encode(message: InstrumentDefinition_Schedule, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: InstrumentDefinition_Schedule, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         for (const v of message.sessions) {
-            InstrumentDefinition_TimeSpanEncode.encode(v!, writer.uint32(10).fork()).ldelim();
+            InstrumentDefinition_TimeSpanEncode.encode(v!, writer.uint32(10).fork()).join();
         }
         return writer;
     }
 }, InstrumentDefinition_ScheduleDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_Schedule {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_Schedule {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_Schedule();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.sessions.push(InstrumentDefinition_TimeSpanDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1016,40 +1095,42 @@ function createBaseInstrumentDefinition_TimeSpan(): InstrumentDefinition_TimeSpa
     return { timeStart: Long.ZERO, timeFinish: Long.ZERO };
 }
 export const InstrumentDefinition_TimeSpanEncode = {
-    encode(message: InstrumentDefinition_TimeSpan, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.timeStart.isZero()) {
-            writer.uint32(8).sint64(message.timeStart);
+    encode(message: InstrumentDefinition_TimeSpan, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.timeStart.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.timeStart.toString());
         }
-        if (!message.timeFinish.isZero()) {
-            writer.uint32(16).sint64(message.timeFinish);
+        if (!message.timeFinish.equals(Long.ZERO)) {
+            writer.uint32(16).sint64(message.timeFinish.toString());
         }
         return writer;
     }
 }, InstrumentDefinition_TimeSpanDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_TimeSpan {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_TimeSpan {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_TimeSpan();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.timeStart = reader.sint64() as Long;
+                    message.timeStart = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
-                    message.timeFinish = reader.sint64() as Long;
+                    message.timeFinish = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1058,31 +1139,32 @@ function createBaseInstrumentDefinition_Calendar(): InstrumentDefinition_Calenda
     return { events: [] };
 }
 export const InstrumentDefinition_CalendarEncode = {
-    encode(message: InstrumentDefinition_Calendar, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: InstrumentDefinition_Calendar, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         for (const v of message.events) {
-            InstrumentDefinition_EventEncode.encode(v!, writer.uint32(10).fork()).ldelim();
+            InstrumentDefinition_EventEncode.encode(v!, writer.uint32(10).fork()).join();
         }
         return writer;
     }
 }, InstrumentDefinition_CalendarDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_Calendar {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_Calendar {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_Calendar();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.events.push(InstrumentDefinition_EventDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1091,40 +1173,42 @@ function createBaseInstrumentDefinition_Event(): InstrumentDefinition_Event {
     return { type: 0, date: Long.ZERO };
 }
 export const InstrumentDefinition_EventEncode = {
-    encode(message: InstrumentDefinition_Event, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: InstrumentDefinition_Event, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.type !== 0) {
             writer.uint32(8).int32(message.type);
         }
-        if (!message.date.isZero()) {
-            writer.uint32(16).sint64(message.date);
+        if (!message.date.equals(Long.ZERO)) {
+            writer.uint32(16).sint64(message.date.toString());
         }
         return writer;
     }
 }, InstrumentDefinition_EventDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_Event {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_Event {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_Event();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.type = reader.int32() as any;
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
-                    message.date = reader.sint64() as Long;
+                    message.date = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1133,9 +1217,9 @@ function createBaseInstrumentDefinition_SpreadLeg(): InstrumentDefinition_Spread
     return { marketId: Long.ZERO, ratio: 0, symbol: "", longSymbol: "", legOptionDelta: 0, legPrice: 0 };
 }
 export const InstrumentDefinition_SpreadLegEncode = {
-    encode(message: InstrumentDefinition_SpreadLeg, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.marketId.isZero()) {
-            writer.uint32(8).sint64(message.marketId);
+    encode(message: InstrumentDefinition_SpreadLeg, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.marketId.toString());
         }
         if (message.ratio !== 0) {
             writer.uint32(16).sint32(message.ratio);
@@ -1155,54 +1239,60 @@ export const InstrumentDefinition_SpreadLegEncode = {
         return writer;
     }
 }, InstrumentDefinition_SpreadLegDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_SpreadLeg {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_SpreadLeg {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_SpreadLeg();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.ratio = reader.sint32();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.longSymbol = reader.string();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 45) {
                         break;
                     }
                     message.legOptionDelta = reader.float();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 53) {
                         break;
                     }
                     message.legPrice = reader.float();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1211,7 +1301,7 @@ function createBaseInstrumentDefinition_MaturityDate(): InstrumentDefinition_Mat
     return { year: 0, month: 0, day: 0 };
 }
 export const InstrumentDefinition_MaturityDateEncode = {
-    encode(message: InstrumentDefinition_MaturityDate, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: InstrumentDefinition_MaturityDate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.year !== 0) {
             writer.uint32(8).sint32(message.year);
         }
@@ -1224,36 +1314,39 @@ export const InstrumentDefinition_MaturityDateEncode = {
         return writer;
     }
 }, InstrumentDefinition_MaturityDateDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_MaturityDate {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_MaturityDate {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_MaturityDate();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.year = reader.sint32();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.month = reader.sint32();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.day = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1262,7 +1355,7 @@ function createBaseInstrumentDefinition_Symbol(): InstrumentDefinition_Symbol {
     return { vendor: "", symbol: "", longSymbol: "" };
 }
 export const InstrumentDefinition_SymbolEncode = {
-    encode(message: InstrumentDefinition_Symbol, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: InstrumentDefinition_Symbol, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.vendor !== "") {
             writer.uint32(10).string(message.vendor);
         }
@@ -1275,36 +1368,39 @@ export const InstrumentDefinition_SymbolEncode = {
         return writer;
     }
 }, InstrumentDefinition_SymbolDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_Symbol {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_Symbol {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_Symbol();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.vendor = reader.string();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.longSymbol = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1313,8 +1409,8 @@ function createBaseInstrumentDefinition_PriceFormat(): InstrumentDefinition_Pric
     return { isFractional: false, denominator: 0, subDenominator: 0, subFormat: 0 };
 }
 export const InstrumentDefinition_PriceFormatEncode = {
-    encode(message: InstrumentDefinition_PriceFormat, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (message.isFractional === true) {
+    encode(message: InstrumentDefinition_PriceFormat, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.isFractional !== false) {
             writer.uint32(8).bool(message.isFractional);
         }
         if (message.denominator !== 0) {
@@ -1329,42 +1425,46 @@ export const InstrumentDefinition_PriceFormatEncode = {
         return writer;
     }
 }, InstrumentDefinition_PriceFormatDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_PriceFormat {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_PriceFormat {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_PriceFormat();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.isFractional = reader.bool();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.denominator = reader.sint32();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.subDenominator = reader.sint32();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 48) {
                         break;
                     }
                     message.subFormat = reader.int32() as any;
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1373,7 +1473,7 @@ function createBaseInstrumentDefinition_CurrencyPair(): InstrumentDefinition_Cur
     return { currency1: "", currency2: "" };
 }
 export const InstrumentDefinition_CurrencyPairEncode = {
-    encode(message: InstrumentDefinition_CurrencyPair, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: InstrumentDefinition_CurrencyPair, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.currency1 !== "") {
             writer.uint32(10).string(message.currency1);
         }
@@ -1383,41 +1483,50 @@ export const InstrumentDefinition_CurrencyPairEncode = {
         return writer;
     }
 }, InstrumentDefinition_CurrencyPairDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_CurrencyPair {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_CurrencyPair {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_CurrencyPair();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.currency1 = reader.string();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.currency2 = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
 };
 function createBaseInstrumentDefinition_ExchangeMetadata(): InstrumentDefinition_ExchangeMetadata {
-    return { securityId: Long.ZERO, channelId: "", sbeId: 0, underlyingSecurityId: Long.ZERO };
+    return {
+        securityId: Long.ZERO,
+        channelId: "",
+        sbeId: 0,
+        underlyingSecurityId: Long.ZERO,
+        securitySymbol: "",
+        underlyingSymbol: "",
+    };
 }
 export const InstrumentDefinition_ExchangeMetadataEncode = {
-    encode(message: InstrumentDefinition_ExchangeMetadata, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.securityId.isZero()) {
-            writer.uint32(8).sint64(message.securityId);
+    encode(message: InstrumentDefinition_ExchangeMetadata, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.securityId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.securityId.toString());
         }
         if (message.channelId !== "") {
             writer.uint32(18).string(message.channelId);
@@ -1425,53 +1534,73 @@ export const InstrumentDefinition_ExchangeMetadataEncode = {
         if (message.sbeId !== 0) {
             writer.uint32(24).sint32(message.sbeId);
         }
-        if (!message.underlyingSecurityId.isZero()) {
-            writer.uint32(32).sint64(message.underlyingSecurityId);
+        if (!message.underlyingSecurityId.equals(Long.ZERO)) {
+            writer.uint32(32).sint64(message.underlyingSecurityId.toString());
+        }
+        if (message.securitySymbol !== "") {
+            writer.uint32(42).string(message.securitySymbol);
+        }
+        if (message.underlyingSymbol !== "") {
+            writer.uint32(50).string(message.underlyingSymbol);
         }
         return writer;
     }
 }, InstrumentDefinition_ExchangeMetadataDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentDefinition_ExchangeMetadata {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_ExchangeMetadata {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentDefinition_ExchangeMetadata();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.securityId = reader.sint64() as Long;
+                    message.securityId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.channelId = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.sbeId = reader.sint32();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
-                    message.underlyingSecurityId = reader.sint64() as Long;
+                    message.underlyingSecurityId = Long.fromString(reader.sint64().toString());
                     continue;
+                }
+                case 5: {
+                    if (tag !== 42) {
+                        break;
+                    }
+                    message.securitySymbol = reader.string();
+                    continue;
+                }
+                case 6: {
+                    if (tag !== 50) {
+                        break;
+                    }
+                    message.underlyingSymbol = reader.string();
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
 };
-if (_m0.util.Long !== Long) {
-    _m0.util.Long = Long as any;
-    _m0.configure();
-}

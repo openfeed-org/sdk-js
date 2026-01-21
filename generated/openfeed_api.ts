@@ -1,6 +1,6 @@
 /* eslint-disable */
+import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import Long from "long";
-import _m0 from "protobufjs/minimal";
 import { HeartBeat, HeartBeatEncode, HeartBeatDecode, InstrumentAction, InstrumentActionEncode, InstrumentActionDecode, MarketSnapshot, MarketSnapshotEncode, MarketSnapshotDecode, MarketStatus, MarketStatusEncode, MarketStatusDecode, MarketUpdate, MarketUpdateEncode, MarketUpdateDecode, Ohlc, OhlcEncode, OhlcDecode, Service, VolumeAtPrice, VolumeAtPriceEncode, VolumeAtPriceDecode } from "./openfeed";
 import { InstrumentDefinition, InstrumentDefinitionEncode, InstrumentDefinitionDecode, InstrumentDefinition_InstrumentType } from "./openfeed_instrument";
 export enum Result {
@@ -266,85 +266,92 @@ function createBaseOpenfeedGatewayRequest(): OpenfeedGatewayRequest {
     };
 }
 export const OpenfeedGatewayRequestEncode = {
-    encode(message: OpenfeedGatewayRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: OpenfeedGatewayRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.loginRequest !== undefined) {
-            LoginRequestEncode.encode(message.loginRequest, writer.uint32(10).fork()).ldelim();
+            LoginRequestEncode.encode(message.loginRequest, writer.uint32(10).fork()).join();
         }
         if (message.logoutRequest !== undefined) {
-            LogoutRequestEncode.encode(message.logoutRequest, writer.uint32(18).fork()).ldelim();
+            LogoutRequestEncode.encode(message.logoutRequest, writer.uint32(18).fork()).join();
         }
         if (message.subscriptionRequest !== undefined) {
-            SubscriptionRequestEncode.encode(message.subscriptionRequest, writer.uint32(26).fork()).ldelim();
+            SubscriptionRequestEncode.encode(message.subscriptionRequest, writer.uint32(26).fork()).join();
         }
         if (message.instrumentRequest !== undefined) {
-            InstrumentRequestEncode.encode(message.instrumentRequest, writer.uint32(34).fork()).ldelim();
+            InstrumentRequestEncode.encode(message.instrumentRequest, writer.uint32(34).fork()).join();
         }
         if (message.instrumentReferenceRequest !== undefined) {
-            InstrumentReferenceRequestEncode.encode(message.instrumentReferenceRequest, writer.uint32(42).fork()).ldelim();
+            InstrumentReferenceRequestEncode.encode(message.instrumentReferenceRequest, writer.uint32(42).fork()).join();
         }
         if (message.exchangeRequest !== undefined) {
-            ExchangeRequestEncode.encode(message.exchangeRequest, writer.uint32(50).fork()).ldelim();
+            ExchangeRequestEncode.encode(message.exchangeRequest, writer.uint32(50).fork()).join();
         }
         if (message.listSubscriptionsRequest !== undefined) {
-            ListSubscriptionsRequestEncode.encode(message.listSubscriptionsRequest, writer.uint32(58).fork()).ldelim();
+            ListSubscriptionsRequestEncode.encode(message.listSubscriptionsRequest, writer.uint32(58).fork()).join();
         }
         return writer;
     }
 }, OpenfeedGatewayRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): OpenfeedGatewayRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): OpenfeedGatewayRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseOpenfeedGatewayRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.loginRequest = LoginRequestDecode.decode(reader, reader.uint32());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.logoutRequest = LogoutRequestDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.subscriptionRequest = SubscriptionRequestDecode.decode(reader, reader.uint32());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.instrumentRequest = InstrumentRequestDecode.decode(reader, reader.uint32());
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.instrumentReferenceRequest = InstrumentReferenceRequestDecode.decode(reader, reader.uint32());
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 50) {
                         break;
                     }
                     message.exchangeRequest = ExchangeRequestDecode.decode(reader, reader.uint32());
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 58) {
                         break;
                     }
                     message.listSubscriptionsRequest = ListSubscriptionsRequestDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -369,157 +376,172 @@ function createBaseOpenfeedGatewayMessage(): OpenfeedGatewayMessage {
     };
 }
 export const OpenfeedGatewayMessageEncode = {
-    encode(message: OpenfeedGatewayMessage, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: OpenfeedGatewayMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.loginResponse !== undefined) {
-            LoginResponseEncode.encode(message.loginResponse, writer.uint32(10).fork()).ldelim();
+            LoginResponseEncode.encode(message.loginResponse, writer.uint32(10).fork()).join();
         }
         if (message.logoutResponse !== undefined) {
-            LogoutResponseEncode.encode(message.logoutResponse, writer.uint32(18).fork()).ldelim();
+            LogoutResponseEncode.encode(message.logoutResponse, writer.uint32(18).fork()).join();
         }
         if (message.instrumentResponse !== undefined) {
-            InstrumentResponseEncode.encode(message.instrumentResponse, writer.uint32(26).fork()).ldelim();
+            InstrumentResponseEncode.encode(message.instrumentResponse, writer.uint32(26).fork()).join();
         }
         if (message.instrumentReferenceResponse !== undefined) {
-            InstrumentReferenceResponseEncode.encode(message.instrumentReferenceResponse, writer.uint32(34).fork()).ldelim();
+            InstrumentReferenceResponseEncode.encode(message.instrumentReferenceResponse, writer.uint32(34).fork()).join();
         }
         if (message.subscriptionResponse !== undefined) {
-            SubscriptionResponseEncode.encode(message.subscriptionResponse, writer.uint32(42).fork()).ldelim();
+            SubscriptionResponseEncode.encode(message.subscriptionResponse, writer.uint32(42).fork()).join();
         }
         if (message.marketStatus !== undefined) {
-            MarketStatusEncode.encode(message.marketStatus, writer.uint32(50).fork()).ldelim();
+            MarketStatusEncode.encode(message.marketStatus, writer.uint32(50).fork()).join();
         }
         if (message.heartBeat !== undefined) {
-            HeartBeatEncode.encode(message.heartBeat, writer.uint32(58).fork()).ldelim();
+            HeartBeatEncode.encode(message.heartBeat, writer.uint32(58).fork()).join();
         }
         if (message.instrumentDefinition !== undefined) {
-            InstrumentDefinitionEncode.encode(message.instrumentDefinition, writer.uint32(66).fork()).ldelim();
+            InstrumentDefinitionEncode.encode(message.instrumentDefinition, writer.uint32(66).fork()).join();
         }
         if (message.marketSnapshot !== undefined) {
-            MarketSnapshotEncode.encode(message.marketSnapshot, writer.uint32(74).fork()).ldelim();
+            MarketSnapshotEncode.encode(message.marketSnapshot, writer.uint32(74).fork()).join();
         }
         if (message.marketUpdate !== undefined) {
-            MarketUpdateEncode.encode(message.marketUpdate, writer.uint32(82).fork()).ldelim();
+            MarketUpdateEncode.encode(message.marketUpdate, writer.uint32(82).fork()).join();
         }
         if (message.volumeAtPrice !== undefined) {
-            VolumeAtPriceEncode.encode(message.volumeAtPrice, writer.uint32(90).fork()).ldelim();
+            VolumeAtPriceEncode.encode(message.volumeAtPrice, writer.uint32(90).fork()).join();
         }
         if (message.ohlc !== undefined) {
-            OhlcEncode.encode(message.ohlc, writer.uint32(98).fork()).ldelim();
+            OhlcEncode.encode(message.ohlc, writer.uint32(98).fork()).join();
         }
         if (message.exchangeResponse !== undefined) {
-            ExchangeResponseEncode.encode(message.exchangeResponse, writer.uint32(106).fork()).ldelim();
+            ExchangeResponseEncode.encode(message.exchangeResponse, writer.uint32(106).fork()).join();
         }
         if (message.instrumentAction !== undefined) {
-            InstrumentActionEncode.encode(message.instrumentAction, writer.uint32(114).fork()).ldelim();
+            InstrumentActionEncode.encode(message.instrumentAction, writer.uint32(114).fork()).join();
         }
         if (message.listSubscriptionsResponse !== undefined) {
-            ListSubscriptionsResponseEncode.encode(message.listSubscriptionsResponse, writer.uint32(122).fork()).ldelim();
+            ListSubscriptionsResponseEncode.encode(message.listSubscriptionsResponse, writer.uint32(122).fork()).join();
         }
         return writer;
     }
 }, OpenfeedGatewayMessageDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): OpenfeedGatewayMessage {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): OpenfeedGatewayMessage {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseOpenfeedGatewayMessage();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.loginResponse = LoginResponseDecode.decode(reader, reader.uint32());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.logoutResponse = LogoutResponseDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.instrumentResponse = InstrumentResponseDecode.decode(reader, reader.uint32());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.instrumentReferenceResponse = InstrumentReferenceResponseDecode.decode(reader, reader.uint32());
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.subscriptionResponse = SubscriptionResponseDecode.decode(reader, reader.uint32());
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 50) {
                         break;
                     }
                     message.marketStatus = MarketStatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 58) {
                         break;
                     }
                     message.heartBeat = HeartBeatDecode.decode(reader, reader.uint32());
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 66) {
                         break;
                     }
                     message.instrumentDefinition = InstrumentDefinitionDecode.decode(reader, reader.uint32());
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 74) {
                         break;
                     }
                     message.marketSnapshot = MarketSnapshotDecode.decode(reader, reader.uint32());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.marketUpdate = MarketUpdateDecode.decode(reader, reader.uint32());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.volumeAtPrice = VolumeAtPriceDecode.decode(reader, reader.uint32());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.ohlc = OhlcDecode.decode(reader, reader.uint32());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.exchangeResponse = ExchangeResponseDecode.decode(reader, reader.uint32());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 114) {
                         break;
                     }
                     message.instrumentAction = InstrumentActionDecode.decode(reader, reader.uint32());
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.listSubscriptionsResponse = ListSubscriptionsResponseDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -528,7 +550,7 @@ function createBaseStatus(): Status {
     return { result: 0, message: "", service: 0 };
 }
 export const StatusEncode = {
-    encode(message: Status, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: Status, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.result !== 0) {
             writer.uint32(8).int32(message.result);
         }
@@ -541,36 +563,39 @@ export const StatusEncode = {
         return writer;
     }
 }, StatusDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Status {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Status {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseStatus();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.result = reader.int32() as any;
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.message = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.service = reader.int32() as any;
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -579,9 +604,9 @@ function createBaseLoginRequest(): LoginRequest {
     return { correlationId: Long.ZERO, username: "", password: "", clientVersion: "", protocolVersion: 0, jwt: "" };
 }
 export const LoginRequestEncode = {
-    encode(message: LoginRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: LoginRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.username !== "") {
             writer.uint32(18).string(message.username);
@@ -601,54 +626,60 @@ export const LoginRequestEncode = {
         return writer;
     }
 }, LoginRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): LoginRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): LoginRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseLoginRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.username = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.password = reader.string();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.clientVersion = reader.string();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
                     message.protocolVersion = reader.sint32();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 50) {
                         break;
                     }
                     message.jwt = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -657,12 +688,12 @@ function createBaseLoginResponse(): LoginResponse {
     return { correlationId: Long.ZERO, status: undefined, token: "" };
 }
 export const LoginResponseEncode = {
-    encode(message: LoginResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: LoginResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.status !== undefined) {
-            StatusEncode.encode(message.status, writer.uint32(18).fork()).ldelim();
+            StatusEncode.encode(message.status, writer.uint32(18).fork()).join();
         }
         if (message.token !== "") {
             writer.uint32(26).string(message.token);
@@ -670,36 +701,39 @@ export const LoginResponseEncode = {
         return writer;
     }
 }, LoginResponseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): LoginResponse {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): LoginResponse {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseLoginResponse();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.status = StatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.token = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -708,9 +742,9 @@ function createBaseLogoutRequest(): LogoutRequest {
     return { correlationId: Long.ZERO, token: "" };
 }
 export const LogoutRequestEncode = {
-    encode(message: LogoutRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: LogoutRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.token !== "") {
             writer.uint32(26).string(message.token);
@@ -718,30 +752,32 @@ export const LogoutRequestEncode = {
         return writer;
     }
 }, LogoutRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): LogoutRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): LogoutRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseLogoutRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.token = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -750,40 +786,42 @@ function createBaseLogoutResponse(): LogoutResponse {
     return { correlationId: Long.ZERO, status: undefined };
 }
 export const LogoutResponseEncode = {
-    encode(message: LogoutResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: LogoutResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.status !== undefined) {
-            StatusEncode.encode(message.status, writer.uint32(18).fork()).ldelim();
+            StatusEncode.encode(message.status, writer.uint32(18).fork()).join();
         }
         return writer;
     }
 }, LogoutResponseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): LogoutResponse {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): LogoutResponse {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseLogoutResponse();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.status = StatusDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -802,9 +840,9 @@ function createBaseInstrumentRequest(): InstrumentRequest {
     };
 }
 export const InstrumentRequestEncode = {
-    encode(message: InstrumentRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: InstrumentRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.token !== "") {
             writer.uint32(18).string(message.token);
@@ -813,7 +851,7 @@ export const InstrumentRequestEncode = {
         for (const v of message.instrumentType) {
             writer.int32(v);
         }
-        writer.ldelim();
+        writer.join();
         for (const v of message.spreadType) {
             writer.uint32(34).string(v!);
         }
@@ -824,7 +862,7 @@ export const InstrumentRequestEncode = {
             writer.uint32(82).string(message.symbol);
         }
         if (message.marketId !== undefined) {
-            writer.uint32(88).sint64(message.marketId);
+            writer.uint32(88).sint64(message.marketId.toString());
         }
         if (message.exchange !== undefined) {
             writer.uint32(98).string(message.exchange);
@@ -835,26 +873,28 @@ export const InstrumentRequestEncode = {
         return writer;
     }
 }, InstrumentRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.token = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag === 24) {
                         message.instrumentType.push(reader.int32() as any);
                         continue;
@@ -867,47 +907,54 @@ export const InstrumentRequestEncode = {
                         continue;
                     }
                     break;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.spreadType.push(reader.string());
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
                     message.version = reader.sint32();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.exchange = reader.string();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
                     message.channelId = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -926,12 +973,12 @@ function createBaseInstrumentResponse(): InstrumentResponse {
     };
 }
 export const InstrumentResponseEncode = {
-    encode(message: InstrumentResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: InstrumentResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.status !== undefined) {
-            StatusEncode.encode(message.status, writer.uint32(18).fork()).ldelim();
+            StatusEncode.encode(message.status, writer.uint32(18).fork()).join();
         }
         if (message.numberOfDefinitions !== 0) {
             writer.uint32(24).sint32(message.numberOfDefinitions);
@@ -939,8 +986,8 @@ export const InstrumentResponseEncode = {
         if (message.symbol !== "") {
             writer.uint32(34).string(message.symbol);
         }
-        if (!message.marketId.isZero()) {
-            writer.uint32(40).sint64(message.marketId);
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(40).sint64(message.marketId.toString());
         }
         if (message.exchange !== "") {
             writer.uint32(50).string(message.exchange);
@@ -952,77 +999,86 @@ export const InstrumentResponseEncode = {
             writer.uint32(64).sint32(message.exchangeId);
         }
         if (message.instrumentDefinition !== undefined) {
-            InstrumentDefinitionEncode.encode(message.instrumentDefinition, writer.uint32(122).fork()).ldelim();
+            InstrumentDefinitionEncode.encode(message.instrumentDefinition, writer.uint32(122).fork()).join();
         }
         return writer;
     }
 }, InstrumentResponseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentResponse {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentResponse {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentResponse();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.status = StatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.numberOfDefinitions = reader.sint32();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 50) {
                         break;
                     }
                     message.exchange = reader.string();
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 56) {
                         break;
                     }
                     message.channelId = reader.sint32();
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 64) {
                         break;
                     }
                     message.exchangeId = reader.sint32();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.instrumentDefinition = InstrumentDefinitionDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1038,9 +1094,9 @@ function createBaseInstrumentReferenceRequest(): InstrumentReferenceRequest {
     };
 }
 export const InstrumentReferenceRequestEncode = {
-    encode(message: InstrumentReferenceRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: InstrumentReferenceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.token !== "") {
             writer.uint32(18).string(message.token);
@@ -1049,7 +1105,7 @@ export const InstrumentReferenceRequestEncode = {
             writer.uint32(82).string(message.symbol);
         }
         if (message.marketId !== undefined) {
-            writer.uint32(88).sint64(message.marketId);
+            writer.uint32(88).sint64(message.marketId.toString());
         }
         if (message.exchange !== undefined) {
             writer.uint32(98).string(message.exchange);
@@ -1060,54 +1116,60 @@ export const InstrumentReferenceRequestEncode = {
         return writer;
     }
 }, InstrumentReferenceRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentReferenceRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentReferenceRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentReferenceRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.token = reader.string();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.exchange = reader.string();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
                     message.channelId = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1129,12 +1191,12 @@ function createBaseInstrumentReferenceResponse(): InstrumentReferenceResponse {
     };
 }
 export const InstrumentReferenceResponseEncode = {
-    encode(message: InstrumentReferenceResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: InstrumentReferenceResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.status !== undefined) {
-            StatusEncode.encode(message.status, writer.uint32(18).fork()).ldelim();
+            StatusEncode.encode(message.status, writer.uint32(18).fork()).join();
         }
         if (message.numberOfDefinitions !== 0) {
             writer.uint32(24).sint32(message.numberOfDefinitions);
@@ -1142,8 +1204,8 @@ export const InstrumentReferenceResponseEncode = {
         if (message.channelId !== 0) {
             writer.uint32(32).sint32(message.channelId);
         }
-        if (!message.marketId.isZero()) {
-            writer.uint32(40).sint64(message.marketId);
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(40).sint64(message.marketId.toString());
         }
         if (message.symbol !== "") {
             writer.uint32(50).string(message.symbol);
@@ -1169,90 +1231,102 @@ export const InstrumentReferenceResponseEncode = {
         return writer;
     }
 }, InstrumentReferenceResponseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentReferenceResponse {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentReferenceResponse {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentReferenceResponse();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.status = StatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.numberOfDefinitions = reader.sint32();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.channelId = reader.sint32();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 50) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 58) {
                         break;
                     }
                     message.exchange = reader.string();
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 66) {
                         break;
                     }
                     message.ddfSymbol = reader.string();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 74) {
                         break;
                     }
                     message.ddfExchange = reader.string();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.ddfBaseCode = reader.string();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.exchangeSymbol = reader.string();
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
                     message.exchangeId = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1261,9 +1335,9 @@ function createBaseExchangeRequest(): ExchangeRequest {
     return { correlationId: Long.ZERO, token: "" };
 }
 export const ExchangeRequestEncode = {
-    encode(message: ExchangeRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: ExchangeRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.token !== "") {
             writer.uint32(18).string(message.token);
@@ -1271,30 +1345,32 @@ export const ExchangeRequestEncode = {
         return writer;
     }
 }, ExchangeRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ExchangeRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ExchangeRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseExchangeRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.token = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1303,49 +1379,52 @@ function createBaseExchangeResponse(): ExchangeResponse {
     return { correlationId: Long.ZERO, status: undefined, exchanges: [] };
 }
 export const ExchangeResponseEncode = {
-    encode(message: ExchangeResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: ExchangeResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.status !== undefined) {
-            StatusEncode.encode(message.status, writer.uint32(18).fork()).ldelim();
+            StatusEncode.encode(message.status, writer.uint32(18).fork()).join();
         }
         for (const v of message.exchanges) {
-            ExchangeResponse_ExchangeEncode.encode(v!, writer.uint32(26).fork()).ldelim();
+            ExchangeResponse_ExchangeEncode.encode(v!, writer.uint32(26).fork()).join();
         }
         return writer;
     }
 }, ExchangeResponseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ExchangeResponse {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ExchangeResponse {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseExchangeResponse();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.status = StatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.exchanges.push(ExchangeResponse_ExchangeDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1354,7 +1433,7 @@ function createBaseExchangeResponse_Exchange(): ExchangeResponse_Exchange {
     return { code: "", description: "", aliases: [], exchangeId: 0 };
 }
 export const ExchangeResponse_ExchangeEncode = {
-    encode(message: ExchangeResponse_Exchange, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: ExchangeResponse_Exchange, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.code !== "") {
             writer.uint32(10).string(message.code);
         }
@@ -1370,42 +1449,46 @@ export const ExchangeResponse_ExchangeEncode = {
         return writer;
     }
 }, ExchangeResponse_ExchangeDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ExchangeResponse_Exchange {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ExchangeResponse_Exchange {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseExchangeResponse_Exchange();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.code = reader.string();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.description = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.aliases.push(reader.string());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.exchangeId = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1414,7 +1497,7 @@ function createBaseBulkSubscriptionFilter(): BulkSubscriptionFilter {
     return { symbolType: 0, symbolPattern: "" };
 }
 export const BulkSubscriptionFilterEncode = {
-    encode(message: BulkSubscriptionFilter, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: BulkSubscriptionFilter, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.symbolType !== 0) {
             writer.uint32(8).int32(message.symbolType);
         }
@@ -1424,30 +1507,32 @@ export const BulkSubscriptionFilterEncode = {
         return writer;
     }
 }, BulkSubscriptionFilterDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): BulkSubscriptionFilter {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): BulkSubscriptionFilter {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseBulkSubscriptionFilter();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.symbolType = reader.int32() as any;
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.symbolPattern = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1456,9 +1541,9 @@ function createBaseSubscriptionRequest(): SubscriptionRequest {
     return { correlationId: Long.ZERO, token: "", service: 0, unsubscribe: false, requests: [] };
 }
 export const SubscriptionRequestEncode = {
-    encode(message: SubscriptionRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: SubscriptionRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.token !== "") {
             writer.uint32(18).string(message.token);
@@ -1466,57 +1551,62 @@ export const SubscriptionRequestEncode = {
         if (message.service !== 0) {
             writer.uint32(24).int32(message.service);
         }
-        if (message.unsubscribe === true) {
+        if (message.unsubscribe !== false) {
             writer.uint32(32).bool(message.unsubscribe);
         }
         for (const v of message.requests) {
-            SubscriptionRequest_RequestEncode.encode(v!, writer.uint32(42).fork()).ldelim();
+            SubscriptionRequest_RequestEncode.encode(v!, writer.uint32(42).fork()).join();
         }
         return writer;
     }
 }, SubscriptionRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): SubscriptionRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): SubscriptionRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseSubscriptionRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.token = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.service = reader.int32() as any;
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.unsubscribe = reader.bool();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.requests.push(SubscriptionRequest_RequestDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1537,12 +1627,12 @@ function createBaseSubscriptionRequest_Request(): SubscriptionRequest_Request {
     };
 }
 export const SubscriptionRequest_RequestEncode = {
-    encode(message: SubscriptionRequest_Request, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: SubscriptionRequest_Request, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.symbol !== undefined) {
             writer.uint32(10).string(message.symbol);
         }
         if (message.marketId !== undefined) {
-            writer.uint32(16).sint64(message.marketId);
+            writer.uint32(16).sint64(message.marketId.toString());
         }
         if (message.exchange !== undefined) {
             writer.uint32(26).string(message.exchange);
@@ -1554,7 +1644,7 @@ export const SubscriptionRequest_RequestEncode = {
         for (const v of message.subscriptionType) {
             writer.int32(v);
         }
-        writer.ldelim();
+        writer.join();
         if (message.snapshotIntervalSeconds !== 0) {
             writer.uint32(88).sint32(message.snapshotIntervalSeconds);
         }
@@ -1562,54 +1652,58 @@ export const SubscriptionRequest_RequestEncode = {
         for (const v of message.instrumentType) {
             writer.int32(v);
         }
-        writer.ldelim();
+        writer.join();
         for (const v of message.bulkSubscriptionFilter) {
-            BulkSubscriptionFilterEncode.encode(v!, writer.uint32(106).fork()).ldelim();
+            BulkSubscriptionFilterEncode.encode(v!, writer.uint32(106).fork()).join();
         }
         for (const v of message.spreadTypeFilter) {
             writer.uint32(114).string(v!);
         }
-        if (message.subscriptionDoNotSendInstruments === true) {
+        if (message.subscriptionDoNotSendInstruments !== false) {
             writer.uint32(120).bool(message.subscriptionDoNotSendInstruments);
         }
-        if (message.subscriptionDoNotSendSnapshots === true) {
+        if (message.subscriptionDoNotSendSnapshots !== false) {
             writer.uint32(128).bool(message.subscriptionDoNotSendSnapshots);
         }
         return writer;
     }
 }, SubscriptionRequest_RequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): SubscriptionRequest_Request {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): SubscriptionRequest_Request {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseSubscriptionRequest_Request();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.exchange = reader.string();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.channelId = reader.sint32();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag === 80) {
                         message.subscriptionType.push(reader.int32() as any);
                         continue;
@@ -1622,13 +1716,15 @@ export const SubscriptionRequest_RequestEncode = {
                         continue;
                     }
                     break;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
                     message.snapshotIntervalSeconds = reader.sint32();
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag === 96) {
                         message.instrumentType.push(reader.int32() as any);
                         continue;
@@ -1641,35 +1737,40 @@ export const SubscriptionRequest_RequestEncode = {
                         continue;
                     }
                     break;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.bulkSubscriptionFilter.push(BulkSubscriptionFilterDecode.decode(reader, reader.uint32()));
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 114) {
                         break;
                     }
                     message.spreadTypeFilter.push(reader.string());
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
                     message.subscriptionDoNotSendInstruments = reader.bool();
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 128) {
                         break;
                     }
                     message.subscriptionDoNotSendSnapshots = reader.bool();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1689,18 +1790,18 @@ function createBaseSubscriptionResponse(): SubscriptionResponse {
     };
 }
 export const SubscriptionResponseEncode = {
-    encode(message: SubscriptionResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: SubscriptionResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.status !== undefined) {
-            StatusEncode.encode(message.status, writer.uint32(18).fork()).ldelim();
+            StatusEncode.encode(message.status, writer.uint32(18).fork()).join();
         }
         if (message.symbol !== "") {
             writer.uint32(26).string(message.symbol);
         }
-        if (!message.marketId.isZero()) {
-            writer.uint32(32).sint64(message.marketId);
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(32).sint64(message.marketId.toString());
         }
         if (message.exchange !== "") {
             writer.uint32(42).string(message.exchange);
@@ -1714,7 +1815,7 @@ export const SubscriptionResponseEncode = {
         if (message.subscriptionType !== 0) {
             writer.uint32(64).int32(message.subscriptionType);
         }
-        if (message.unsubscribe === true) {
+        if (message.unsubscribe !== false) {
             writer.uint32(72).bool(message.unsubscribe);
         }
         if (message.snapshotIntervalSeconds !== 0) {
@@ -1723,78 +1824,88 @@ export const SubscriptionResponseEncode = {
         return writer;
     }
 }, SubscriptionResponseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): SubscriptionResponse {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): SubscriptionResponse {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseSubscriptionResponse();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.status = StatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.exchange = reader.string();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 48) {
                         break;
                     }
                     message.channelId = reader.sint32();
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 56) {
                         break;
                     }
                     message.numberOfDefinitions = reader.sint32();
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 64) {
                         break;
                     }
                     message.subscriptionType = reader.int32() as any;
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
                     message.unsubscribe = reader.bool();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.snapshotIntervalSeconds = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1803,9 +1914,9 @@ function createBaseListSubscriptionsRequest(): ListSubscriptionsRequest {
     return { correlationId: Long.ZERO, token: "", username: "" };
 }
 export const ListSubscriptionsRequestEncode = {
-    encode(message: ListSubscriptionsRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: ListSubscriptionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.token !== "") {
             writer.uint32(18).string(message.token);
@@ -1816,36 +1927,39 @@ export const ListSubscriptionsRequestEncode = {
         return writer;
     }
 }, ListSubscriptionsRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseListSubscriptionsRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.token = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.username = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1854,58 +1968,62 @@ function createBaseListSubscriptionsResponse(): ListSubscriptionsResponse {
     return { correlationId: Long.ZERO, status: undefined, username: "", sessions: [] };
 }
 export const ListSubscriptionsResponseEncode = {
-    encode(message: ListSubscriptionsResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.correlationId.isZero()) {
-            writer.uint32(8).sint64(message.correlationId);
+    encode(message: ListSubscriptionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.correlationId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.correlationId.toString());
         }
         if (message.status !== undefined) {
-            StatusEncode.encode(message.status, writer.uint32(18).fork()).ldelim();
+            StatusEncode.encode(message.status, writer.uint32(18).fork()).join();
         }
         if (message.username !== "") {
             writer.uint32(26).string(message.username);
         }
         for (const v of message.sessions) {
-            ListSubscriptionsResponse_SessionEncode.encode(v!, writer.uint32(82).fork()).ldelim();
+            ListSubscriptionsResponse_SessionEncode.encode(v!, writer.uint32(82).fork()).join();
         }
         return writer;
     }
 }, ListSubscriptionsResponseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsResponse {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsResponse {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseListSubscriptionsResponse();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.correlationId = reader.sint64() as Long;
+                    message.correlationId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.status = StatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.username = reader.string();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.sessions.push(ListSubscriptionsResponse_SessionDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1914,9 +2032,9 @@ function createBaseListSubscriptionsResponse_Session(): ListSubscriptionsRespons
     return { loginTime: Long.ZERO, token: "", clientVersion: "", marketSubscriptions: [], exchangeSubscriptions: [] };
 }
 export const ListSubscriptionsResponse_SessionEncode = {
-    encode(message: ListSubscriptionsResponse_Session, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.loginTime.isZero()) {
-            writer.uint32(8).sint64(message.loginTime);
+    encode(message: ListSubscriptionsResponse_Session, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.loginTime.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.loginTime.toString());
         }
         if (message.token !== "") {
             writer.uint32(18).string(message.token);
@@ -1925,56 +2043,61 @@ export const ListSubscriptionsResponse_SessionEncode = {
             writer.uint32(26).string(message.clientVersion);
         }
         for (const v of message.marketSubscriptions) {
-            ListSubscriptionsResponse_SubscriptionEncode.encode(v!, writer.uint32(82).fork()).ldelim();
+            ListSubscriptionsResponse_SubscriptionEncode.encode(v!, writer.uint32(82).fork()).join();
         }
         for (const v of message.exchangeSubscriptions) {
-            ListSubscriptionsResponse_SubscriptionEncode.encode(v!, writer.uint32(90).fork()).ldelim();
+            ListSubscriptionsResponse_SubscriptionEncode.encode(v!, writer.uint32(90).fork()).join();
         }
         return writer;
     }
 }, ListSubscriptionsResponse_SessionDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsResponse_Session {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsResponse_Session {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseListSubscriptionsResponse_Session();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.loginTime = reader.sint64() as Long;
+                    message.loginTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.token = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.clientVersion = reader.string();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.marketSubscriptions.push(ListSubscriptionsResponse_SubscriptionDecode.decode(reader, reader.uint32()));
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.exchangeSubscriptions.push(ListSubscriptionsResponse_SubscriptionDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1983,18 +2106,18 @@ function createBaseListSubscriptionsResponse_Subscription(): ListSubscriptionsRe
     return { subscriptionId: "", symbolId: "", marketId: Long.ZERO, symbolCounts: [], exchange: "", root: "" };
 }
 export const ListSubscriptionsResponse_SubscriptionEncode = {
-    encode(message: ListSubscriptionsResponse_Subscription, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: ListSubscriptionsResponse_Subscription, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.subscriptionId !== "") {
             writer.uint32(10).string(message.subscriptionId);
         }
         if (message.symbolId !== "") {
             writer.uint32(18).string(message.symbolId);
         }
-        if (!message.marketId.isZero()) {
-            writer.uint32(24).sint64(message.marketId);
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(24).sint64(message.marketId.toString());
         }
         for (const v of message.symbolCounts) {
-            ListSubscriptionsResponse_SymbolCountEncode.encode(v!, writer.uint32(34).fork()).ldelim();
+            ListSubscriptionsResponse_SymbolCountEncode.encode(v!, writer.uint32(34).fork()).join();
         }
         if (message.exchange !== "") {
             writer.uint32(82).string(message.exchange);
@@ -2005,54 +2128,60 @@ export const ListSubscriptionsResponse_SubscriptionEncode = {
         return writer;
     }
 }, ListSubscriptionsResponse_SubscriptionDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsResponse_Subscription {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsResponse_Subscription {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseListSubscriptionsResponse_Subscription();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.subscriptionId = reader.string();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.symbolId = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.symbolCounts.push(ListSubscriptionsResponse_SymbolCountDecode.decode(reader, reader.uint32()));
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.exchange = reader.string();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.root = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2061,7 +2190,7 @@ function createBaseListSubscriptionsResponse_SymbolCount(): ListSubscriptionsRes
     return { symbol: "", count: 0 };
 }
 export const ListSubscriptionsResponse_SymbolCountEncode = {
-    encode(message: ListSubscriptionsResponse_SymbolCount, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: ListSubscriptionsResponse_SymbolCount, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.symbol !== "") {
             writer.uint32(10).string(message.symbol);
         }
@@ -2071,35 +2200,33 @@ export const ListSubscriptionsResponse_SymbolCountEncode = {
         return writer;
     }
 }, ListSubscriptionsResponse_SymbolCountDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ListSubscriptionsResponse_SymbolCount {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsResponse_SymbolCount {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseListSubscriptionsResponse_SymbolCount();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.count = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
 };
-if (_m0.util.Long !== Long) {
-    _m0.util.Long = Long as any;
-    _m0.configure();
-}

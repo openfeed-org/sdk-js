@@ -1,6 +1,6 @@
 /* eslint-disable */
+import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import Long from "long";
-import _m0 from "protobufjs/minimal";
 import { InstrumentDefinition, InstrumentDefinitionEncode, InstrumentDefinitionDecode } from "./openfeed_instrument";
 /** / Book side */
 export enum BookSide {
@@ -236,6 +236,11 @@ export interface MarketSession {
     monetaryValue: MonetaryValue | undefined;
     /** UTC Timestamp, nano seconds since Unix epoch */
     transactionTime: Long;
+    officialBestBidOffer: OfficialBestBidOffer | undefined;
+    referenceVolatilityPrice: ReferenceVolatilityPrice | undefined;
+    priceLimits: PriceLimits | undefined;
+    marketOpenInterest: MarketOpenInterest | undefined;
+    vwap: Vwap | undefined;
 }
 /** / Snapshot for a market */
 export interface MarketSnapshot {
@@ -314,6 +319,12 @@ export interface MarketSnapshot {
     lowRolling: LowRolling | undefined;
     /** / 'Z' session. Includes all trades, even the ones that do not update Last. */
     zSession: MarketSession | undefined;
+    referenceVolatilityPrice: ReferenceVolatilityPrice | undefined;
+    priceLimits: PriceLimits | undefined;
+    /** / Older previous sessions */
+    sessions: MarketSession[];
+    officialBestBidOffer: OfficialBestBidOffer | undefined;
+    marketOpenInterest: MarketOpenInterest | undefined;
 }
 /** Used by market state to return snapshot. */
 export interface MarketSnapshotResponse {
@@ -387,6 +398,10 @@ export interface MarketUpdate {
     highRolling?: HighRolling | undefined;
     lowRolling?: LowRolling | undefined;
     requestForQuote?: RequestForQuote | undefined;
+    referenceVolatilityPrice?: ReferenceVolatilityPrice | undefined;
+    priceLimits?: PriceLimits | undefined;
+    officialBestBidOffer?: OfficialBestBidOffer | undefined;
+    marketOpenInterest?: MarketOpenInterest | undefined;
 }
 /** / Depth Price Level */
 export interface DepthPriceLevel {
@@ -473,6 +488,17 @@ export interface BestBidOffer {
     regional: boolean;
     /** / True if not persisted in the EOD database. */
     transient: boolean;
+}
+/** / Official Best Bid and Offer. */
+export interface OfficialBestBidOffer {
+    /** / Date only, format 2012-07-04 -> 20120704 */
+    tradeDate: number;
+    /** UTC Timestamp, nano seconds since Unix epoch */
+    transactionTime: Long;
+    /** / Divide by priceDenominator */
+    bidPrice: Long;
+    /** / Divide by priceDenominator */
+    offerPrice: Long;
 }
 /** / Insert a new price level, pushing existing levels down */
 export interface AddPriceLevel {
@@ -790,6 +816,13 @@ export interface OpenInterest {
     tradeDate: number;
     volume: Long;
 }
+/** / Market Open interest */
+export interface MarketOpenInterest {
+    transactionTime: Long;
+    /** Date only, format 2012-07-04 -> 20120704 */
+    tradeDate: number;
+    volume: Long;
+}
 /** / Volume Weighted Average Price */
 export interface Vwap {
     transactionTime: Long;
@@ -848,6 +881,32 @@ export interface CapitalDistributions {
 export interface SharesOutstanding {
     sharesOutstanding: Long;
     transactionTime: Long;
+}
+/** / Price limits. */
+export interface PriceLimits {
+    /** / trade date */
+    tradeDate: number;
+    /** / Transaction time. */
+    transactionTime: Long;
+    /** / Upper price limit for the outright tradable instrument for the current trading day */
+    upperPriceLimit: Long;
+    /** / Lower price limit for the outright tradable instrument for the current trading day */
+    lowerPriceLimit: Long;
+}
+/** / The Reference Volatility Price message provides ‘raw’ strikes. LME volatilities are quoted in Delta space. */
+export interface ReferenceVolatilityPrice {
+    /** / trade date */
+    tradeDate: number;
+    /** / Identifies the ATM strike (1) or delta point (0). */
+    atm: number;
+    /** / Indicates whether the reference volatility was created in Delta or Strike space. */
+    surfaceDomain: string;
+    /** / Volatility */
+    volatility: Long;
+    /** / premium */
+    premium: Long;
+    /** / Option delta for the volatility point. */
+    delta: Long;
 }
 /**  */
 export interface NetAssetValue {
@@ -1027,148 +1086,162 @@ function createBaseOpenfeedMessage(): OpenfeedMessage {
     };
 }
 export const OpenfeedMessageEncode = {
-    encode(message: OpenfeedMessage, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.sendingTime.isZero()) {
-            writer.uint32(8).sint64(message.sendingTime);
+    encode(message: OpenfeedMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.sendingTime.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.sendingTime.toString());
         }
         if (message.totalCount !== 0) {
             writer.uint32(16).sint32(message.totalCount);
         }
-        if (!message.syncSequence.isZero()) {
-            writer.uint32(24).int64(message.syncSequence);
+        if (!message.syncSequence.equals(Long.ZERO)) {
+            writer.uint32(24).int64(message.syncSequence.toString());
         }
         if (message.context !== undefined) {
-            ContextEncode.encode(message.context, writer.uint32(34).fork()).ldelim();
+            ContextEncode.encode(message.context, writer.uint32(34).fork()).join();
         }
         if (message.channelReset !== undefined) {
-            ChannelResetEncode.encode(message.channelReset, writer.uint32(82).fork()).ldelim();
+            ChannelResetEncode.encode(message.channelReset, writer.uint32(82).fork()).join();
         }
         if (message.heartBeat !== undefined) {
-            HeartBeatEncode.encode(message.heartBeat, writer.uint32(90).fork()).ldelim();
+            HeartBeatEncode.encode(message.heartBeat, writer.uint32(90).fork()).join();
         }
         if (message.adminMessage !== undefined) {
-            AdminMessageEncode.encode(message.adminMessage, writer.uint32(98).fork()).ldelim();
+            AdminMessageEncode.encode(message.adminMessage, writer.uint32(98).fork()).join();
         }
         if (message.instrumentDefinition !== undefined) {
-            InstrumentDefinitionEncode.encode(message.instrumentDefinition, writer.uint32(106).fork()).ldelim();
+            InstrumentDefinitionEncode.encode(message.instrumentDefinition, writer.uint32(106).fork()).join();
         }
         if (message.instrumentGroupStatus !== undefined) {
-            InstrumentGroupStatusEncode.encode(message.instrumentGroupStatus, writer.uint32(114).fork()).ldelim();
+            InstrumentGroupStatusEncode.encode(message.instrumentGroupStatus, writer.uint32(114).fork()).join();
         }
         if (message.marketSnapshot !== undefined) {
-            MarketSnapshotEncode.encode(message.marketSnapshot, writer.uint32(122).fork()).ldelim();
+            MarketSnapshotEncode.encode(message.marketSnapshot, writer.uint32(122).fork()).join();
         }
         if (message.marketUpdate !== undefined) {
-            MarketUpdateEncode.encode(message.marketUpdate, writer.uint32(130).fork()).ldelim();
+            MarketUpdateEncode.encode(message.marketUpdate, writer.uint32(130).fork()).join();
         }
         if (message.marketStatus !== undefined) {
-            MarketStatusEncode.encode(message.marketStatus, writer.uint32(138).fork()).ldelim();
+            MarketStatusEncode.encode(message.marketStatus, writer.uint32(138).fork()).join();
         }
         if (message.eodCommoditySummary !== undefined) {
-            EODCommoditySummaryEncode.encode(message.eodCommoditySummary, writer.uint32(146).fork()).ldelim();
+            EODCommoditySummaryEncode.encode(message.eodCommoditySummary, writer.uint32(146).fork()).join();
         }
         if (message.instrumentAction !== undefined) {
-            InstrumentActionEncode.encode(message.instrumentAction, writer.uint32(154).fork()).ldelim();
+            InstrumentActionEncode.encode(message.instrumentAction, writer.uint32(154).fork()).join();
         }
         return writer;
     }
 }, OpenfeedMessageDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): OpenfeedMessage {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): OpenfeedMessage {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseOpenfeedMessage();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.sendingTime = reader.sint64() as Long;
+                    message.sendingTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.totalCount = reader.sint32();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
-                    message.syncSequence = reader.int64() as Long;
+                    message.syncSequence = Long.fromString(reader.int64().toString());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.context = ContextDecode.decode(reader, reader.uint32());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.channelReset = ChannelResetDecode.decode(reader, reader.uint32());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.heartBeat = HeartBeatDecode.decode(reader, reader.uint32());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.adminMessage = AdminMessageDecode.decode(reader, reader.uint32());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.instrumentDefinition = InstrumentDefinitionDecode.decode(reader, reader.uint32());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 114) {
                         break;
                     }
                     message.instrumentGroupStatus = InstrumentGroupStatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.marketSnapshot = MarketSnapshotDecode.decode(reader, reader.uint32());
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 130) {
                         break;
                     }
                     message.marketUpdate = MarketUpdateDecode.decode(reader, reader.uint32());
                     continue;
-                case 17:
+                }
+                case 17: {
                     if (tag !== 138) {
                         break;
                     }
                     message.marketStatus = MarketStatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 18:
+                }
+                case 18: {
                     if (tag !== 146) {
                         break;
                     }
                     message.eodCommoditySummary = EODCommoditySummaryDecode.decode(reader, reader.uint32());
                     continue;
-                case 19:
+                }
+                case 19: {
                     if (tag !== 154) {
                         break;
                     }
                     message.instrumentAction = InstrumentActionDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1177,40 +1250,42 @@ function createBaseChannelReset(): ChannelReset {
     return { channel: 0, transactionTime: Long.ZERO };
 }
 export const ChannelResetEncode = {
-    encode(message: ChannelReset, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: ChannelReset, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.channel !== 0) {
             writer.uint32(8).sint32(message.channel);
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(16).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(16).sint64(message.transactionTime.toString());
         }
         return writer;
     }
 }, ChannelResetDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ChannelReset {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ChannelReset {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseChannelReset();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.channel = reader.sint32();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1219,14 +1294,14 @@ function createBaseHeartBeat(): HeartBeat {
     return { transactionTime: Long.ZERO, status: "", exchange: false, channel: 0 };
 }
 export const HeartBeatEncode = {
-    encode(message: HeartBeat, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(8).sint64(message.transactionTime);
+    encode(message: HeartBeat, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.transactionTime.toString());
         }
         if (message.status !== "") {
             writer.uint32(18).string(message.status);
         }
-        if (message.exchange === true) {
+        if (message.exchange !== false) {
             writer.uint32(24).bool(message.exchange);
         }
         if (message.channel !== 0) {
@@ -1235,42 +1310,46 @@ export const HeartBeatEncode = {
         return writer;
     }
 }, HeartBeatDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): HeartBeat {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): HeartBeat {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseHeartBeat();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.status = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.exchange = reader.bool();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.channel = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1279,9 +1358,9 @@ function createBaseAdminMessage(): AdminMessage {
     return { originationTime: Long.ZERO, source: "", languageCode: "", headLine: "", text: "", status: 0, channel: 0 };
 }
 export const AdminMessageEncode = {
-    encode(message: AdminMessage, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.originationTime.isZero()) {
-            writer.uint32(8).sint64(message.originationTime);
+    encode(message: AdminMessage, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.originationTime.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.originationTime.toString());
         }
         if (message.source !== "") {
             writer.uint32(18).string(message.source);
@@ -1304,60 +1383,67 @@ export const AdminMessageEncode = {
         return writer;
     }
 }, AdminMessageDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): AdminMessage {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): AdminMessage {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseAdminMessage();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.originationTime = reader.sint64() as Long;
+                    message.originationTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.source = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.languageCode = reader.string();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.headLine = reader.string();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.text = reader.string();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 48) {
                         break;
                     }
                     message.status = reader.int32() as any;
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 56) {
                         break;
                     }
                     message.channel = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1366,9 +1452,9 @@ function createBaseInstrumentGroupStatus(): InstrumentGroupStatus {
     return { transactionTime: Long.ZERO, instrumentGroupId: "", tradingStatus: 0, tradeDate: 0, channel: 0 };
 }
 export const InstrumentGroupStatusEncode = {
-    encode(message: InstrumentGroupStatus, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(8).sint64(message.transactionTime);
+    encode(message: InstrumentGroupStatus, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.transactionTime.toString());
         }
         if (message.instrumentGroupId !== "") {
             writer.uint32(18).string(message.instrumentGroupId);
@@ -1385,48 +1471,53 @@ export const InstrumentGroupStatusEncode = {
         return writer;
     }
 }, InstrumentGroupStatusDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentGroupStatus {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentGroupStatus {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentGroupStatus();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.instrumentGroupId = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.tradingStatus = reader.int32() as any;
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
                     message.channel = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1435,9 +1526,9 @@ function createBaseMarketStatus(): MarketStatus {
     return { transactionTime: Long.ZERO, channel: 0, marketWideStatus: 0 };
 }
 export const MarketStatusEncode = {
-    encode(message: MarketStatus, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(8).sint64(message.transactionTime);
+    encode(message: MarketStatus, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.transactionTime.toString());
         }
         if (message.channel !== 0) {
             writer.uint32(16).sint32(message.channel);
@@ -1448,36 +1539,39 @@ export const MarketStatusEncode = {
         return writer;
     }
 }, MarketStatusDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): MarketStatus {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): MarketStatus {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseMarketStatus();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.channel = reader.sint32();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.marketWideStatus = reader.int32() as any;
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1492,18 +1586,18 @@ function createBaseEODCommoditySummary(): EODCommoditySummary {
     };
 }
 export const EODCommoditySummaryEncode = {
-    encode(message: EODCommoditySummary, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: EODCommoditySummary, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.tradeDate !== 0) {
             writer.uint32(8).sint32(message.tradeDate);
         }
         if (message.contractRoot !== "") {
             writer.uint32(18).string(message.contractRoot);
         }
-        if (!message.consolidatedVolume.isZero()) {
-            writer.uint32(24).sint64(message.consolidatedVolume);
+        if (!message.consolidatedVolume.equals(Long.ZERO)) {
+            writer.uint32(24).sint64(message.consolidatedVolume.toString());
         }
-        if (!message.consolidatedOpenInterest.isZero()) {
-            writer.uint32(32).sint64(message.consolidatedOpenInterest);
+        if (!message.consolidatedOpenInterest.equals(Long.ZERO)) {
+            writer.uint32(32).sint64(message.consolidatedOpenInterest.toString());
         }
         if (message.auxiliaryData.length !== 0) {
             writer.uint32(794).bytes(message.auxiliaryData);
@@ -1511,48 +1605,53 @@ export const EODCommoditySummaryEncode = {
         return writer;
     }
 }, EODCommoditySummaryDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): EODCommoditySummary {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): EODCommoditySummary {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseEODCommoditySummary();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.contractRoot = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
-                    message.consolidatedVolume = reader.sint64() as Long;
+                    message.consolidatedVolume = Long.fromString(reader.sint64().toString());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
-                    message.consolidatedOpenInterest = reader.sint64() as Long;
+                    message.consolidatedOpenInterest = Long.fromString(reader.sint64().toString());
                     continue;
-                case 99:
+                }
+                case 99: {
                     if (tag !== 794) {
                         break;
                     }
                     message.auxiliaryData = reader.bytes();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1571,133 +1670,200 @@ function createBaseMarketSession(): MarketSession {
         numberOfTrades: undefined,
         monetaryValue: undefined,
         transactionTime: Long.ZERO,
+        officialBestBidOffer: undefined,
+        referenceVolatilityPrice: undefined,
+        priceLimits: undefined,
+        marketOpenInterest: undefined,
+        vwap: undefined,
     };
 }
 export const MarketSessionEncode = {
-    encode(message: MarketSession, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: MarketSession, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.tradeDate !== 0) {
             writer.uint32(32).sint32(message.tradeDate);
         }
         if (message.open !== undefined) {
-            OpenEncode.encode(message.open, writer.uint32(242).fork()).ldelim();
+            OpenEncode.encode(message.open, writer.uint32(242).fork()).join();
         }
         if (message.high !== undefined) {
-            HighEncode.encode(message.high, writer.uint32(250).fork()).ldelim();
+            HighEncode.encode(message.high, writer.uint32(250).fork()).join();
         }
         if (message.low !== undefined) {
-            LowEncode.encode(message.low, writer.uint32(258).fork()).ldelim();
+            LowEncode.encode(message.low, writer.uint32(258).fork()).join();
         }
         if (message.last !== undefined) {
-            LastEncode.encode(message.last, writer.uint32(282).fork()).ldelim();
+            LastEncode.encode(message.last, writer.uint32(282).fork()).join();
         }
         if (message.volume !== undefined) {
-            VolumeEncode.encode(message.volume, writer.uint32(306).fork()).ldelim();
+            VolumeEncode.encode(message.volume, writer.uint32(306).fork()).join();
         }
         if (message.settlement !== undefined) {
-            SettlementEncode.encode(message.settlement, writer.uint32(314).fork()).ldelim();
+            SettlementEncode.encode(message.settlement, writer.uint32(314).fork()).join();
         }
         if (message.prevSettlement !== undefined) {
-            SettlementEncode.encode(message.prevSettlement, writer.uint32(354).fork()).ldelim();
+            SettlementEncode.encode(message.prevSettlement, writer.uint32(354).fork()).join();
         }
         if (message.openInterest !== undefined) {
-            OpenInterestEncode.encode(message.openInterest, writer.uint32(322).fork()).ldelim();
+            OpenInterestEncode.encode(message.openInterest, writer.uint32(322).fork()).join();
         }
         if (message.numberOfTrades !== undefined) {
-            NumberOfTradesEncode.encode(message.numberOfTrades, writer.uint32(330).fork()).ldelim();
+            NumberOfTradesEncode.encode(message.numberOfTrades, writer.uint32(330).fork()).join();
         }
         if (message.monetaryValue !== undefined) {
-            MonetaryValueEncode.encode(message.monetaryValue, writer.uint32(338).fork()).ldelim();
+            MonetaryValueEncode.encode(message.monetaryValue, writer.uint32(338).fork()).join();
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(344).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(344).sint64(message.transactionTime.toString());
+        }
+        if (message.officialBestBidOffer !== undefined) {
+            OfficialBestBidOfferEncode.encode(message.officialBestBidOffer, writer.uint32(362).fork()).join();
+        }
+        if (message.referenceVolatilityPrice !== undefined) {
+            ReferenceVolatilityPriceEncode.encode(message.referenceVolatilityPrice, writer.uint32(370).fork()).join();
+        }
+        if (message.priceLimits !== undefined) {
+            PriceLimitsEncode.encode(message.priceLimits, writer.uint32(378).fork()).join();
+        }
+        if (message.marketOpenInterest !== undefined) {
+            MarketOpenInterestEncode.encode(message.marketOpenInterest, writer.uint32(386).fork()).join();
+        }
+        if (message.vwap !== undefined) {
+            VwapEncode.encode(message.vwap, writer.uint32(394).fork()).join();
         }
         return writer;
     }
 }, MarketSessionDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): MarketSession {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): MarketSession {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseMarketSession();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 4:
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 30:
+                }
+                case 30: {
                     if (tag !== 242) {
                         break;
                     }
                     message.open = OpenDecode.decode(reader, reader.uint32());
                     continue;
-                case 31:
+                }
+                case 31: {
                     if (tag !== 250) {
                         break;
                     }
                     message.high = HighDecode.decode(reader, reader.uint32());
                     continue;
-                case 32:
+                }
+                case 32: {
                     if (tag !== 258) {
                         break;
                     }
                     message.low = LowDecode.decode(reader, reader.uint32());
                     continue;
-                case 35:
+                }
+                case 35: {
                     if (tag !== 282) {
                         break;
                     }
                     message.last = LastDecode.decode(reader, reader.uint32());
                     continue;
-                case 38:
+                }
+                case 38: {
                     if (tag !== 306) {
                         break;
                     }
                     message.volume = VolumeDecode.decode(reader, reader.uint32());
                     continue;
-                case 39:
+                }
+                case 39: {
                     if (tag !== 314) {
                         break;
                     }
                     message.settlement = SettlementDecode.decode(reader, reader.uint32());
                     continue;
-                case 44:
+                }
+                case 44: {
                     if (tag !== 354) {
                         break;
                     }
                     message.prevSettlement = SettlementDecode.decode(reader, reader.uint32());
                     continue;
-                case 40:
+                }
+                case 40: {
                     if (tag !== 322) {
                         break;
                     }
                     message.openInterest = OpenInterestDecode.decode(reader, reader.uint32());
                     continue;
-                case 41:
+                }
+                case 41: {
                     if (tag !== 330) {
                         break;
                     }
                     message.numberOfTrades = NumberOfTradesDecode.decode(reader, reader.uint32());
                     continue;
-                case 42:
+                }
+                case 42: {
                     if (tag !== 338) {
                         break;
                     }
                     message.monetaryValue = MonetaryValueDecode.decode(reader, reader.uint32());
                     continue;
-                case 43:
+                }
+                case 43: {
                     if (tag !== 344) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
+                }
+                case 45: {
+                    if (tag !== 362) {
+                        break;
+                    }
+                    message.officialBestBidOffer = OfficialBestBidOfferDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 46: {
+                    if (tag !== 370) {
+                        break;
+                    }
+                    message.referenceVolatilityPrice = ReferenceVolatilityPriceDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 47: {
+                    if (tag !== 378) {
+                        break;
+                    }
+                    message.priceLimits = PriceLimitsDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 48: {
+                    if (tag !== 386) {
+                        break;
+                    }
+                    message.marketOpenInterest = MarketOpenInterestDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 49: {
+                    if (tag !== 394) {
+                        break;
+                    }
+                    message.vwap = VwapDecode.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -1743,18 +1909,23 @@ function createBaseMarketSnapshot(): MarketSnapshot {
         highRolling: undefined,
         lowRolling: undefined,
         zSession: undefined,
+        referenceVolatilityPrice: undefined,
+        priceLimits: undefined,
+        sessions: [],
+        officialBestBidOffer: undefined,
+        marketOpenInterest: undefined,
     };
 }
 export const MarketSnapshotEncode = {
-    encode(message: MarketSnapshot, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.marketId.isZero()) {
-            writer.uint32(8).sint64(message.marketId);
+    encode(message: MarketSnapshot, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.marketId.toString());
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(16).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(16).sint64(message.transactionTime.toString());
         }
-        if (!message.marketSequence.isZero()) {
-            writer.uint32(24).int64(message.marketSequence);
+        if (!message.marketSequence.equals(Long.ZERO)) {
+            writer.uint32(24).int64(message.marketSequence.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(32).sint32(message.tradeDate);
@@ -1775,344 +1946,433 @@ export const MarketSnapshotEncode = {
             writer.uint32(72).int32(message.service);
         }
         if (message.instrumentStatus !== undefined) {
-            InstrumentStatusEncode.encode(message.instrumentStatus, writer.uint32(82).fork()).ldelim();
+            InstrumentStatusEncode.encode(message.instrumentStatus, writer.uint32(82).fork()).join();
         }
         if (message.bbo !== undefined) {
-            BestBidOfferEncode.encode(message.bbo, writer.uint32(90).fork()).ldelim();
+            BestBidOfferEncode.encode(message.bbo, writer.uint32(90).fork()).join();
         }
         if (message.index !== undefined) {
-            IndexValueEncode.encode(message.index, writer.uint32(98).fork()).ldelim();
+            IndexValueEncode.encode(message.index, writer.uint32(98).fork()).join();
         }
         for (const v of message.priceLevels) {
-            AddPriceLevelEncode.encode(v!, writer.uint32(106).fork()).ldelim();
+            AddPriceLevelEncode.encode(v!, writer.uint32(106).fork()).join();
         }
         for (const v of message.orders) {
-            AddOrderEncode.encode(v!, writer.uint32(114).fork()).ldelim();
+            AddOrderEncode.encode(v!, writer.uint32(114).fork()).join();
         }
         if (message.news !== undefined) {
-            NewsEncode.encode(message.news, writer.uint32(122).fork()).ldelim();
+            NewsEncode.encode(message.news, writer.uint32(122).fork()).join();
         }
         if (message.open !== undefined) {
-            OpenEncode.encode(message.open, writer.uint32(242).fork()).ldelim();
+            OpenEncode.encode(message.open, writer.uint32(242).fork()).join();
         }
         if (message.high !== undefined) {
-            HighEncode.encode(message.high, writer.uint32(250).fork()).ldelim();
+            HighEncode.encode(message.high, writer.uint32(250).fork()).join();
         }
         if (message.low !== undefined) {
-            LowEncode.encode(message.low, writer.uint32(258).fork()).ldelim();
+            LowEncode.encode(message.low, writer.uint32(258).fork()).join();
         }
         if (message.close !== undefined) {
-            CloseEncode.encode(message.close, writer.uint32(266).fork()).ldelim();
+            CloseEncode.encode(message.close, writer.uint32(266).fork()).join();
         }
         if (message.prevClose !== undefined) {
-            PrevCloseEncode.encode(message.prevClose, writer.uint32(274).fork()).ldelim();
+            PrevCloseEncode.encode(message.prevClose, writer.uint32(274).fork()).join();
         }
         if (message.last !== undefined) {
-            LastEncode.encode(message.last, writer.uint32(282).fork()).ldelim();
+            LastEncode.encode(message.last, writer.uint32(282).fork()).join();
         }
         if (message.yearHigh !== undefined) {
-            YearHighEncode.encode(message.yearHigh, writer.uint32(290).fork()).ldelim();
+            YearHighEncode.encode(message.yearHigh, writer.uint32(290).fork()).join();
         }
         if (message.yearLow !== undefined) {
-            YearLowEncode.encode(message.yearLow, writer.uint32(298).fork()).ldelim();
+            YearLowEncode.encode(message.yearLow, writer.uint32(298).fork()).join();
         }
         if (message.volume !== undefined) {
-            VolumeEncode.encode(message.volume, writer.uint32(306).fork()).ldelim();
+            VolumeEncode.encode(message.volume, writer.uint32(306).fork()).join();
         }
         if (message.settlement !== undefined) {
-            SettlementEncode.encode(message.settlement, writer.uint32(314).fork()).ldelim();
+            SettlementEncode.encode(message.settlement, writer.uint32(314).fork()).join();
         }
         if (message.openInterest !== undefined) {
-            OpenInterestEncode.encode(message.openInterest, writer.uint32(322).fork()).ldelim();
+            OpenInterestEncode.encode(message.openInterest, writer.uint32(322).fork()).join();
         }
         if (message.vwap !== undefined) {
-            VwapEncode.encode(message.vwap, writer.uint32(330).fork()).ldelim();
+            VwapEncode.encode(message.vwap, writer.uint32(330).fork()).join();
         }
         if (message.dividendsIncomeDistributions !== undefined) {
-            DividendsIncomeDistributionsEncode.encode(message.dividendsIncomeDistributions, writer.uint32(338).fork()).ldelim();
+            DividendsIncomeDistributionsEncode.encode(message.dividendsIncomeDistributions, writer.uint32(338).fork()).join();
         }
         if (message.numberOfTrades !== undefined) {
-            NumberOfTradesEncode.encode(message.numberOfTrades, writer.uint32(346).fork()).ldelim();
+            NumberOfTradesEncode.encode(message.numberOfTrades, writer.uint32(346).fork()).join();
         }
         if (message.monetaryValue !== undefined) {
-            MonetaryValueEncode.encode(message.monetaryValue, writer.uint32(354).fork()).ldelim();
+            MonetaryValueEncode.encode(message.monetaryValue, writer.uint32(354).fork()).join();
         }
         if (message.capitalDistributions !== undefined) {
-            CapitalDistributionsEncode.encode(message.capitalDistributions, writer.uint32(362).fork()).ldelim();
+            CapitalDistributionsEncode.encode(message.capitalDistributions, writer.uint32(362).fork()).join();
         }
         if (message.sharesOutstanding !== undefined) {
-            SharesOutstandingEncode.encode(message.sharesOutstanding, writer.uint32(370).fork()).ldelim();
+            SharesOutstandingEncode.encode(message.sharesOutstanding, writer.uint32(370).fork()).join();
         }
         if (message.netAssetValue !== undefined) {
-            NetAssetValueEncode.encode(message.netAssetValue, writer.uint32(378).fork()).ldelim();
+            NetAssetValueEncode.encode(message.netAssetValue, writer.uint32(378).fork()).join();
         }
         if (message.previousSession !== undefined) {
-            MarketSessionEncode.encode(message.previousSession, writer.uint32(386).fork()).ldelim();
+            MarketSessionEncode.encode(message.previousSession, writer.uint32(386).fork()).join();
         }
         if (message.tSession !== undefined) {
-            MarketSessionEncode.encode(message.tSession, writer.uint32(394).fork()).ldelim();
+            MarketSessionEncode.encode(message.tSession, writer.uint32(394).fork()).join();
         }
         if (message.volumeAtPrice !== undefined) {
-            VolumeAtPriceEncode.encode(message.volumeAtPrice, writer.uint32(402).fork()).ldelim();
+            VolumeAtPriceEncode.encode(message.volumeAtPrice, writer.uint32(402).fork()).join();
         }
         if (message.highRolling !== undefined) {
-            HighRollingEncode.encode(message.highRolling, writer.uint32(410).fork()).ldelim();
+            HighRollingEncode.encode(message.highRolling, writer.uint32(410).fork()).join();
         }
         if (message.lowRolling !== undefined) {
-            LowRollingEncode.encode(message.lowRolling, writer.uint32(418).fork()).ldelim();
+            LowRollingEncode.encode(message.lowRolling, writer.uint32(418).fork()).join();
         }
         if (message.zSession !== undefined) {
-            MarketSessionEncode.encode(message.zSession, writer.uint32(426).fork()).ldelim();
+            MarketSessionEncode.encode(message.zSession, writer.uint32(426).fork()).join();
+        }
+        if (message.referenceVolatilityPrice !== undefined) {
+            ReferenceVolatilityPriceEncode.encode(message.referenceVolatilityPrice, writer.uint32(434).fork()).join();
+        }
+        if (message.priceLimits !== undefined) {
+            PriceLimitsEncode.encode(message.priceLimits, writer.uint32(442).fork()).join();
+        }
+        for (const v of message.sessions) {
+            MarketSessionEncode.encode(v!, writer.uint32(450).fork()).join();
+        }
+        if (message.officialBestBidOffer !== undefined) {
+            OfficialBestBidOfferEncode.encode(message.officialBestBidOffer, writer.uint32(458).fork()).join();
+        }
+        if (message.marketOpenInterest !== undefined) {
+            MarketOpenInterestEncode.encode(message.marketOpenInterest, writer.uint32(466).fork()).join();
         }
         return writer;
     }
 }, MarketSnapshotDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): MarketSnapshot {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): MarketSnapshot {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseMarketSnapshot();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
-                    message.marketSequence = reader.int64() as Long;
+                    message.marketSequence = Long.fromString(reader.int64().toString());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
                     message.totalChunks = reader.sint32();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 48) {
                         break;
                     }
                     message.currentChunk = reader.sint32();
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 58) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 64) {
                         break;
                     }
                     message.priceDenominator = reader.sint32();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
                     message.service = reader.int32() as any;
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.instrumentStatus = InstrumentStatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.bbo = BestBidOfferDecode.decode(reader, reader.uint32());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.index = IndexValueDecode.decode(reader, reader.uint32());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.priceLevels.push(AddPriceLevelDecode.decode(reader, reader.uint32()));
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 114) {
                         break;
                     }
                     message.orders.push(AddOrderDecode.decode(reader, reader.uint32()));
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.news = NewsDecode.decode(reader, reader.uint32());
                     continue;
-                case 30:
+                }
+                case 30: {
                     if (tag !== 242) {
                         break;
                     }
                     message.open = OpenDecode.decode(reader, reader.uint32());
                     continue;
-                case 31:
+                }
+                case 31: {
                     if (tag !== 250) {
                         break;
                     }
                     message.high = HighDecode.decode(reader, reader.uint32());
                     continue;
-                case 32:
+                }
+                case 32: {
                     if (tag !== 258) {
                         break;
                     }
                     message.low = LowDecode.decode(reader, reader.uint32());
                     continue;
-                case 33:
+                }
+                case 33: {
                     if (tag !== 266) {
                         break;
                     }
                     message.close = CloseDecode.decode(reader, reader.uint32());
                     continue;
-                case 34:
+                }
+                case 34: {
                     if (tag !== 274) {
                         break;
                     }
                     message.prevClose = PrevCloseDecode.decode(reader, reader.uint32());
                     continue;
-                case 35:
+                }
+                case 35: {
                     if (tag !== 282) {
                         break;
                     }
                     message.last = LastDecode.decode(reader, reader.uint32());
                     continue;
-                case 36:
+                }
+                case 36: {
                     if (tag !== 290) {
                         break;
                     }
                     message.yearHigh = YearHighDecode.decode(reader, reader.uint32());
                     continue;
-                case 37:
+                }
+                case 37: {
                     if (tag !== 298) {
                         break;
                     }
                     message.yearLow = YearLowDecode.decode(reader, reader.uint32());
                     continue;
-                case 38:
+                }
+                case 38: {
                     if (tag !== 306) {
                         break;
                     }
                     message.volume = VolumeDecode.decode(reader, reader.uint32());
                     continue;
-                case 39:
+                }
+                case 39: {
                     if (tag !== 314) {
                         break;
                     }
                     message.settlement = SettlementDecode.decode(reader, reader.uint32());
                     continue;
-                case 40:
+                }
+                case 40: {
                     if (tag !== 322) {
                         break;
                     }
                     message.openInterest = OpenInterestDecode.decode(reader, reader.uint32());
                     continue;
-                case 41:
+                }
+                case 41: {
                     if (tag !== 330) {
                         break;
                     }
                     message.vwap = VwapDecode.decode(reader, reader.uint32());
                     continue;
-                case 42:
+                }
+                case 42: {
                     if (tag !== 338) {
                         break;
                     }
                     message.dividendsIncomeDistributions = DividendsIncomeDistributionsDecode.decode(reader, reader.uint32());
                     continue;
-                case 43:
+                }
+                case 43: {
                     if (tag !== 346) {
                         break;
                     }
                     message.numberOfTrades = NumberOfTradesDecode.decode(reader, reader.uint32());
                     continue;
-                case 44:
+                }
+                case 44: {
                     if (tag !== 354) {
                         break;
                     }
                     message.monetaryValue = MonetaryValueDecode.decode(reader, reader.uint32());
                     continue;
-                case 45:
+                }
+                case 45: {
                     if (tag !== 362) {
                         break;
                     }
                     message.capitalDistributions = CapitalDistributionsDecode.decode(reader, reader.uint32());
                     continue;
-                case 46:
+                }
+                case 46: {
                     if (tag !== 370) {
                         break;
                     }
                     message.sharesOutstanding = SharesOutstandingDecode.decode(reader, reader.uint32());
                     continue;
-                case 47:
+                }
+                case 47: {
                     if (tag !== 378) {
                         break;
                     }
                     message.netAssetValue = NetAssetValueDecode.decode(reader, reader.uint32());
                     continue;
-                case 48:
+                }
+                case 48: {
                     if (tag !== 386) {
                         break;
                     }
                     message.previousSession = MarketSessionDecode.decode(reader, reader.uint32());
                     continue;
-                case 49:
+                }
+                case 49: {
                     if (tag !== 394) {
                         break;
                     }
                     message.tSession = MarketSessionDecode.decode(reader, reader.uint32());
                     continue;
-                case 50:
+                }
+                case 50: {
                     if (tag !== 402) {
                         break;
                     }
                     message.volumeAtPrice = VolumeAtPriceDecode.decode(reader, reader.uint32());
                     continue;
-                case 51:
+                }
+                case 51: {
                     if (tag !== 410) {
                         break;
                     }
                     message.highRolling = HighRollingDecode.decode(reader, reader.uint32());
                     continue;
-                case 52:
+                }
+                case 52: {
                     if (tag !== 418) {
                         break;
                     }
                     message.lowRolling = LowRollingDecode.decode(reader, reader.uint32());
                     continue;
-                case 53:
+                }
+                case 53: {
                     if (tag !== 426) {
                         break;
                     }
                     message.zSession = MarketSessionDecode.decode(reader, reader.uint32());
                     continue;
+                }
+                case 54: {
+                    if (tag !== 434) {
+                        break;
+                    }
+                    message.referenceVolatilityPrice = ReferenceVolatilityPriceDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 55: {
+                    if (tag !== 442) {
+                        break;
+                    }
+                    message.priceLimits = PriceLimitsDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 56: {
+                    if (tag !== 450) {
+                        break;
+                    }
+                    message.sessions.push(MarketSessionDecode.decode(reader, reader.uint32()));
+                    continue;
+                }
+                case 57: {
+                    if (tag !== 458) {
+                        break;
+                    }
+                    message.officialBestBidOffer = OfficialBestBidOfferDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 58: {
+                    if (tag !== 466) {
+                        break;
+                    }
+                    message.marketOpenInterest = MarketOpenInterestDecode.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2121,7 +2381,7 @@ function createBaseMarketSnapshotResponse(): MarketSnapshotResponse {
     return { result: 0, message: "", marketSnapshot: undefined };
 }
 export const MarketSnapshotResponseEncode = {
-    encode(message: MarketSnapshotResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: MarketSnapshotResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.result !== 0) {
             writer.uint32(8).int32(message.result);
         }
@@ -2129,41 +2389,44 @@ export const MarketSnapshotResponseEncode = {
             writer.uint32(18).string(message.message);
         }
         if (message.marketSnapshot !== undefined) {
-            MarketSnapshotEncode.encode(message.marketSnapshot, writer.uint32(26).fork()).ldelim();
+            MarketSnapshotEncode.encode(message.marketSnapshot, writer.uint32(26).fork()).join();
         }
         return writer;
     }
 }, MarketSnapshotResponseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): MarketSnapshotResponse {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): MarketSnapshotResponse {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseMarketSnapshotResponse();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.result = reader.int32() as any;
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.message = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.marketSnapshot = MarketSnapshotDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2214,27 +2477,31 @@ function createBaseMarketUpdate(): MarketUpdate {
         highRolling: undefined,
         lowRolling: undefined,
         requestForQuote: undefined,
+        referenceVolatilityPrice: undefined,
+        priceLimits: undefined,
+        officialBestBidOffer: undefined,
+        marketOpenInterest: undefined,
     };
 }
 export const MarketUpdateEncode = {
-    encode(message: MarketUpdate, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.marketId.isZero()) {
-            writer.uint32(8).sint64(message.marketId);
+    encode(message: MarketUpdate, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.marketId.toString());
         }
         if (message.symbol !== "") {
             writer.uint32(18).string(message.symbol);
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(24).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(24).sint64(message.transactionTime.toString());
         }
-        if (!message.distributionTime.isZero()) {
-            writer.uint32(32).sint64(message.distributionTime);
+        if (!message.distributionTime.equals(Long.ZERO)) {
+            writer.uint32(32).sint64(message.distributionTime.toString());
         }
-        if (!message.marketSequence.isZero()) {
-            writer.uint32(40).sint64(message.marketSequence);
+        if (!message.marketSequence.equals(Long.ZERO)) {
+            writer.uint32(40).sint64(message.marketSequence.toString());
         }
-        if (!message.sourceSequence.isZero()) {
-            writer.uint32(48).sint64(message.sourceSequence);
+        if (!message.sourceSequence.equals(Long.ZERO)) {
+            writer.uint32(48).sint64(message.sourceSequence.toString());
         }
         if (message.originatorId.length !== 0) {
             writer.uint32(58).bytes(message.originatorId);
@@ -2243,392 +2510,476 @@ export const MarketUpdateEncode = {
             writer.uint32(72).sint32(message.priceDenominator);
         }
         if (message.context !== undefined) {
-            ContextEncode.encode(message.context, writer.uint32(82).fork()).ldelim();
+            ContextEncode.encode(message.context, writer.uint32(82).fork()).join();
         }
         if (message.session !== undefined) {
-            MarketSessionEncode.encode(message.session, writer.uint32(90).fork()).ldelim();
+            MarketSessionEncode.encode(message.session, writer.uint32(90).fork()).join();
         }
         if (message.tSession !== undefined) {
-            MarketSessionEncode.encode(message.tSession, writer.uint32(98).fork()).ldelim();
+            MarketSessionEncode.encode(message.tSession, writer.uint32(98).fork()).join();
         }
         if (message.previousSession !== undefined) {
-            MarketSessionEncode.encode(message.previousSession, writer.uint32(106).fork()).ldelim();
+            MarketSessionEncode.encode(message.previousSession, writer.uint32(106).fork()).join();
         }
-        if (message.regional === true) {
+        if (message.regional !== false) {
             writer.uint32(112).bool(message.regional);
         }
         if (message.zSession !== undefined) {
-            MarketSessionEncode.encode(message.zSession, writer.uint32(122).fork()).ldelim();
+            MarketSessionEncode.encode(message.zSession, writer.uint32(122).fork()).join();
         }
         if (message.news !== undefined) {
-            NewsEncode.encode(message.news, writer.uint32(162).fork()).ldelim();
+            NewsEncode.encode(message.news, writer.uint32(162).fork()).join();
         }
         if (message.clearBook !== undefined) {
-            ClearBookEncode.encode(message.clearBook, writer.uint32(170).fork()).ldelim();
+            ClearBookEncode.encode(message.clearBook, writer.uint32(170).fork()).join();
         }
         if (message.instrumentStatus !== undefined) {
-            InstrumentStatusEncode.encode(message.instrumentStatus, writer.uint32(178).fork()).ldelim();
+            InstrumentStatusEncode.encode(message.instrumentStatus, writer.uint32(178).fork()).join();
         }
         if (message.bbo !== undefined) {
-            BestBidOfferEncode.encode(message.bbo, writer.uint32(186).fork()).ldelim();
+            BestBidOfferEncode.encode(message.bbo, writer.uint32(186).fork()).join();
         }
         if (message.depthPriceLevel !== undefined) {
-            DepthPriceLevelEncode.encode(message.depthPriceLevel, writer.uint32(194).fork()).ldelim();
+            DepthPriceLevelEncode.encode(message.depthPriceLevel, writer.uint32(194).fork()).join();
         }
         if (message.depthOrder !== undefined) {
-            DepthOrderEncode.encode(message.depthOrder, writer.uint32(202).fork()).ldelim();
+            DepthOrderEncode.encode(message.depthOrder, writer.uint32(202).fork()).join();
         }
         if (message.index !== undefined) {
-            IndexValueEncode.encode(message.index, writer.uint32(210).fork()).ldelim();
+            IndexValueEncode.encode(message.index, writer.uint32(210).fork()).join();
         }
         if (message.trades !== undefined) {
-            TradesEncode.encode(message.trades, writer.uint32(218).fork()).ldelim();
+            TradesEncode.encode(message.trades, writer.uint32(218).fork()).join();
         }
         if (message.open !== undefined) {
-            OpenEncode.encode(message.open, writer.uint32(226).fork()).ldelim();
+            OpenEncode.encode(message.open, writer.uint32(226).fork()).join();
         }
         if (message.high !== undefined) {
-            HighEncode.encode(message.high, writer.uint32(234).fork()).ldelim();
+            HighEncode.encode(message.high, writer.uint32(234).fork()).join();
         }
         if (message.low !== undefined) {
-            LowEncode.encode(message.low, writer.uint32(242).fork()).ldelim();
+            LowEncode.encode(message.low, writer.uint32(242).fork()).join();
         }
         if (message.close !== undefined) {
-            CloseEncode.encode(message.close, writer.uint32(250).fork()).ldelim();
+            CloseEncode.encode(message.close, writer.uint32(250).fork()).join();
         }
         if (message.prevClose !== undefined) {
-            PrevCloseEncode.encode(message.prevClose, writer.uint32(258).fork()).ldelim();
+            PrevCloseEncode.encode(message.prevClose, writer.uint32(258).fork()).join();
         }
         if (message.last !== undefined) {
-            LastEncode.encode(message.last, writer.uint32(266).fork()).ldelim();
+            LastEncode.encode(message.last, writer.uint32(266).fork()).join();
         }
         if (message.yearHigh !== undefined) {
-            YearHighEncode.encode(message.yearHigh, writer.uint32(274).fork()).ldelim();
+            YearHighEncode.encode(message.yearHigh, writer.uint32(274).fork()).join();
         }
         if (message.yearLow !== undefined) {
-            YearLowEncode.encode(message.yearLow, writer.uint32(282).fork()).ldelim();
+            YearLowEncode.encode(message.yearLow, writer.uint32(282).fork()).join();
         }
         if (message.volume !== undefined) {
-            VolumeEncode.encode(message.volume, writer.uint32(290).fork()).ldelim();
+            VolumeEncode.encode(message.volume, writer.uint32(290).fork()).join();
         }
         if (message.settlement !== undefined) {
-            SettlementEncode.encode(message.settlement, writer.uint32(298).fork()).ldelim();
+            SettlementEncode.encode(message.settlement, writer.uint32(298).fork()).join();
         }
         if (message.openInterest !== undefined) {
-            OpenInterestEncode.encode(message.openInterest, writer.uint32(306).fork()).ldelim();
+            OpenInterestEncode.encode(message.openInterest, writer.uint32(306).fork()).join();
         }
         if (message.vwap !== undefined) {
-            VwapEncode.encode(message.vwap, writer.uint32(314).fork()).ldelim();
+            VwapEncode.encode(message.vwap, writer.uint32(314).fork()).join();
         }
         if (message.dividendsIncomeDistributions !== undefined) {
-            DividendsIncomeDistributionsEncode.encode(message.dividendsIncomeDistributions, writer.uint32(322).fork()).ldelim();
+            DividendsIncomeDistributionsEncode.encode(message.dividendsIncomeDistributions, writer.uint32(322).fork()).join();
         }
         if (message.numberOfTrades !== undefined) {
-            NumberOfTradesEncode.encode(message.numberOfTrades, writer.uint32(330).fork()).ldelim();
+            NumberOfTradesEncode.encode(message.numberOfTrades, writer.uint32(330).fork()).join();
         }
         if (message.monetaryValue !== undefined) {
-            MonetaryValueEncode.encode(message.monetaryValue, writer.uint32(338).fork()).ldelim();
+            MonetaryValueEncode.encode(message.monetaryValue, writer.uint32(338).fork()).join();
         }
         if (message.capitalDistributions !== undefined) {
-            CapitalDistributionsEncode.encode(message.capitalDistributions, writer.uint32(346).fork()).ldelim();
+            CapitalDistributionsEncode.encode(message.capitalDistributions, writer.uint32(346).fork()).join();
         }
         if (message.sharesOutstanding !== undefined) {
-            SharesOutstandingEncode.encode(message.sharesOutstanding, writer.uint32(354).fork()).ldelim();
+            SharesOutstandingEncode.encode(message.sharesOutstanding, writer.uint32(354).fork()).join();
         }
         if (message.netAssetValue !== undefined) {
-            NetAssetValueEncode.encode(message.netAssetValue, writer.uint32(362).fork()).ldelim();
+            NetAssetValueEncode.encode(message.netAssetValue, writer.uint32(362).fork()).join();
         }
         if (message.marketSummary !== undefined) {
-            MarketSummaryEncode.encode(message.marketSummary, writer.uint32(370).fork()).ldelim();
+            MarketSummaryEncode.encode(message.marketSummary, writer.uint32(370).fork()).join();
         }
         if (message.highRolling !== undefined) {
-            HighRollingEncode.encode(message.highRolling, writer.uint32(378).fork()).ldelim();
+            HighRollingEncode.encode(message.highRolling, writer.uint32(378).fork()).join();
         }
         if (message.lowRolling !== undefined) {
-            LowRollingEncode.encode(message.lowRolling, writer.uint32(386).fork()).ldelim();
+            LowRollingEncode.encode(message.lowRolling, writer.uint32(386).fork()).join();
         }
         if (message.requestForQuote !== undefined) {
-            RequestForQuoteEncode.encode(message.requestForQuote, writer.uint32(394).fork()).ldelim();
+            RequestForQuoteEncode.encode(message.requestForQuote, writer.uint32(394).fork()).join();
+        }
+        if (message.referenceVolatilityPrice !== undefined) {
+            ReferenceVolatilityPriceEncode.encode(message.referenceVolatilityPrice, writer.uint32(402).fork()).join();
+        }
+        if (message.priceLimits !== undefined) {
+            PriceLimitsEncode.encode(message.priceLimits, writer.uint32(410).fork()).join();
+        }
+        if (message.officialBestBidOffer !== undefined) {
+            OfficialBestBidOfferEncode.encode(message.officialBestBidOffer, writer.uint32(418).fork()).join();
+        }
+        if (message.marketOpenInterest !== undefined) {
+            MarketOpenInterestEncode.encode(message.marketOpenInterest, writer.uint32(426).fork()).join();
         }
         return writer;
     }
 }, MarketUpdateDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): MarketUpdate {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): MarketUpdate {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseMarketUpdate();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
-                    message.distributionTime = reader.sint64() as Long;
+                    message.distributionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
-                    message.marketSequence = reader.sint64() as Long;
+                    message.marketSequence = Long.fromString(reader.sint64().toString());
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 48) {
                         break;
                     }
-                    message.sourceSequence = reader.sint64() as Long;
+                    message.sourceSequence = Long.fromString(reader.sint64().toString());
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 58) {
                         break;
                     }
                     message.originatorId = reader.bytes();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
                     message.priceDenominator = reader.sint32();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.context = ContextDecode.decode(reader, reader.uint32());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.session = MarketSessionDecode.decode(reader, reader.uint32());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.tSession = MarketSessionDecode.decode(reader, reader.uint32());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.previousSession = MarketSessionDecode.decode(reader, reader.uint32());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
                     message.regional = reader.bool();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.zSession = MarketSessionDecode.decode(reader, reader.uint32());
                     continue;
-                case 20:
+                }
+                case 20: {
                     if (tag !== 162) {
                         break;
                     }
                     message.news = NewsDecode.decode(reader, reader.uint32());
                     continue;
-                case 21:
+                }
+                case 21: {
                     if (tag !== 170) {
                         break;
                     }
                     message.clearBook = ClearBookDecode.decode(reader, reader.uint32());
                     continue;
-                case 22:
+                }
+                case 22: {
                     if (tag !== 178) {
                         break;
                     }
                     message.instrumentStatus = InstrumentStatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 23:
+                }
+                case 23: {
                     if (tag !== 186) {
                         break;
                     }
                     message.bbo = BestBidOfferDecode.decode(reader, reader.uint32());
                     continue;
-                case 24:
+                }
+                case 24: {
                     if (tag !== 194) {
                         break;
                     }
                     message.depthPriceLevel = DepthPriceLevelDecode.decode(reader, reader.uint32());
                     continue;
-                case 25:
+                }
+                case 25: {
                     if (tag !== 202) {
                         break;
                     }
                     message.depthOrder = DepthOrderDecode.decode(reader, reader.uint32());
                     continue;
-                case 26:
+                }
+                case 26: {
                     if (tag !== 210) {
                         break;
                     }
                     message.index = IndexValueDecode.decode(reader, reader.uint32());
                     continue;
-                case 27:
+                }
+                case 27: {
                     if (tag !== 218) {
                         break;
                     }
                     message.trades = TradesDecode.decode(reader, reader.uint32());
                     continue;
-                case 28:
+                }
+                case 28: {
                     if (tag !== 226) {
                         break;
                     }
                     message.open = OpenDecode.decode(reader, reader.uint32());
                     continue;
-                case 29:
+                }
+                case 29: {
                     if (tag !== 234) {
                         break;
                     }
                     message.high = HighDecode.decode(reader, reader.uint32());
                     continue;
-                case 30:
+                }
+                case 30: {
                     if (tag !== 242) {
                         break;
                     }
                     message.low = LowDecode.decode(reader, reader.uint32());
                     continue;
-                case 31:
+                }
+                case 31: {
                     if (tag !== 250) {
                         break;
                     }
                     message.close = CloseDecode.decode(reader, reader.uint32());
                     continue;
-                case 32:
+                }
+                case 32: {
                     if (tag !== 258) {
                         break;
                     }
                     message.prevClose = PrevCloseDecode.decode(reader, reader.uint32());
                     continue;
-                case 33:
+                }
+                case 33: {
                     if (tag !== 266) {
                         break;
                     }
                     message.last = LastDecode.decode(reader, reader.uint32());
                     continue;
-                case 34:
+                }
+                case 34: {
                     if (tag !== 274) {
                         break;
                     }
                     message.yearHigh = YearHighDecode.decode(reader, reader.uint32());
                     continue;
-                case 35:
+                }
+                case 35: {
                     if (tag !== 282) {
                         break;
                     }
                     message.yearLow = YearLowDecode.decode(reader, reader.uint32());
                     continue;
-                case 36:
+                }
+                case 36: {
                     if (tag !== 290) {
                         break;
                     }
                     message.volume = VolumeDecode.decode(reader, reader.uint32());
                     continue;
-                case 37:
+                }
+                case 37: {
                     if (tag !== 298) {
                         break;
                     }
                     message.settlement = SettlementDecode.decode(reader, reader.uint32());
                     continue;
-                case 38:
+                }
+                case 38: {
                     if (tag !== 306) {
                         break;
                     }
                     message.openInterest = OpenInterestDecode.decode(reader, reader.uint32());
                     continue;
-                case 39:
+                }
+                case 39: {
                     if (tag !== 314) {
                         break;
                     }
                     message.vwap = VwapDecode.decode(reader, reader.uint32());
                     continue;
-                case 40:
+                }
+                case 40: {
                     if (tag !== 322) {
                         break;
                     }
                     message.dividendsIncomeDistributions = DividendsIncomeDistributionsDecode.decode(reader, reader.uint32());
                     continue;
-                case 41:
+                }
+                case 41: {
                     if (tag !== 330) {
                         break;
                     }
                     message.numberOfTrades = NumberOfTradesDecode.decode(reader, reader.uint32());
                     continue;
-                case 42:
+                }
+                case 42: {
                     if (tag !== 338) {
                         break;
                     }
                     message.monetaryValue = MonetaryValueDecode.decode(reader, reader.uint32());
                     continue;
-                case 43:
+                }
+                case 43: {
                     if (tag !== 346) {
                         break;
                     }
                     message.capitalDistributions = CapitalDistributionsDecode.decode(reader, reader.uint32());
                     continue;
-                case 44:
+                }
+                case 44: {
                     if (tag !== 354) {
                         break;
                     }
                     message.sharesOutstanding = SharesOutstandingDecode.decode(reader, reader.uint32());
                     continue;
-                case 45:
+                }
+                case 45: {
                     if (tag !== 362) {
                         break;
                     }
                     message.netAssetValue = NetAssetValueDecode.decode(reader, reader.uint32());
                     continue;
-                case 46:
+                }
+                case 46: {
                     if (tag !== 370) {
                         break;
                     }
                     message.marketSummary = MarketSummaryDecode.decode(reader, reader.uint32());
                     continue;
-                case 47:
+                }
+                case 47: {
                     if (tag !== 378) {
                         break;
                     }
                     message.highRolling = HighRollingDecode.decode(reader, reader.uint32());
                     continue;
-                case 48:
+                }
+                case 48: {
                     if (tag !== 386) {
                         break;
                     }
                     message.lowRolling = LowRollingDecode.decode(reader, reader.uint32());
                     continue;
-                case 49:
+                }
+                case 49: {
                     if (tag !== 394) {
                         break;
                     }
                     message.requestForQuote = RequestForQuoteDecode.decode(reader, reader.uint32());
                     continue;
+                }
+                case 50: {
+                    if (tag !== 402) {
+                        break;
+                    }
+                    message.referenceVolatilityPrice = ReferenceVolatilityPriceDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 51: {
+                    if (tag !== 410) {
+                        break;
+                    }
+                    message.priceLimits = PriceLimitsDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 52: {
+                    if (tag !== 418) {
+                        break;
+                    }
+                    message.officialBestBidOffer = OfficialBestBidOfferDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 53: {
+                    if (tag !== 426) {
+                        break;
+                    }
+                    message.marketOpenInterest = MarketOpenInterestDecode.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2637,31 +2988,32 @@ function createBaseDepthPriceLevel(): DepthPriceLevel {
     return { levels: [] };
 }
 export const DepthPriceLevelEncode = {
-    encode(message: DepthPriceLevel, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: DepthPriceLevel, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         for (const v of message.levels) {
-            DepthPriceLevel_EntryEncode.encode(v!, writer.uint32(10).fork()).ldelim();
+            DepthPriceLevel_EntryEncode.encode(v!, writer.uint32(10).fork()).join();
         }
         return writer;
     }
 }, DepthPriceLevelDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): DepthPriceLevel {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): DepthPriceLevel {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseDepthPriceLevel();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.levels.push(DepthPriceLevel_EntryDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2670,49 +3022,52 @@ function createBaseDepthPriceLevel_Entry(): DepthPriceLevel_Entry {
     return { addPriceLevel: undefined, deletePriceLevel: undefined, modifyPriceLevel: undefined };
 }
 export const DepthPriceLevel_EntryEncode = {
-    encode(message: DepthPriceLevel_Entry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: DepthPriceLevel_Entry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.addPriceLevel !== undefined) {
-            AddPriceLevelEncode.encode(message.addPriceLevel, writer.uint32(10).fork()).ldelim();
+            AddPriceLevelEncode.encode(message.addPriceLevel, writer.uint32(10).fork()).join();
         }
         if (message.deletePriceLevel !== undefined) {
-            DeletePriceLevelEncode.encode(message.deletePriceLevel, writer.uint32(18).fork()).ldelim();
+            DeletePriceLevelEncode.encode(message.deletePriceLevel, writer.uint32(18).fork()).join();
         }
         if (message.modifyPriceLevel !== undefined) {
-            ModifyPriceLevelEncode.encode(message.modifyPriceLevel, writer.uint32(26).fork()).ldelim();
+            ModifyPriceLevelEncode.encode(message.modifyPriceLevel, writer.uint32(26).fork()).join();
         }
         return writer;
     }
 }, DepthPriceLevel_EntryDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): DepthPriceLevel_Entry {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): DepthPriceLevel_Entry {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseDepthPriceLevel_Entry();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.addPriceLevel = AddPriceLevelDecode.decode(reader, reader.uint32());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.deletePriceLevel = DeletePriceLevelDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.modifyPriceLevel = ModifyPriceLevelDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2721,31 +3076,32 @@ function createBaseDepthOrder(): DepthOrder {
     return { orders: [] };
 }
 export const DepthOrderEncode = {
-    encode(message: DepthOrder, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: DepthOrder, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         for (const v of message.orders) {
-            DepthOrder_EntryEncode.encode(v!, writer.uint32(10).fork()).ldelim();
+            DepthOrder_EntryEncode.encode(v!, writer.uint32(10).fork()).join();
         }
         return writer;
     }
 }, DepthOrderDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): DepthOrder {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): DepthOrder {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseDepthOrder();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.orders.push(DepthOrder_EntryDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2754,49 +3110,52 @@ function createBaseDepthOrder_Entry(): DepthOrder_Entry {
     return { addOrder: undefined, deleteOrder: undefined, modifyOrder: undefined };
 }
 export const DepthOrder_EntryEncode = {
-    encode(message: DepthOrder_Entry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: DepthOrder_Entry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.addOrder !== undefined) {
-            AddOrderEncode.encode(message.addOrder, writer.uint32(10).fork()).ldelim();
+            AddOrderEncode.encode(message.addOrder, writer.uint32(10).fork()).join();
         }
         if (message.deleteOrder !== undefined) {
-            DeleteOrderEncode.encode(message.deleteOrder, writer.uint32(18).fork()).ldelim();
+            DeleteOrderEncode.encode(message.deleteOrder, writer.uint32(18).fork()).join();
         }
         if (message.modifyOrder !== undefined) {
-            ModifyOrderEncode.encode(message.modifyOrder, writer.uint32(26).fork()).ldelim();
+            ModifyOrderEncode.encode(message.modifyOrder, writer.uint32(26).fork()).join();
         }
         return writer;
     }
 }, DepthOrder_EntryDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): DepthOrder_Entry {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): DepthOrder_Entry {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseDepthOrder_Entry();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.addOrder = AddOrderDecode.decode(reader, reader.uint32());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.deleteOrder = DeleteOrderDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.modifyOrder = ModifyOrderDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2805,9 +3164,9 @@ function createBaseNews(): News {
     return { originationTime: Long.ZERO, source: "", languageCode: "", headLine: "", text: "", symbols: [] };
 }
 export const NewsEncode = {
-    encode(message: News, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.originationTime.isZero()) {
-            writer.uint32(8).sint64(message.originationTime);
+    encode(message: News, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.originationTime.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.originationTime.toString());
         }
         if (message.source !== "") {
             writer.uint32(18).string(message.source);
@@ -2827,54 +3186,60 @@ export const NewsEncode = {
         return writer;
     }
 }, NewsDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): News {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): News {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseNews();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.originationTime = reader.sint64() as Long;
+                    message.originationTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.source = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.languageCode = reader.string();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.headLine = reader.string();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.text = reader.string();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 50) {
                         break;
                     }
                     message.symbols.push(reader.string());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2883,40 +3248,42 @@ function createBaseClearBook(): ClearBook {
     return { reserved: 0, transactionTime: Long.ZERO };
 }
 export const ClearBookEncode = {
-    encode(message: ClearBook, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: ClearBook, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.reserved !== 0) {
             writer.uint32(8).sint32(message.reserved);
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(16).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(16).sint64(message.transactionTime.toString());
         }
         return writer;
     }
 }, ClearBookDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ClearBook {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ClearBook {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseClearBook();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.reserved = reader.sint32();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -2933,15 +3300,15 @@ function createBaseInstrumentStatus(): InstrumentStatus {
     };
 }
 export const InstrumentStatusEncode = {
-    encode(message: InstrumentStatus, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: InstrumentStatus, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradingStatus !== 0) {
             writer.uint32(80).int32(message.tradingStatus);
         }
-        if (!message.openingTime.isZero()) {
-            writer.uint32(88).sint64(message.openingTime);
+        if (!message.openingTime.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.openingTime.toString());
         }
         if (message.note !== "") {
             writer.uint32(98).string(message.note);
@@ -2958,60 +3325,67 @@ export const InstrumentStatusEncode = {
         return writer;
     }
 }, InstrumentStatusDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentStatus {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentStatus {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentStatus();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradingStatus = reader.int32() as any;
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.openingTime = reader.sint64() as Long;
+                    message.openingTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.note = reader.string();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
                     message.regulationSHOShortSalePriceTest = reader.int32() as any;
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
                     message.priorTradingStatus = reader.int32() as any;
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3035,15 +3409,15 @@ function createBaseBestBidOffer(): BestBidOffer {
     };
 }
 export const BestBidOfferEncode = {
-    encode(message: BestBidOffer, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: BestBidOffer, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
-        if (!message.bidPrice.isZero()) {
-            writer.uint32(80).sint64(message.bidPrice);
+        if (!message.bidPrice.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.bidPrice.toString());
         }
-        if (!message.bidQuantity.isZero()) {
-            writer.uint32(88).sint64(message.bidQuantity);
+        if (!message.bidQuantity.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.bidQuantity.toString());
         }
         if (message.bidOrderCount !== 0) {
             writer.uint32(96).sint32(message.bidOrderCount);
@@ -3054,11 +3428,11 @@ export const BestBidOfferEncode = {
         if (message.bidQuoteCondition.length !== 0) {
             writer.uint32(114).bytes(message.bidQuoteCondition);
         }
-        if (!message.offerPrice.isZero()) {
-            writer.uint32(160).sint64(message.offerPrice);
+        if (!message.offerPrice.equals(Long.ZERO)) {
+            writer.uint32(160).sint64(message.offerPrice.toString());
         }
-        if (!message.offerQuantity.isZero()) {
-            writer.uint32(168).sint64(message.offerQuantity);
+        if (!message.offerQuantity.equals(Long.ZERO)) {
+            writer.uint32(168).sint64(message.offerQuantity.toString());
         }
         if (message.offerOrderCount !== 0) {
             writer.uint32(176).sint32(message.offerOrderCount);
@@ -3072,111 +3446,189 @@ export const BestBidOfferEncode = {
         if (message.quoteCondition.length !== 0) {
             writer.uint32(242).bytes(message.quoteCondition);
         }
-        if (message.regional === true) {
+        if (message.regional !== false) {
             writer.uint32(256).bool(message.regional);
         }
-        if (message.transient === true) {
+        if (message.transient !== false) {
             writer.uint32(264).bool(message.transient);
         }
         return writer;
     }
 }, BestBidOfferDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): BestBidOffer {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): BestBidOffer {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseBestBidOffer();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
-                    message.bidPrice = reader.sint64() as Long;
+                    message.bidPrice = Long.fromString(reader.sint64().toString());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.bidQuantity = reader.sint64() as Long;
+                    message.bidQuantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
                     message.bidOrderCount = reader.sint32();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.bidOriginator = reader.bytes();
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 114) {
                         break;
                     }
                     message.bidQuoteCondition = reader.bytes();
                     continue;
-                case 20:
+                }
+                case 20: {
                     if (tag !== 160) {
                         break;
                     }
-                    message.offerPrice = reader.sint64() as Long;
+                    message.offerPrice = Long.fromString(reader.sint64().toString());
                     continue;
-                case 21:
+                }
+                case 21: {
                     if (tag !== 168) {
                         break;
                     }
-                    message.offerQuantity = reader.sint64() as Long;
+                    message.offerQuantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 22:
+                }
+                case 22: {
                     if (tag !== 176) {
                         break;
                     }
                     message.offerOrderCount = reader.sint32();
                     continue;
-                case 23:
+                }
+                case 23: {
                     if (tag !== 186) {
                         break;
                     }
                     message.offerOriginator = reader.bytes();
                     continue;
-                case 24:
+                }
+                case 24: {
                     if (tag !== 194) {
                         break;
                     }
                     message.offerQuoteCondition = reader.bytes();
                     continue;
-                case 30:
+                }
+                case 30: {
                     if (tag !== 242) {
                         break;
                     }
                     message.quoteCondition = reader.bytes();
                     continue;
-                case 32:
+                }
+                case 32: {
                     if (tag !== 256) {
                         break;
                     }
                     message.regional = reader.bool();
                     continue;
-                case 33:
+                }
+                case 33: {
                     if (tag !== 264) {
                         break;
                     }
                     message.transient = reader.bool();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseOfficialBestBidOffer(): OfficialBestBidOffer {
+    return { tradeDate: 0, transactionTime: Long.ZERO, bidPrice: Long.ZERO, offerPrice: Long.ZERO };
+}
+export const OfficialBestBidOfferEncode = {
+    encode(message: OfficialBestBidOffer, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.tradeDate !== 0) {
+            writer.uint32(64).sint32(message.tradeDate);
+        }
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
+        }
+        if (!message.bidPrice.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.bidPrice.toString());
+        }
+        if (!message.offerPrice.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.offerPrice.toString());
+        }
+        return writer;
+    }
+}, OfficialBestBidOfferDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): OfficialBestBidOffer {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseOfficialBestBidOffer();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 8: {
+                    if (tag !== 64) {
+                        break;
+                    }
+                    message.tradeDate = reader.sint32();
+                    continue;
+                }
+                case 9: {
+                    if (tag !== 72) {
+                        break;
+                    }
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 10: {
+                    if (tag !== 80) {
+                        break;
+                    }
+                    message.bidPrice = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 11: {
+                    if (tag !== 88) {
+                        break;
+                    }
+                    message.offerPrice = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3193,9 +3645,9 @@ function createBaseAddPriceLevel(): AddPriceLevel {
     };
 }
 export const AddPriceLevelEncode = {
-    encode(message: AddPriceLevel, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: AddPriceLevel, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.level !== 0) {
             writer.uint32(80).sint32(message.level);
@@ -3203,75 +3655,82 @@ export const AddPriceLevelEncode = {
         if (message.side !== 0) {
             writer.uint32(88).int32(message.side);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(96).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(96).sint64(message.price.toString());
         }
-        if (!message.quantity.isZero()) {
-            writer.uint32(104).sint64(message.quantity);
+        if (!message.quantity.equals(Long.ZERO)) {
+            writer.uint32(104).sint64(message.quantity.toString());
         }
         if (message.orderCount !== 0) {
             writer.uint32(112).sint32(message.orderCount);
         }
-        if (!message.impliedQuantity.isZero()) {
-            writer.uint32(120).sint64(message.impliedQuantity);
+        if (!message.impliedQuantity.equals(Long.ZERO)) {
+            writer.uint32(120).sint64(message.impliedQuantity.toString());
         }
         return writer;
     }
 }, AddPriceLevelDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): AddPriceLevel {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): AddPriceLevel {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseAddPriceLevel();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.level = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
                     message.side = reader.int32() as any;
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
-                    message.quantity = reader.sint64() as Long;
+                    message.quantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
                     message.orderCount = reader.sint32();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
-                    message.impliedQuantity = reader.sint64() as Long;
+                    message.impliedQuantity = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3280,9 +3739,9 @@ function createBaseDeletePriceLevel(): DeletePriceLevel {
     return { transactionTime: Long.ZERO, level: 0, side: 0 };
 }
 export const DeletePriceLevelEncode = {
-    encode(message: DeletePriceLevel, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: DeletePriceLevel, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.level !== 0) {
             writer.uint32(80).sint32(message.level);
@@ -3293,36 +3752,39 @@ export const DeletePriceLevelEncode = {
         return writer;
     }
 }, DeletePriceLevelDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): DeletePriceLevel {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): DeletePriceLevel {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseDeletePriceLevel();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.level = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
                     message.side = reader.int32() as any;
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3339,9 +3801,9 @@ function createBaseModifyPriceLevel(): ModifyPriceLevel {
     };
 }
 export const ModifyPriceLevelEncode = {
-    encode(message: ModifyPriceLevel, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: ModifyPriceLevel, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.level !== 0) {
             writer.uint32(80).sint32(message.level);
@@ -3349,75 +3811,82 @@ export const ModifyPriceLevelEncode = {
         if (message.side !== 0) {
             writer.uint32(88).int32(message.side);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(96).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(96).sint64(message.price.toString());
         }
-        if (!message.quantity.isZero()) {
-            writer.uint32(104).sint64(message.quantity);
+        if (!message.quantity.equals(Long.ZERO)) {
+            writer.uint32(104).sint64(message.quantity.toString());
         }
         if (message.orderCount !== 0) {
             writer.uint32(112).sint32(message.orderCount);
         }
-        if (!message.impliedQuantity.isZero()) {
-            writer.uint32(120).sint64(message.impliedQuantity);
+        if (!message.impliedQuantity.equals(Long.ZERO)) {
+            writer.uint32(120).sint64(message.impliedQuantity.toString());
         }
         return writer;
     }
 }, ModifyPriceLevelDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ModifyPriceLevel {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ModifyPriceLevel {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseModifyPriceLevel();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.level = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
                     message.side = reader.int32() as any;
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
-                    message.quantity = reader.sint64() as Long;
+                    message.quantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
                     message.orderCount = reader.sint32();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
-                    message.impliedQuantity = reader.sint64() as Long;
+                    message.impliedQuantity = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3434,85 +3903,92 @@ function createBaseAddOrder(): AddOrder {
     };
 }
 export const AddOrderEncode = {
-    encode(message: AddOrder, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: AddOrder, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
-        if (!message.orderId.isZero()) {
-            writer.uint32(80).sint64(message.orderId);
+        if (!message.orderId.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.orderId.toString());
         }
         if (message.side !== 0) {
             writer.uint32(88).int32(message.side);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(96).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(96).sint64(message.price.toString());
         }
-        if (!message.quantity.isZero()) {
-            writer.uint32(104).sint64(message.quantity);
+        if (!message.quantity.equals(Long.ZERO)) {
+            writer.uint32(104).sint64(message.quantity.toString());
         }
-        if (message.isImplied === true) {
+        if (message.isImplied !== false) {
             writer.uint32(112).bool(message.isImplied);
         }
-        if (!message.priority.isZero()) {
-            writer.uint32(120).sint64(message.priority);
+        if (!message.priority.equals(Long.ZERO)) {
+            writer.uint32(120).sint64(message.priority.toString());
         }
         return writer;
     }
 }, AddOrderDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): AddOrder {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): AddOrder {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseAddOrder();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
-                    message.orderId = reader.sint64() as Long;
+                    message.orderId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
                     message.side = reader.int32() as any;
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
-                    message.quantity = reader.sint64() as Long;
+                    message.quantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
                     message.isImplied = reader.bool();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
-                    message.priority = reader.sint64() as Long;
+                    message.priority = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3521,12 +3997,12 @@ function createBaseDeleteOrder(): DeleteOrder {
     return { transactionTime: Long.ZERO, orderId: Long.ZERO, side: 0 };
 }
 export const DeleteOrderEncode = {
-    encode(message: DeleteOrder, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: DeleteOrder, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
-        if (!message.orderId.isZero()) {
-            writer.uint32(80).sint64(message.orderId);
+        if (!message.orderId.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.orderId.toString());
         }
         if (message.side !== 0) {
             writer.uint32(88).int32(message.side);
@@ -3534,36 +4010,39 @@ export const DeleteOrderEncode = {
         return writer;
     }
 }, DeleteOrderDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): DeleteOrder {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): DeleteOrder {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseDeleteOrder();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
-                    message.orderId = reader.sint64() as Long;
+                    message.orderId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
                     message.side = reader.int32() as any;
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3580,85 +4059,92 @@ function createBaseModifyOrder(): ModifyOrder {
     };
 }
 export const ModifyOrderEncode = {
-    encode(message: ModifyOrder, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: ModifyOrder, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
-        if (!message.orderId.isZero()) {
-            writer.uint32(80).sint64(message.orderId);
+        if (!message.orderId.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.orderId.toString());
         }
         if (message.side !== 0) {
             writer.uint32(88).int32(message.side);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(96).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(96).sint64(message.price.toString());
         }
-        if (!message.quantity.isZero()) {
-            writer.uint32(104).sint64(message.quantity);
+        if (!message.quantity.equals(Long.ZERO)) {
+            writer.uint32(104).sint64(message.quantity.toString());
         }
-        if (message.isImplied === true) {
+        if (message.isImplied !== false) {
             writer.uint32(112).bool(message.isImplied);
         }
-        if (!message.priority.isZero()) {
-            writer.uint32(120).sint64(message.priority);
+        if (!message.priority.equals(Long.ZERO)) {
+            writer.uint32(120).sint64(message.priority.toString());
         }
         return writer;
     }
 }, ModifyOrderDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ModifyOrder {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ModifyOrder {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseModifyOrder();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
-                    message.orderId = reader.sint64() as Long;
+                    message.orderId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
                     message.side = reader.int32() as any;
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
-                    message.quantity = reader.sint64() as Long;
+                    message.quantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
                     message.isImplied = reader.bool();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
-                    message.priority = reader.sint64() as Long;
+                    message.priority = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3680,130 +4166,142 @@ function createBaseIndexValue(): IndexValue {
     };
 }
 export const IndexValueEncode = {
-    encode(message: IndexValue, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: IndexValue, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.last.isZero()) {
-            writer.uint32(88).sint64(message.last);
+        if (!message.last.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.last.toString());
         }
-        if (!message.volume.isZero()) {
-            writer.uint32(96).sint64(message.volume);
+        if (!message.volume.equals(Long.ZERO)) {
+            writer.uint32(96).sint64(message.volume.toString());
         }
-        if (!message.open.isZero()) {
-            writer.uint32(104).sint64(message.open);
+        if (!message.open.equals(Long.ZERO)) {
+            writer.uint32(104).sint64(message.open.toString());
         }
-        if (!message.settlementOpen.isZero()) {
-            writer.uint32(112).sint64(message.settlementOpen);
+        if (!message.settlementOpen.equals(Long.ZERO)) {
+            writer.uint32(112).sint64(message.settlementOpen.toString());
         }
-        if (!message.specialOpen.isZero()) {
-            writer.uint32(120).sint64(message.specialOpen);
+        if (!message.specialOpen.equals(Long.ZERO)) {
+            writer.uint32(120).sint64(message.specialOpen.toString());
         }
-        if (!message.high.isZero()) {
-            writer.uint32(128).sint64(message.high);
+        if (!message.high.equals(Long.ZERO)) {
+            writer.uint32(128).sint64(message.high.toString());
         }
-        if (!message.low.isZero()) {
-            writer.uint32(136).sint64(message.low);
+        if (!message.low.equals(Long.ZERO)) {
+            writer.uint32(136).sint64(message.low.toString());
         }
-        if (!message.close.isZero()) {
-            writer.uint32(144).sint64(message.close);
+        if (!message.close.equals(Long.ZERO)) {
+            writer.uint32(144).sint64(message.close.toString());
         }
-        if (!message.bid.isZero()) {
-            writer.uint32(152).sint64(message.bid);
+        if (!message.bid.equals(Long.ZERO)) {
+            writer.uint32(152).sint64(message.bid.toString());
         }
-        if (!message.offer.isZero()) {
-            writer.uint32(160).sint64(message.offer);
+        if (!message.offer.equals(Long.ZERO)) {
+            writer.uint32(160).sint64(message.offer.toString());
         }
         return writer;
     }
 }, IndexValueDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): IndexValue {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): IndexValue {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseIndexValue();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.last = reader.sint64() as Long;
+                    message.last = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
-                    message.volume = reader.sint64() as Long;
+                    message.volume = Long.fromString(reader.sint64().toString());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
-                    message.open = reader.sint64() as Long;
+                    message.open = Long.fromString(reader.sint64().toString());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
-                    message.settlementOpen = reader.sint64() as Long;
+                    message.settlementOpen = Long.fromString(reader.sint64().toString());
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
-                    message.specialOpen = reader.sint64() as Long;
+                    message.specialOpen = Long.fromString(reader.sint64().toString());
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 128) {
                         break;
                     }
-                    message.high = reader.sint64() as Long;
+                    message.high = Long.fromString(reader.sint64().toString());
                     continue;
-                case 17:
+                }
+                case 17: {
                     if (tag !== 136) {
                         break;
                     }
-                    message.low = reader.sint64() as Long;
+                    message.low = Long.fromString(reader.sint64().toString());
                     continue;
-                case 18:
+                }
+                case 18: {
                     if (tag !== 144) {
                         break;
                     }
-                    message.close = reader.sint64() as Long;
+                    message.close = Long.fromString(reader.sint64().toString());
                     continue;
-                case 19:
+                }
+                case 19: {
                     if (tag !== 152) {
                         break;
                     }
-                    message.bid = reader.sint64() as Long;
+                    message.bid = Long.fromString(reader.sint64().toString());
                     continue;
-                case 20:
+                }
+                case 20: {
                     if (tag !== 160) {
                         break;
                     }
-                    message.offer = reader.sint64() as Long;
+                    message.offer = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3812,31 +4310,32 @@ function createBaseTrades(): Trades {
     return { trades: [] };
 }
 export const TradesEncode = {
-    encode(message: Trades, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: Trades, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         for (const v of message.trades) {
-            Trades_EntryEncode.encode(v!, writer.uint32(10).fork()).ldelim();
+            Trades_EntryEncode.encode(v!, writer.uint32(10).fork()).join();
         }
         return writer;
     }
 }, TradesDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Trades {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Trades {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTrades();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.trades.push(Trades_EntryDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3845,49 +4344,52 @@ function createBaseTrades_Entry(): Trades_Entry {
     return { trade: undefined, tradeCorrection: undefined, tradeCancel: undefined };
 }
 export const Trades_EntryEncode = {
-    encode(message: Trades_Entry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: Trades_Entry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.trade !== undefined) {
-            TradeEncode.encode(message.trade, writer.uint32(10).fork()).ldelim();
+            TradeEncode.encode(message.trade, writer.uint32(10).fork()).join();
         }
         if (message.tradeCorrection !== undefined) {
-            TradeCorrectionEncode.encode(message.tradeCorrection, writer.uint32(18).fork()).ldelim();
+            TradeCorrectionEncode.encode(message.tradeCorrection, writer.uint32(18).fork()).join();
         }
         if (message.tradeCancel !== undefined) {
-            TradeCancelEncode.encode(message.tradeCancel, writer.uint32(26).fork()).ldelim();
+            TradeCancelEncode.encode(message.tradeCancel, writer.uint32(26).fork()).join();
         }
         return writer;
     }
 }, Trades_EntryDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Trades_Entry {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Trades_Entry {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTrades_Entry();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.trade = TradeDecode.decode(reader, reader.uint32());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.tradeCorrection = TradeCorrectionDecode.decode(reader, reader.uint32());
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.tradeCancel = TradeCancelDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -3925,18 +4427,18 @@ function createBaseTrade(): Trade {
     };
 }
 export const TradeEncode = {
-    encode(message: Trade, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: Trade, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.originatorId.length !== 0) {
             writer.uint32(66).bytes(message.originatorId);
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
-        if (!message.price.isZero()) {
-            writer.uint32(80).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.price.toString());
         }
-        if (!message.quantity.isZero()) {
-            writer.uint32(88).sint64(message.quantity);
+        if (!message.quantity.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.quantity.toString());
         }
         if (message.tradeId.length !== 0) {
             writer.uint32(98).bytes(message.tradeId);
@@ -3953,16 +4455,16 @@ export const TradeEncode = {
         if (message.sellerId.length !== 0) {
             writer.uint32(130).bytes(message.sellerId);
         }
-        if (message.openingTrade === true) {
+        if (message.openingTrade !== false) {
             writer.uint32(136).bool(message.openingTrade);
         }
-        if (message.systemPriced === true) {
+        if (message.systemPriced !== false) {
             writer.uint32(144).bool(message.systemPriced);
         }
-        if (message.marketOnClose === true) {
+        if (message.marketOnClose !== false) {
             writer.uint32(152).bool(message.marketOnClose);
         }
-        if (message.oddLot === true) {
+        if (message.oddLot !== false) {
             writer.uint32(160).bool(message.oddLot);
         }
         if (message.settlementTerms !== 0) {
@@ -3971,11 +4473,11 @@ export const TradeEncode = {
         if (message.crossType !== 0) {
             writer.uint32(176).int32(message.crossType);
         }
-        if (message.byPass === true) {
+        if (message.byPass !== false) {
             writer.uint32(184).bool(message.byPass);
         }
-        if (!message.lastPrice.isZero()) {
-            writer.uint32(192).sint64(message.lastPrice);
+        if (!message.lastPrice.equals(Long.ZERO)) {
+            writer.uint32(192).sint64(message.lastPrice.toString());
         }
         if (message.saleCondition.length !== 0) {
             writer.uint32(202).bytes(message.saleCondition);
@@ -3983,28 +4485,28 @@ export const TradeEncode = {
         if (message.currency !== "") {
             writer.uint32(210).string(message.currency);
         }
-        if (message.doesNotUpdateLast === true) {
+        if (message.doesNotUpdateLast !== false) {
             writer.uint32(216).bool(message.doesNotUpdateLast);
         }
-        if (message.doesNotUpdateVolume === true) {
+        if (message.doesNotUpdateVolume !== false) {
             writer.uint32(224).bool(message.doesNotUpdateVolume);
         }
         if (message.session !== "") {
             writer.uint32(242).string(message.session);
         }
-        if (message.blockTrade === true) {
+        if (message.blockTrade !== false) {
             writer.uint32(248).bool(message.blockTrade);
         }
-        if (!message.distributionTime.isZero()) {
-            writer.uint32(256).sint64(message.distributionTime);
+        if (!message.distributionTime.equals(Long.ZERO)) {
+            writer.uint32(256).sint64(message.distributionTime.toString());
         }
-        if (!message.transactionTime2.isZero()) {
-            writer.uint32(264).sint64(message.transactionTime2);
+        if (!message.transactionTime2.equals(Long.ZERO)) {
+            writer.uint32(264).sint64(message.transactionTime2.toString());
         }
         if (message.consolidatedPriceIndicator !== "") {
             writer.uint32(274).string(message.consolidatedPriceIndicator);
         }
-        if (message.transient === true) {
+        if (message.transient !== false) {
             writer.uint32(280).bool(message.transient);
         }
         if (message.indexShortName !== "") {
@@ -4013,186 +4515,214 @@ export const TradeEncode = {
         return writer;
     }
 }, TradeDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Trade {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Trade {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTrade();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 8:
+                case 8: {
                     if (tag !== 66) {
                         break;
                     }
                     message.originatorId = reader.bytes();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.quantity = reader.sint64() as Long;
+                    message.quantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.tradeId = reader.bytes();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
                     message.side = reader.int32() as any;
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.buyerId = reader.bytes();
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 130) {
                         break;
                     }
                     message.sellerId = reader.bytes();
                     continue;
-                case 17:
+                }
+                case 17: {
                     if (tag !== 136) {
                         break;
                     }
                     message.openingTrade = reader.bool();
                     continue;
-                case 18:
+                }
+                case 18: {
                     if (tag !== 144) {
                         break;
                     }
                     message.systemPriced = reader.bool();
                     continue;
-                case 19:
+                }
+                case 19: {
                     if (tag !== 152) {
                         break;
                     }
                     message.marketOnClose = reader.bool();
                     continue;
-                case 20:
+                }
+                case 20: {
                     if (tag !== 160) {
                         break;
                     }
                     message.oddLot = reader.bool();
                     continue;
-                case 21:
+                }
+                case 21: {
                     if (tag !== 168) {
                         break;
                     }
                     message.settlementTerms = reader.int32() as any;
                     continue;
-                case 22:
+                }
+                case 22: {
                     if (tag !== 176) {
                         break;
                     }
                     message.crossType = reader.int32() as any;
                     continue;
-                case 23:
+                }
+                case 23: {
                     if (tag !== 184) {
                         break;
                     }
                     message.byPass = reader.bool();
                     continue;
-                case 24:
+                }
+                case 24: {
                     if (tag !== 192) {
                         break;
                     }
-                    message.lastPrice = reader.sint64() as Long;
+                    message.lastPrice = Long.fromString(reader.sint64().toString());
                     continue;
-                case 25:
+                }
+                case 25: {
                     if (tag !== 202) {
                         break;
                     }
                     message.saleCondition = reader.bytes();
                     continue;
-                case 26:
+                }
+                case 26: {
                     if (tag !== 210) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
-                case 27:
+                }
+                case 27: {
                     if (tag !== 216) {
                         break;
                     }
                     message.doesNotUpdateLast = reader.bool();
                     continue;
-                case 28:
+                }
+                case 28: {
                     if (tag !== 224) {
                         break;
                     }
                     message.doesNotUpdateVolume = reader.bool();
                     continue;
-                case 30:
+                }
+                case 30: {
                     if (tag !== 242) {
                         break;
                     }
                     message.session = reader.string();
                     continue;
-                case 31:
+                }
+                case 31: {
                     if (tag !== 248) {
                         break;
                     }
                     message.blockTrade = reader.bool();
                     continue;
-                case 32:
+                }
+                case 32: {
                     if (tag !== 256) {
                         break;
                     }
-                    message.distributionTime = reader.sint64() as Long;
+                    message.distributionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 33:
+                }
+                case 33: {
                     if (tag !== 264) {
                         break;
                     }
-                    message.transactionTime2 = reader.sint64() as Long;
+                    message.transactionTime2 = Long.fromString(reader.sint64().toString());
                     continue;
-                case 34:
+                }
+                case 34: {
                     if (tag !== 274) {
                         break;
                     }
                     message.consolidatedPriceIndicator = reader.string();
                     continue;
-                case 35:
+                }
+                case 35: {
                     if (tag !== 280) {
                         break;
                     }
                     message.transient = reader.bool();
                     continue;
-                case 36:
+                }
+                case 36: {
                     if (tag !== 290) {
                         break;
                     }
                     message.indexShortName = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -4225,18 +4755,18 @@ function createBaseTradeCorrection(): TradeCorrection {
     };
 }
 export const TradeCorrectionEncode = {
-    encode(message: TradeCorrection, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: TradeCorrection, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.originatorId.length !== 0) {
             writer.uint32(66).bytes(message.originatorId);
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
-        if (!message.price.isZero()) {
-            writer.uint32(80).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.price.toString());
         }
-        if (!message.quantity.isZero()) {
-            writer.uint32(88).sint64(message.quantity);
+        if (!message.quantity.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.quantity.toString());
         }
         if (message.tradeId.length !== 0) {
             writer.uint32(98).bytes(message.tradeId);
@@ -4253,16 +4783,16 @@ export const TradeCorrectionEncode = {
         if (message.sellerId.length !== 0) {
             writer.uint32(130).bytes(message.sellerId);
         }
-        if (message.openingTrade === true) {
+        if (message.openingTrade !== false) {
             writer.uint32(136).bool(message.openingTrade);
         }
-        if (message.systemPriced === true) {
+        if (message.systemPriced !== false) {
             writer.uint32(144).bool(message.systemPriced);
         }
-        if (message.marketOnClose === true) {
+        if (message.marketOnClose !== false) {
             writer.uint32(152).bool(message.marketOnClose);
         }
-        if (message.oddLot === true) {
+        if (message.oddLot !== false) {
             writer.uint32(160).bool(message.oddLot);
         }
         if (message.settlementTerms !== 0) {
@@ -4271,7 +4801,7 @@ export const TradeCorrectionEncode = {
         if (message.crossType !== 0) {
             writer.uint32(176).int32(message.crossType);
         }
-        if (message.byPass === true) {
+        if (message.byPass !== false) {
             writer.uint32(184).bool(message.byPass);
         }
         if (message.originalTradeId.length !== 0) {
@@ -4283,171 +4813,194 @@ export const TradeCorrectionEncode = {
         if (message.currency !== "") {
             writer.uint32(210).string(message.currency);
         }
-        if (!message.distributionTime.isZero()) {
-            writer.uint32(216).sint64(message.distributionTime);
+        if (!message.distributionTime.equals(Long.ZERO)) {
+            writer.uint32(216).sint64(message.distributionTime.toString());
         }
-        if (!message.transactionTime2.isZero()) {
-            writer.uint32(224).sint64(message.transactionTime2);
+        if (!message.transactionTime2.equals(Long.ZERO)) {
+            writer.uint32(224).sint64(message.transactionTime2.toString());
         }
-        if (!message.originalTradePrice.isZero()) {
-            writer.uint32(232).sint64(message.originalTradePrice);
+        if (!message.originalTradePrice.equals(Long.ZERO)) {
+            writer.uint32(232).sint64(message.originalTradePrice.toString());
         }
-        if (!message.originalTradeQuantity.isZero()) {
-            writer.uint32(240).sint64(message.originalTradeQuantity);
+        if (!message.originalTradeQuantity.equals(Long.ZERO)) {
+            writer.uint32(240).sint64(message.originalTradeQuantity.toString());
         }
         return writer;
     }
 }, TradeCorrectionDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): TradeCorrection {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): TradeCorrection {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTradeCorrection();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 8:
+                case 8: {
                     if (tag !== 66) {
                         break;
                     }
                     message.originatorId = reader.bytes();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.quantity = reader.sint64() as Long;
+                    message.quantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.tradeId = reader.bytes();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
                     message.side = reader.int32() as any;
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.buyerId = reader.bytes();
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 130) {
                         break;
                     }
                     message.sellerId = reader.bytes();
                     continue;
-                case 17:
+                }
+                case 17: {
                     if (tag !== 136) {
                         break;
                     }
                     message.openingTrade = reader.bool();
                     continue;
-                case 18:
+                }
+                case 18: {
                     if (tag !== 144) {
                         break;
                     }
                     message.systemPriced = reader.bool();
                     continue;
-                case 19:
+                }
+                case 19: {
                     if (tag !== 152) {
                         break;
                     }
                     message.marketOnClose = reader.bool();
                     continue;
-                case 20:
+                }
+                case 20: {
                     if (tag !== 160) {
                         break;
                     }
                     message.oddLot = reader.bool();
                     continue;
-                case 21:
+                }
+                case 21: {
                     if (tag !== 168) {
                         break;
                     }
                     message.settlementTerms = reader.int32() as any;
                     continue;
-                case 22:
+                }
+                case 22: {
                     if (tag !== 176) {
                         break;
                     }
                     message.crossType = reader.int32() as any;
                     continue;
-                case 23:
+                }
+                case 23: {
                     if (tag !== 184) {
                         break;
                     }
                     message.byPass = reader.bool();
                     continue;
-                case 24:
+                }
+                case 24: {
                     if (tag !== 194) {
                         break;
                     }
                     message.originalTradeId = reader.bytes();
                     continue;
-                case 25:
+                }
+                case 25: {
                     if (tag !== 202) {
                         break;
                     }
                     message.saleCondition = reader.bytes();
                     continue;
-                case 26:
+                }
+                case 26: {
                     if (tag !== 210) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
-                case 27:
+                }
+                case 27: {
                     if (tag !== 216) {
                         break;
                     }
-                    message.distributionTime = reader.sint64() as Long;
+                    message.distributionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 28:
+                }
+                case 28: {
                     if (tag !== 224) {
                         break;
                     }
-                    message.transactionTime2 = reader.sint64() as Long;
+                    message.transactionTime2 = Long.fromString(reader.sint64().toString());
                     continue;
-                case 29:
+                }
+                case 29: {
                     if (tag !== 232) {
                         break;
                     }
-                    message.originalTradePrice = reader.sint64() as Long;
+                    message.originalTradePrice = Long.fromString(reader.sint64().toString());
                     continue;
-                case 30:
+                }
+                case 30: {
                     if (tag !== 240) {
                         break;
                     }
-                    message.originalTradeQuantity = reader.sint64() as Long;
+                    message.originalTradeQuantity = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -4466,18 +5019,18 @@ function createBaseTradeCancel(): TradeCancel {
     };
 }
 export const TradeCancelEncode = {
-    encode(message: TradeCancel, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: TradeCancel, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.originatorId.length !== 0) {
             writer.uint32(66).bytes(message.originatorId);
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
-        if (!message.correctedTradePrice.isZero()) {
-            writer.uint32(80).sint64(message.correctedTradePrice);
+        if (!message.correctedTradePrice.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.correctedTradePrice.toString());
         }
-        if (!message.correctedTradeQuantity.isZero()) {
-            writer.uint32(88).sint64(message.correctedTradeQuantity);
+        if (!message.correctedTradeQuantity.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.correctedTradeQuantity.toString());
         }
         if (message.tradeId.length !== 0) {
             writer.uint32(98).bytes(message.tradeId);
@@ -4488,81 +5041,90 @@ export const TradeCancelEncode = {
         if (message.currency !== "") {
             writer.uint32(114).string(message.currency);
         }
-        if (!message.distributionTime.isZero()) {
-            writer.uint32(120).sint64(message.distributionTime);
+        if (!message.distributionTime.equals(Long.ZERO)) {
+            writer.uint32(120).sint64(message.distributionTime.toString());
         }
-        if (!message.transactionTime2.isZero()) {
-            writer.uint32(128).sint64(message.transactionTime2);
+        if (!message.transactionTime2.equals(Long.ZERO)) {
+            writer.uint32(128).sint64(message.transactionTime2.toString());
         }
         return writer;
     }
 }, TradeCancelDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): TradeCancel {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): TradeCancel {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTradeCancel();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 8:
+                case 8: {
                     if (tag !== 66) {
                         break;
                     }
                     message.originatorId = reader.bytes();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
-                    message.correctedTradePrice = reader.sint64() as Long;
+                    message.correctedTradePrice = Long.fromString(reader.sint64().toString());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.correctedTradeQuantity = reader.sint64() as Long;
+                    message.correctedTradeQuantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.tradeId = reader.bytes();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.saleCondition = reader.bytes();
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 114) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
-                    message.distributionTime = reader.sint64() as Long;
+                    message.distributionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 128) {
                         break;
                     }
-                    message.transactionTime2 = reader.sint64() as Long;
+                    message.transactionTime2 = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -4571,15 +5133,15 @@ function createBaseOpen(): Open {
     return { transactionTime: Long.ZERO, tradeDate: 0, price: Long.ZERO, OpenCloseSettlementFlag: 0, currency: "" };
 }
 export const OpenEncode = {
-    encode(message: Open, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: Open, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(88).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.price.toString());
         }
         if (message.OpenCloseSettlementFlag !== 0) {
             writer.uint32(96).int32(message.OpenCloseSettlementFlag);
@@ -4590,48 +5152,53 @@ export const OpenEncode = {
         return writer;
     }
 }, OpenDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Open {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Open {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseOpen();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
                     message.OpenCloseSettlementFlag = reader.int32() as any;
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -4640,15 +5207,15 @@ function createBaseHigh(): High {
     return { transactionTime: Long.ZERO, tradeDate: 0, price: Long.ZERO, currency: "" };
 }
 export const HighEncode = {
-    encode(message: High, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: High, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(88).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.price.toString());
         }
         if (message.currency !== "") {
             writer.uint32(98).string(message.currency);
@@ -4656,42 +5223,46 @@ export const HighEncode = {
         return writer;
     }
 }, HighDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): High {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): High {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseHigh();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -4700,15 +5271,15 @@ function createBaseHighRolling(): HighRolling {
     return { transactionTime: Long.ZERO, tradeDate: 0, price: Long.ZERO, currency: "" };
 }
 export const HighRollingEncode = {
-    encode(message: HighRolling, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: HighRolling, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(88).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.price.toString());
         }
         if (message.currency !== "") {
             writer.uint32(98).string(message.currency);
@@ -4716,42 +5287,46 @@ export const HighRollingEncode = {
         return writer;
     }
 }, HighRollingDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): HighRolling {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): HighRolling {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseHighRolling();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -4760,15 +5335,15 @@ function createBaseLow(): Low {
     return { transactionTime: Long.ZERO, tradeDate: 0, price: Long.ZERO, currency: "" };
 }
 export const LowEncode = {
-    encode(message: Low, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: Low, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(88).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.price.toString());
         }
         if (message.currency !== "") {
             writer.uint32(98).string(message.currency);
@@ -4776,42 +5351,46 @@ export const LowEncode = {
         return writer;
     }
 }, LowDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Low {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Low {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseLow();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -4820,15 +5399,15 @@ function createBaseLowRolling(): LowRolling {
     return { transactionTime: Long.ZERO, tradeDate: 0, price: Long.ZERO, currency: "" };
 }
 export const LowRollingEncode = {
-    encode(message: LowRolling, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: LowRolling, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(88).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.price.toString());
         }
         if (message.currency !== "") {
             writer.uint32(98).string(message.currency);
@@ -4836,42 +5415,46 @@ export const LowRollingEncode = {
         return writer;
     }
 }, LowRollingDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): LowRolling {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): LowRolling {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseLowRolling();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -4880,15 +5463,15 @@ function createBaseClose(): Close {
     return { transactionTime: Long.ZERO, tradeDate: 0, price: Long.ZERO, currency: "" };
 }
 export const CloseEncode = {
-    encode(message: Close, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: Close, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(88).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.price.toString());
         }
         if (message.currency !== "") {
             writer.uint32(98).string(message.currency);
@@ -4896,42 +5479,46 @@ export const CloseEncode = {
         return writer;
     }
 }, CloseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Close {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Close {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseClose();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -4940,15 +5527,15 @@ function createBasePrevClose(): PrevClose {
     return { transactionTime: Long.ZERO, tradeDate: 0, price: Long.ZERO, currency: "" };
 }
 export const PrevCloseEncode = {
-    encode(message: PrevClose, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: PrevClose, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(88).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.price.toString());
         }
         if (message.currency !== "") {
             writer.uint32(98).string(message.currency);
@@ -4956,42 +5543,46 @@ export const PrevCloseEncode = {
         return writer;
     }
 }, PrevCloseDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): PrevClose {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): PrevClose {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBasePrevClose();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5000,18 +5591,18 @@ function createBaseLast(): Last {
     return { transactionTime: Long.ZERO, tradeDate: 0, price: Long.ZERO, quantity: Long.ZERO, currency: "", session: "" };
 }
 export const LastEncode = {
-    encode(message: Last, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: Last, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(88).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.price.toString());
         }
-        if (!message.quantity.isZero()) {
-            writer.uint32(96).sint64(message.quantity);
+        if (!message.quantity.equals(Long.ZERO)) {
+            writer.uint32(96).sint64(message.quantity.toString());
         }
         if (message.currency !== "") {
             writer.uint32(106).string(message.currency);
@@ -5022,54 +5613,60 @@ export const LastEncode = {
         return writer;
     }
 }, LastDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Last {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Last {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseLast();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
-                    message.quantity = reader.sint64() as Long;
+                    message.quantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
-                case 30:
+                }
+                case 30: {
                     if (tag !== 242) {
                         break;
                     }
                     message.session = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5078,12 +5675,12 @@ function createBaseYearHigh(): YearHigh {
     return { transactionTime: Long.ZERO, price: Long.ZERO, currency: "" };
 }
 export const YearHighEncode = {
-    encode(message: YearHigh, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: YearHigh, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
-        if (!message.price.isZero()) {
-            writer.uint32(80).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.price.toString());
         }
         if (message.currency !== "") {
             writer.uint32(90).string(message.currency);
@@ -5091,36 +5688,39 @@ export const YearHighEncode = {
         return writer;
     }
 }, YearHighDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): YearHigh {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): YearHigh {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseYearHigh();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5129,12 +5729,12 @@ function createBaseYearLow(): YearLow {
     return { transactionTime: Long.ZERO, price: Long.ZERO, currency: "" };
 }
 export const YearLowEncode = {
-    encode(message: YearLow, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: YearLow, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
-        if (!message.price.isZero()) {
-            writer.uint32(80).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(80).sint64(message.price.toString());
         }
         if (message.currency !== "") {
             writer.uint32(90).string(message.currency);
@@ -5142,36 +5742,39 @@ export const YearLowEncode = {
         return writer;
     }
 }, YearLowDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): YearLow {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): YearLow {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseYearLow();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5180,49 +5783,52 @@ function createBaseVolume(): Volume {
     return { transactionTime: Long.ZERO, tradeDate: 0, volume: Long.ZERO };
 }
 export const VolumeEncode = {
-    encode(message: Volume, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: Volume, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.volume.isZero()) {
-            writer.uint32(88).sint64(message.volume);
+        if (!message.volume.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.volume.toString());
         }
         return writer;
     }
 }, VolumeDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Volume {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Volume {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseVolume();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.volume = reader.sint64() as Long;
+                    message.volume = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5231,49 +5837,52 @@ function createBaseNumberOfTrades(): NumberOfTrades {
     return { transactionTime: Long.ZERO, tradeDate: 0, numberTrades: Long.ZERO };
 }
 export const NumberOfTradesEncode = {
-    encode(message: NumberOfTrades, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: NumberOfTrades, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.numberTrades.isZero()) {
-            writer.uint32(88).sint64(message.numberTrades);
+        if (!message.numberTrades.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.numberTrades.toString());
         }
         return writer;
     }
 }, NumberOfTradesDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): NumberOfTrades {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): NumberOfTrades {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseNumberOfTrades();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.numberTrades = reader.sint64() as Long;
+                    message.numberTrades = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5282,15 +5891,15 @@ function createBaseMonetaryValue(): MonetaryValue {
     return { transactionTime: Long.ZERO, tradeDate: 0, value: Long.ZERO, valueCurrencyCode: "" };
 }
 export const MonetaryValueEncode = {
-    encode(message: MonetaryValue, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: MonetaryValue, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.value.isZero()) {
-            writer.uint32(88).sint64(message.value);
+        if (!message.value.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.value.toString());
         }
         if (message.valueCurrencyCode !== "") {
             writer.uint32(98).string(message.valueCurrencyCode);
@@ -5298,42 +5907,46 @@ export const MonetaryValueEncode = {
         return writer;
     }
 }, MonetaryValueDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): MonetaryValue {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): MonetaryValue {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseMonetaryValue();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.value = reader.sint64() as Long;
+                    message.value = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.valueCurrencyCode = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5352,17 +5965,17 @@ function createBaseSettlement(): Settlement {
     };
 }
 export const SettlementEncode = {
-    encode(message: Settlement, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: Settlement, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.price.isZero()) {
-            writer.uint32(88).sint64(message.price);
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.price.toString());
         }
-        if (message.preliminarySettle === true) {
+        if (message.preliminarySettle !== false) {
             writer.uint32(96).bool(message.preliminarySettle);
         }
         if (message.currency !== "") {
@@ -5374,81 +5987,90 @@ export const SettlementEncode = {
         if (message.session !== "") {
             writer.uint32(122).string(message.session);
         }
-        if (message.transient === true) {
+        if (message.transient !== false) {
             writer.uint32(128).bool(message.transient);
         }
-        if (message.reserved === true) {
+        if (message.reserved !== false) {
             writer.uint32(1016).bool(message.reserved);
         }
         return writer;
     }
 }, SettlementDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Settlement {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Settlement {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseSettlement();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
                     message.preliminarySettle = reader.bool();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.currency = reader.string();
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
                     message.settlementSource = reader.int32() as any;
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.session = reader.string();
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 128) {
                         break;
                     }
                     message.transient = reader.bool();
                     continue;
-                case 127:
+                }
+                case 127: {
                     if (tag !== 1016) {
                         break;
                     }
                     message.reserved = reader.bool();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5457,49 +6079,106 @@ function createBaseOpenInterest(): OpenInterest {
     return { transactionTime: Long.ZERO, tradeDate: 0, volume: Long.ZERO };
 }
 export const OpenInterestEncode = {
-    encode(message: OpenInterest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: OpenInterest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.volume.isZero()) {
-            writer.uint32(88).sint64(message.volume);
+        if (!message.volume.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.volume.toString());
         }
         return writer;
     }
 }, OpenInterestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): OpenInterest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): OpenInterest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseOpenInterest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.volume = reader.sint64() as Long;
+                    message.volume = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseMarketOpenInterest(): MarketOpenInterest {
+    return { transactionTime: Long.ZERO, tradeDate: 0, volume: Long.ZERO };
+}
+export const MarketOpenInterestEncode = {
+    encode(message: MarketOpenInterest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
+        }
+        if (message.tradeDate !== 0) {
+            writer.uint32(80).sint32(message.tradeDate);
+        }
+        if (!message.volume.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.volume.toString());
+        }
+        return writer;
+    }
+}, MarketOpenInterestDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): MarketOpenInterest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseMarketOpenInterest();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 9: {
+                    if (tag !== 72) {
+                        break;
+                    }
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 10: {
+                    if (tag !== 80) {
+                        break;
+                    }
+                    message.tradeDate = reader.sint32();
+                    continue;
+                }
+                case 11: {
+                    if (tag !== 88) {
+                        break;
+                    }
+                    message.volume = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5508,49 +6187,52 @@ function createBaseVwap(): Vwap {
     return { transactionTime: Long.ZERO, tradeDate: 0, vwap: Long.ZERO };
 }
 export const VwapEncode = {
-    encode(message: Vwap, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(72).sint64(message.transactionTime);
+    encode(message: Vwap, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.vwap.isZero()) {
-            writer.uint32(88).sint64(message.vwap);
+        if (!message.vwap.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.vwap.toString());
         }
         return writer;
     }
 }, VwapDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Vwap {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Vwap {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseVwap();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 9:
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.vwap = reader.sint64() as Long;
+                    message.vwap = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5578,9 +6260,9 @@ function createBaseDividendsIncomeDistributions(): DividendsIncomeDistributions 
     };
 }
 export const DividendsIncomeDistributionsEncode = {
-    encode(message: DividendsIncomeDistributions, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(48).sint64(message.transactionTime);
+    encode(message: DividendsIncomeDistributions, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(48).sint64(message.transactionTime.toString());
         }
         if (message.instrumentType !== "") {
             writer.uint32(58).string(message.instrumentType);
@@ -5600,8 +6282,8 @@ export const DividendsIncomeDistributionsEncode = {
         if (message.exDividendDate !== 0) {
             writer.uint32(96).sint32(message.exDividendDate);
         }
-        if (!message.amount.isZero()) {
-            writer.uint32(104).sint64(message.amount);
+        if (!message.amount.equals(Long.ZERO)) {
+            writer.uint32(104).sint64(message.amount.toString());
         }
         if (message.currencyCode !== "") {
             writer.uint32(114).string(message.currencyCode);
@@ -5609,26 +6291,26 @@ export const DividendsIncomeDistributionsEncode = {
         for (const v of message.notes) {
             writer.uint32(122).string(v!);
         }
-        if (!message.totalCashDistribution.isZero()) {
-            writer.uint32(128).sint64(message.totalCashDistribution);
+        if (!message.totalCashDistribution.equals(Long.ZERO)) {
+            writer.uint32(128).sint64(message.totalCashDistribution.toString());
         }
-        if (!message.nonQualifiedCashDistribution.isZero()) {
-            writer.uint32(136).sint64(message.nonQualifiedCashDistribution);
+        if (!message.nonQualifiedCashDistribution.equals(Long.ZERO)) {
+            writer.uint32(136).sint64(message.nonQualifiedCashDistribution.toString());
         }
-        if (!message.qualifiedCashDistribution.isZero()) {
-            writer.uint32(144).sint64(message.qualifiedCashDistribution);
+        if (!message.qualifiedCashDistribution.equals(Long.ZERO)) {
+            writer.uint32(144).sint64(message.qualifiedCashDistribution.toString());
         }
-        if (!message.taxFreeCashDistribution.isZero()) {
-            writer.uint32(152).sint64(message.taxFreeCashDistribution);
+        if (!message.taxFreeCashDistribution.equals(Long.ZERO)) {
+            writer.uint32(152).sint64(message.taxFreeCashDistribution.toString());
         }
-        if (!message.ordinaryForeignTaxCredit.isZero()) {
-            writer.uint32(160).sint64(message.ordinaryForeignTaxCredit);
+        if (!message.ordinaryForeignTaxCredit.equals(Long.ZERO)) {
+            writer.uint32(160).sint64(message.ordinaryForeignTaxCredit.toString());
         }
-        if (!message.qualifiedForeignTaxCredit.isZero()) {
-            writer.uint32(168).sint64(message.qualifiedForeignTaxCredit);
+        if (!message.qualifiedForeignTaxCredit.equals(Long.ZERO)) {
+            writer.uint32(168).sint64(message.qualifiedForeignTaxCredit.toString());
         }
-        if (!message.stockDividendRatio.isZero()) {
-            writer.uint32(176).sint64(message.stockDividendRatio);
+        if (!message.stockDividendRatio.equals(Long.ZERO)) {
+            writer.uint32(176).sint64(message.stockDividendRatio.toString());
         }
         if (message.reinvestDate !== 0) {
             writer.uint32(184).sint32(message.reinvestDate);
@@ -5636,126 +6318,144 @@ export const DividendsIncomeDistributionsEncode = {
         return writer;
     }
 }, DividendsIncomeDistributionsDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): DividendsIncomeDistributions {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): DividendsIncomeDistributions {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseDividendsIncomeDistributions();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 6:
+                case 6: {
                     if (tag !== 48) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 58) {
                         break;
                     }
                     message.instrumentType = reader.string();
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 66) {
                         break;
                     }
                     message.corporateAction = reader.string();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 74) {
                         break;
                     }
                     message.distributionType = reader.string();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.payableDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
                     message.recordDate = reader.sint32();
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
                     message.exDividendDate = reader.sint32();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
-                    message.amount = reader.sint64() as Long;
+                    message.amount = Long.fromString(reader.sint64().toString());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 114) {
                         break;
                     }
                     message.currencyCode = reader.string();
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.notes.push(reader.string());
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 128) {
                         break;
                     }
-                    message.totalCashDistribution = reader.sint64() as Long;
+                    message.totalCashDistribution = Long.fromString(reader.sint64().toString());
                     continue;
-                case 17:
+                }
+                case 17: {
                     if (tag !== 136) {
                         break;
                     }
-                    message.nonQualifiedCashDistribution = reader.sint64() as Long;
+                    message.nonQualifiedCashDistribution = Long.fromString(reader.sint64().toString());
                     continue;
-                case 18:
+                }
+                case 18: {
                     if (tag !== 144) {
                         break;
                     }
-                    message.qualifiedCashDistribution = reader.sint64() as Long;
+                    message.qualifiedCashDistribution = Long.fromString(reader.sint64().toString());
                     continue;
-                case 19:
+                }
+                case 19: {
                     if (tag !== 152) {
                         break;
                     }
-                    message.taxFreeCashDistribution = reader.sint64() as Long;
+                    message.taxFreeCashDistribution = Long.fromString(reader.sint64().toString());
                     continue;
-                case 20:
+                }
+                case 20: {
                     if (tag !== 160) {
                         break;
                     }
-                    message.ordinaryForeignTaxCredit = reader.sint64() as Long;
+                    message.ordinaryForeignTaxCredit = Long.fromString(reader.sint64().toString());
                     continue;
-                case 21:
+                }
+                case 21: {
                     if (tag !== 168) {
                         break;
                     }
-                    message.qualifiedForeignTaxCredit = reader.sint64() as Long;
+                    message.qualifiedForeignTaxCredit = Long.fromString(reader.sint64().toString());
                     continue;
-                case 22:
+                }
+                case 22: {
                     if (tag !== 176) {
                         break;
                     }
-                    message.stockDividendRatio = reader.sint64() as Long;
+                    message.stockDividendRatio = Long.fromString(reader.sint64().toString());
                     continue;
-                case 23:
+                }
+                case 23: {
                     if (tag !== 184) {
                         break;
                     }
                     message.reinvestDate = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5778,9 +6478,9 @@ function createBaseCapitalDistributions(): CapitalDistributions {
     };
 }
 export const CapitalDistributionsEncode = {
-    encode(message: CapitalDistributions, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(64).sint64(message.transactionTime);
+    encode(message: CapitalDistributions, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(64).sint64(message.transactionTime.toString());
         }
         if (message.instrumentType !== "") {
             writer.uint32(74).string(message.instrumentType);
@@ -5797,17 +6497,17 @@ export const CapitalDistributionsEncode = {
         if (message.exDate !== 0) {
             writer.uint32(104).sint32(message.exDate);
         }
-        if (!message.shortTermCapitalGain.isZero()) {
-            writer.uint32(112).sint64(message.shortTermCapitalGain);
+        if (!message.shortTermCapitalGain.equals(Long.ZERO)) {
+            writer.uint32(112).sint64(message.shortTermCapitalGain.toString());
         }
-        if (!message.longTermCapitalGain.isZero()) {
-            writer.uint32(120).sint64(message.longTermCapitalGain);
+        if (!message.longTermCapitalGain.equals(Long.ZERO)) {
+            writer.uint32(120).sint64(message.longTermCapitalGain.toString());
         }
-        if (!message.unallocatedDistributions.isZero()) {
-            writer.uint32(128).sint64(message.unallocatedDistributions);
+        if (!message.unallocatedDistributions.equals(Long.ZERO)) {
+            writer.uint32(128).sint64(message.unallocatedDistributions.toString());
         }
-        if (!message.returnOfCapital.isZero()) {
-            writer.uint32(136).sint64(message.returnOfCapital);
+        if (!message.returnOfCapital.equals(Long.ZERO)) {
+            writer.uint32(136).sint64(message.returnOfCapital.toString());
         }
         if (message.currencyCode !== "") {
             writer.uint32(146).string(message.currencyCode);
@@ -5821,96 +6521,109 @@ export const CapitalDistributionsEncode = {
         return writer;
     }
 }, CapitalDistributionsDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): CapitalDistributions {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): CapitalDistributions {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseCapitalDistributions();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 8:
+                case 8: {
                     if (tag !== 64) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 74) {
                         break;
                     }
                     message.instrumentType = reader.string();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.corporateAction = reader.string();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
                     message.payableDate = reader.sint32();
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 96) {
                         break;
                     }
                     message.recordDate = reader.sint32();
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
                     message.exDate = reader.sint32();
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
-                    message.shortTermCapitalGain = reader.sint64() as Long;
+                    message.shortTermCapitalGain = Long.fromString(reader.sint64().toString());
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 120) {
                         break;
                     }
-                    message.longTermCapitalGain = reader.sint64() as Long;
+                    message.longTermCapitalGain = Long.fromString(reader.sint64().toString());
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 128) {
                         break;
                     }
-                    message.unallocatedDistributions = reader.sint64() as Long;
+                    message.unallocatedDistributions = Long.fromString(reader.sint64().toString());
                     continue;
-                case 17:
+                }
+                case 17: {
                     if (tag !== 136) {
                         break;
                     }
-                    message.returnOfCapital = reader.sint64() as Long;
+                    message.returnOfCapital = Long.fromString(reader.sint64().toString());
                     continue;
-                case 18:
+                }
+                case 18: {
                     if (tag !== 146) {
                         break;
                     }
                     message.currencyCode = reader.string();
                     continue;
-                case 19:
+                }
+                case 19: {
                     if (tag !== 154) {
                         break;
                     }
                     message.notes.push(reader.string());
                     continue;
-                case 20:
+                }
+                case 20: {
                     if (tag !== 160) {
                         break;
                     }
                     message.reinvestDate = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5919,40 +6632,190 @@ function createBaseSharesOutstanding(): SharesOutstanding {
     return { sharesOutstanding: Long.ZERO, transactionTime: Long.ZERO };
 }
 export const SharesOutstandingEncode = {
-    encode(message: SharesOutstanding, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.sharesOutstanding.isZero()) {
-            writer.uint32(8).sint64(message.sharesOutstanding);
+    encode(message: SharesOutstanding, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.sharesOutstanding.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.sharesOutstanding.toString());
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(16).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(16).sint64(message.transactionTime.toString());
         }
         return writer;
     }
 }, SharesOutstandingDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): SharesOutstanding {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): SharesOutstanding {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseSharesOutstanding();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.sharesOutstanding = reader.sint64() as Long;
+                    message.sharesOutstanding = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBasePriceLimits(): PriceLimits {
+    return { tradeDate: 0, transactionTime: Long.ZERO, upperPriceLimit: Long.ZERO, lowerPriceLimit: Long.ZERO };
+}
+export const PriceLimitsEncode = {
+    encode(message: PriceLimits, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.tradeDate !== 0) {
+            writer.uint32(8).sint32(message.tradeDate);
+        }
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(16).sint64(message.transactionTime.toString());
+        }
+        if (!message.upperPriceLimit.equals(Long.ZERO)) {
+            writer.uint32(24).sint64(message.upperPriceLimit.toString());
+        }
+        if (!message.lowerPriceLimit.equals(Long.ZERO)) {
+            writer.uint32(32).sint64(message.lowerPriceLimit.toString());
+        }
+        return writer;
+    }
+}, PriceLimitsDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): PriceLimits {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBasePriceLimits();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.tradeDate = reader.sint32();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.upperPriceLimit = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 32) {
+                        break;
+                    }
+                    message.lowerPriceLimit = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseReferenceVolatilityPrice(): ReferenceVolatilityPrice {
+    return { tradeDate: 0, atm: 0, surfaceDomain: "", volatility: Long.ZERO, premium: Long.ZERO, delta: Long.ZERO };
+}
+export const ReferenceVolatilityPriceEncode = {
+    encode(message: ReferenceVolatilityPrice, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.tradeDate !== 0) {
+            writer.uint32(8).sint32(message.tradeDate);
+        }
+        if (message.atm !== 0) {
+            writer.uint32(16).sint32(message.atm);
+        }
+        if (message.surfaceDomain !== "") {
+            writer.uint32(26).string(message.surfaceDomain);
+        }
+        if (!message.volatility.equals(Long.ZERO)) {
+            writer.uint32(32).sint64(message.volatility.toString());
+        }
+        if (!message.premium.equals(Long.ZERO)) {
+            writer.uint32(40).sint64(message.premium.toString());
+        }
+        if (!message.delta.equals(Long.ZERO)) {
+            writer.uint32(48).sint64(message.delta.toString());
+        }
+        return writer;
+    }
+}, ReferenceVolatilityPriceDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): ReferenceVolatilityPrice {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseReferenceVolatilityPrice();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.tradeDate = reader.sint32();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.atm = reader.sint32();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.surfaceDomain = reader.string();
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 32) {
+                        break;
+                    }
+                    message.volatility = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 5: {
+                    if (tag !== 40) {
+                        break;
+                    }
+                    message.premium = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 6: {
+                    if (tag !== 48) {
+                        break;
+                    }
+                    message.delta = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -5961,40 +6824,42 @@ function createBaseNetAssetValue(): NetAssetValue {
     return { netAssetValue: Long.ZERO, transactionTime: Long.ZERO };
 }
 export const NetAssetValueEncode = {
-    encode(message: NetAssetValue, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.netAssetValue.isZero()) {
-            writer.uint32(8).sint64(message.netAssetValue);
+    encode(message: NetAssetValue, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.netAssetValue.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.netAssetValue.toString());
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(16).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(16).sint64(message.transactionTime.toString());
         }
         return writer;
     }
 }, NetAssetValueDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): NetAssetValue {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): NetAssetValue {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseNetAssetValue();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.netAssetValue = reader.sint64() as Long;
+                    message.netAssetValue = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6025,57 +6890,57 @@ function createBaseMarketSummary(): MarketSummary {
     };
 }
 export const MarketSummaryEncode = {
-    encode(message: MarketSummary, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(8).sint64(message.transactionTime);
+    encode(message: MarketSummary, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.transactionTime.toString());
         }
         if (message.tradingDate !== 0) {
             writer.uint32(16).sint32(message.tradingDate);
         }
-        if (message.startOfDay === true) {
+        if (message.startOfDay !== false) {
             writer.uint32(24).bool(message.startOfDay);
         }
-        if (message.endOfDay === true) {
+        if (message.endOfDay !== false) {
             writer.uint32(32).bool(message.endOfDay);
         }
         if (message.clear !== 0) {
             writer.uint32(40).int32(message.clear);
         }
         if (message.instrumentStatus !== undefined) {
-            InstrumentStatusEncode.encode(message.instrumentStatus, writer.uint32(74).fork()).ldelim();
+            InstrumentStatusEncode.encode(message.instrumentStatus, writer.uint32(74).fork()).join();
         }
         if (message.bbo !== undefined) {
-            BestBidOfferEncode.encode(message.bbo, writer.uint32(82).fork()).ldelim();
+            BestBidOfferEncode.encode(message.bbo, writer.uint32(82).fork()).join();
         }
         if (message.open !== undefined) {
-            OpenEncode.encode(message.open, writer.uint32(90).fork()).ldelim();
+            OpenEncode.encode(message.open, writer.uint32(90).fork()).join();
         }
         if (message.high !== undefined) {
-            HighEncode.encode(message.high, writer.uint32(98).fork()).ldelim();
+            HighEncode.encode(message.high, writer.uint32(98).fork()).join();
         }
         if (message.low !== undefined) {
-            LowEncode.encode(message.low, writer.uint32(106).fork()).ldelim();
+            LowEncode.encode(message.low, writer.uint32(106).fork()).join();
         }
         if (message.close !== undefined) {
-            CloseEncode.encode(message.close, writer.uint32(114).fork()).ldelim();
+            CloseEncode.encode(message.close, writer.uint32(114).fork()).join();
         }
         if (message.prevClose !== undefined) {
-            PrevCloseEncode.encode(message.prevClose, writer.uint32(122).fork()).ldelim();
+            PrevCloseEncode.encode(message.prevClose, writer.uint32(122).fork()).join();
         }
         if (message.last !== undefined) {
-            LastEncode.encode(message.last, writer.uint32(130).fork()).ldelim();
+            LastEncode.encode(message.last, writer.uint32(130).fork()).join();
         }
         if (message.volume !== undefined) {
-            VolumeEncode.encode(message.volume, writer.uint32(138).fork()).ldelim();
+            VolumeEncode.encode(message.volume, writer.uint32(138).fork()).join();
         }
         if (message.settlement !== undefined) {
-            SettlementEncode.encode(message.settlement, writer.uint32(146).fork()).ldelim();
+            SettlementEncode.encode(message.settlement, writer.uint32(146).fork()).join();
         }
         if (message.openInterest !== undefined) {
-            OpenInterestEncode.encode(message.openInterest, writer.uint32(154).fork()).ldelim();
+            OpenInterestEncode.encode(message.openInterest, writer.uint32(154).fork()).join();
         }
         if (message.vwap !== undefined) {
-            VwapEncode.encode(message.vwap, writer.uint32(162).fork()).ldelim();
+            VwapEncode.encode(message.vwap, writer.uint32(162).fork()).join();
         }
         if (message.session !== "") {
             writer.uint32(170).string(message.session);
@@ -6084,152 +6949,173 @@ export const MarketSummaryEncode = {
             writer.uint32(176).int32(message.summaryType);
         }
         if (message.prevVolume !== undefined) {
-            VolumeEncode.encode(message.prevVolume, writer.uint32(186).fork()).ldelim();
+            VolumeEncode.encode(message.prevVolume, writer.uint32(186).fork()).join();
         }
-        if (message.transient === true) {
+        if (message.transient !== false) {
             writer.uint32(192).bool(message.transient);
         }
         return writer;
     }
 }, MarketSummaryDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): MarketSummary {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): MarketSummary {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseMarketSummary();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.tradingDate = reader.sint32();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.startOfDay = reader.bool();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.endOfDay = reader.bool();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
                     message.clear = reader.int32() as any;
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 74) {
                         break;
                     }
                     message.instrumentStatus = InstrumentStatusDecode.decode(reader, reader.uint32());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.bbo = BestBidOfferDecode.decode(reader, reader.uint32());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.open = OpenDecode.decode(reader, reader.uint32());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.high = HighDecode.decode(reader, reader.uint32());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 106) {
                         break;
                     }
                     message.low = LowDecode.decode(reader, reader.uint32());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 114) {
                         break;
                     }
                     message.close = CloseDecode.decode(reader, reader.uint32());
                     continue;
-                case 15:
+                }
+                case 15: {
                     if (tag !== 122) {
                         break;
                     }
                     message.prevClose = PrevCloseDecode.decode(reader, reader.uint32());
                     continue;
-                case 16:
+                }
+                case 16: {
                     if (tag !== 130) {
                         break;
                     }
                     message.last = LastDecode.decode(reader, reader.uint32());
                     continue;
-                case 17:
+                }
+                case 17: {
                     if (tag !== 138) {
                         break;
                     }
                     message.volume = VolumeDecode.decode(reader, reader.uint32());
                     continue;
-                case 18:
+                }
+                case 18: {
                     if (tag !== 146) {
                         break;
                     }
                     message.settlement = SettlementDecode.decode(reader, reader.uint32());
                     continue;
-                case 19:
+                }
+                case 19: {
                     if (tag !== 154) {
                         break;
                     }
                     message.openInterest = OpenInterestDecode.decode(reader, reader.uint32());
                     continue;
-                case 20:
+                }
+                case 20: {
                     if (tag !== 162) {
                         break;
                     }
                     message.vwap = VwapDecode.decode(reader, reader.uint32());
                     continue;
-                case 21:
+                }
+                case 21: {
                     if (tag !== 170) {
                         break;
                     }
                     message.session = reader.string();
                     continue;
-                case 22:
+                }
+                case 22: {
                     if (tag !== 176) {
                         break;
                     }
                     message.summaryType = reader.int32() as any;
                     continue;
-                case 23:
+                }
+                case 23: {
                     if (tag !== 186) {
                         break;
                     }
                     message.prevVolume = VolumeDecode.decode(reader, reader.uint32());
                     continue;
-                case 24:
+                }
+                case 24: {
                     if (tag !== 192) {
                         break;
                     }
                     message.transient = reader.bool();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6238,40 +7124,42 @@ function createBaseContext(): Context {
     return { data: [], tracePoints: [] };
 }
 export const ContextEncode = {
-    encode(message: Context, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: Context, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         for (const v of message.data) {
-            ContextDataEncode.encode(v!, writer.uint32(10).fork()).ldelim();
+            ContextDataEncode.encode(v!, writer.uint32(10).fork()).join();
         }
         for (const v of message.tracePoints) {
-            TracePointEncode.encode(v!, writer.uint32(18).fork()).ldelim();
+            TracePointEncode.encode(v!, writer.uint32(18).fork()).join();
         }
         return writer;
     }
 }, ContextDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Context {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Context {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseContext();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.data.push(ContextDataDecode.decode(reader, reader.uint32()));
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.tracePoints.push(TracePointDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6289,7 +7177,7 @@ function createBaseContextData(): ContextData {
     };
 }
 export const ContextDataEncode = {
-    encode(message: ContextData, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: ContextData, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.id !== "") {
             writer.uint32(10).string(message.id);
         }
@@ -6306,7 +7194,7 @@ export const ContextDataEncode = {
             writer.uint32(64).sint32(message.vsint32);
         }
         if (message.vsint64 !== undefined) {
-            writer.uint32(72).sint64(message.vsint64);
+            writer.uint32(72).sint64(message.vsint64.toString());
         }
         if (message.vfloat !== undefined) {
             writer.uint32(85).float(message.vfloat);
@@ -6317,66 +7205,74 @@ export const ContextDataEncode = {
         return writer;
     }
 }, ContextDataDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): ContextData {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): ContextData {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseContextData();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.id = reader.string();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.vstring = reader.string();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 50) {
                         break;
                     }
                     message.vbytes = reader.bytes();
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 56) {
                         break;
                     }
                     message.vbool = reader.bool();
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 64) {
                         break;
                     }
                     message.vsint32 = reader.sint32();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.vsint64 = reader.sint64() as Long;
+                    message.vsint64 = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 85) {
                         break;
                     }
                     message.vfloat = reader.float();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 89) {
                         break;
                     }
                     message.vdouble = reader.double();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6385,15 +7281,15 @@ function createBaseTracePoint(): TracePoint {
     return { id: "", componentId: "", timestampNs: Long.ZERO, componentLatencyNs: 0 };
 }
 export const TracePointEncode = {
-    encode(message: TracePoint, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: TracePoint, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.id !== "") {
             writer.uint32(10).string(message.id);
         }
         if (message.componentId !== "") {
             writer.uint32(18).string(message.componentId);
         }
-        if (!message.timestampNs.isZero()) {
-            writer.uint32(24).sint64(message.timestampNs);
+        if (!message.timestampNs.equals(Long.ZERO)) {
+            writer.uint32(24).sint64(message.timestampNs.toString());
         }
         if (message.componentLatencyNs !== 0) {
             writer.uint32(32).int32(message.componentLatencyNs);
@@ -6401,42 +7297,46 @@ export const TracePointEncode = {
         return writer;
     }
 }, TracePointDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): TracePoint {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): TracePoint {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTracePoint();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.id = reader.string();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.componentId = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
-                    message.timestampNs = reader.sint64() as Long;
+                    message.timestampNs = Long.fromString(reader.sint64().toString());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.componentLatencyNs = reader.int32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6445,15 +7345,15 @@ function createBaseTCPHistoricalReplayRequest(): TCPHistoricalReplayRequest {
     return { channel: 0, resetNumber: 0, sequence: Long.ZERO, count: 0, requestId: "" };
 }
 export const TCPHistoricalReplayRequestEncode = {
-    encode(message: TCPHistoricalReplayRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: TCPHistoricalReplayRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.channel !== 0) {
             writer.uint32(8).int32(message.channel);
         }
         if (message.resetNumber !== 0) {
             writer.uint32(16).int32(message.resetNumber);
         }
-        if (!message.sequence.isZero()) {
-            writer.uint32(24).int64(message.sequence);
+        if (!message.sequence.equals(Long.ZERO)) {
+            writer.uint32(24).int64(message.sequence.toString());
         }
         if (message.count !== 0) {
             writer.uint32(32).int32(message.count);
@@ -6464,48 +7364,53 @@ export const TCPHistoricalReplayRequestEncode = {
         return writer;
     }
 }, TCPHistoricalReplayRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): TCPHistoricalReplayRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): TCPHistoricalReplayRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseTCPHistoricalReplayRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.channel = reader.int32();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.resetNumber = reader.int32();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
-                    message.sequence = reader.int64() as Long;
+                    message.sequence = Long.fromString(reader.int64().toString());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.count = reader.int32();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.requestId = reader.string();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6514,7 +7419,7 @@ function createBaseSnapshotRequest(): SnapshotRequest {
     return { channel: 0, resetNumber: 0, requestId: "", snapshotRequestTypes: [] };
 }
 export const SnapshotRequestEncode = {
-    encode(message: SnapshotRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: SnapshotRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.channel !== 0) {
             writer.uint32(8).int32(message.channel);
         }
@@ -6528,36 +7433,39 @@ export const SnapshotRequestEncode = {
         for (const v of message.snapshotRequestTypes) {
             writer.int32(v);
         }
-        writer.ldelim();
+        writer.join();
         return writer;
     }
 }, SnapshotRequestDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): SnapshotRequest {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): SnapshotRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseSnapshotRequest();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
                     message.channel = reader.int32();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.resetNumber = reader.int32();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.requestId = reader.string();
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag === 32) {
                         message.snapshotRequestTypes.push(reader.int32() as any);
                         continue;
@@ -6570,11 +7478,12 @@ export const SnapshotRequestEncode = {
                         continue;
                     }
                     break;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6592,94 +7501,102 @@ function createBaseVolumeAtPrice(): VolumeAtPrice {
     };
 }
 export const VolumeAtPriceEncode = {
-    encode(message: VolumeAtPrice, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.marketId.isZero()) {
-            writer.uint32(8).sint64(message.marketId);
+    encode(message: VolumeAtPrice, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.marketId.toString());
         }
         if (message.symbol !== "") {
             writer.uint32(18).string(message.symbol);
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(24).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(24).sint64(message.transactionTime.toString());
         }
-        if (!message.lastPrice.isZero()) {
-            writer.uint32(32).sint64(message.lastPrice);
+        if (!message.lastPrice.equals(Long.ZERO)) {
+            writer.uint32(32).sint64(message.lastPrice.toString());
         }
-        if (!message.lastQuantity.isZero()) {
-            writer.uint32(40).sint64(message.lastQuantity);
+        if (!message.lastQuantity.equals(Long.ZERO)) {
+            writer.uint32(40).sint64(message.lastQuantity.toString());
         }
-        if (!message.lastCumulativeVolume.isZero()) {
-            writer.uint32(48).sint64(message.lastCumulativeVolume);
+        if (!message.lastCumulativeVolume.equals(Long.ZERO)) {
+            writer.uint32(48).sint64(message.lastCumulativeVolume.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(56).sint32(message.tradeDate);
         }
         for (const v of message.priceVolumes) {
-            VolumeAtPrice_PriceLevelVolumeEncode.encode(v!, writer.uint32(66).fork()).ldelim();
+            VolumeAtPrice_PriceLevelVolumeEncode.encode(v!, writer.uint32(66).fork()).join();
         }
         return writer;
     }
 }, VolumeAtPriceDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): VolumeAtPrice {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): VolumeAtPrice {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseVolumeAtPrice();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
-                    message.lastPrice = reader.sint64() as Long;
+                    message.lastPrice = Long.fromString(reader.sint64().toString());
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
-                    message.lastQuantity = reader.sint64() as Long;
+                    message.lastQuantity = Long.fromString(reader.sint64().toString());
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 48) {
                         break;
                     }
-                    message.lastCumulativeVolume = reader.sint64() as Long;
+                    message.lastCumulativeVolume = Long.fromString(reader.sint64().toString());
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 56) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 66) {
                         break;
                     }
                     message.priceVolumes.push(VolumeAtPrice_PriceLevelVolumeDecode.decode(reader, reader.uint32()));
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6688,40 +7605,42 @@ function createBaseVolumeAtPrice_PriceLevelVolume(): VolumeAtPrice_PriceLevelVol
     return { price: Long.ZERO, volume: Long.ZERO };
 }
 export const VolumeAtPrice_PriceLevelVolumeEncode = {
-    encode(message: VolumeAtPrice_PriceLevelVolume, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.price.isZero()) {
-            writer.uint32(8).sint64(message.price);
+    encode(message: VolumeAtPrice_PriceLevelVolume, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.price.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.price.toString());
         }
-        if (!message.volume.isZero()) {
-            writer.uint32(16).sint64(message.volume);
+        if (!message.volume.equals(Long.ZERO)) {
+            writer.uint32(16).sint64(message.volume.toString());
         }
         return writer;
     }
 }, VolumeAtPrice_PriceLevelVolumeDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): VolumeAtPrice_PriceLevelVolume {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): VolumeAtPrice_PriceLevelVolume {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseVolumeAtPrice_PriceLevelVolume();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.price = reader.sint64() as Long;
+                    message.price = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
-                    message.volume = reader.sint64() as Long;
+                    message.volume = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6745,148 +7664,162 @@ function createBaseOhlc(): Ohlc {
     };
 }
 export const OhlcEncode = {
-    encode(message: Ohlc, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.marketId.isZero()) {
-            writer.uint32(8).sint64(message.marketId);
+    encode(message: Ohlc, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.marketId.toString());
         }
         if (message.symbol !== "") {
             writer.uint32(18).string(message.symbol);
         }
         if (message.open !== undefined) {
-            OpenEncode.encode(message.open, writer.uint32(26).fork()).ldelim();
+            OpenEncode.encode(message.open, writer.uint32(26).fork()).join();
         }
         if (message.high !== undefined) {
-            HighEncode.encode(message.high, writer.uint32(34).fork()).ldelim();
+            HighEncode.encode(message.high, writer.uint32(34).fork()).join();
         }
         if (message.low !== undefined) {
-            LowEncode.encode(message.low, writer.uint32(42).fork()).ldelim();
+            LowEncode.encode(message.low, writer.uint32(42).fork()).join();
         }
         if (message.close !== undefined) {
-            CloseEncode.encode(message.close, writer.uint32(50).fork()).ldelim();
+            CloseEncode.encode(message.close, writer.uint32(50).fork()).join();
         }
-        if (!message.volume.isZero()) {
-            writer.uint32(56).sint64(message.volume);
+        if (!message.volume.equals(Long.ZERO)) {
+            writer.uint32(56).sint64(message.volume.toString());
         }
         if (message.priceVolume !== 0) {
             writer.uint32(65).double(message.priceVolume);
         }
-        if (!message.numberTrades.isZero()) {
-            writer.uint32(72).sint64(message.numberTrades);
+        if (!message.numberTrades.equals(Long.ZERO)) {
+            writer.uint32(72).sint64(message.numberTrades.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(80).sint32(message.tradeDate);
         }
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(88).sint64(message.transactionTime);
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(88).sint64(message.transactionTime.toString());
         }
         for (const v of message.tradeIds) {
             writer.uint32(98).string(v!);
         }
-        if (!message.openStartTime.isZero()) {
-            writer.uint32(104).sint64(message.openStartTime);
+        if (!message.openStartTime.equals(Long.ZERO)) {
+            writer.uint32(104).sint64(message.openStartTime.toString());
         }
-        if (!message.closeEndTime.isZero()) {
-            writer.uint32(112).sint64(message.closeEndTime);
+        if (!message.closeEndTime.equals(Long.ZERO)) {
+            writer.uint32(112).sint64(message.closeEndTime.toString());
         }
         return writer;
     }
 }, OhlcDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): Ohlc {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): Ohlc {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseOhlc();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.marketId = reader.sint64() as Long;
+                    message.marketId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 26) {
                         break;
                     }
                     message.open = OpenDecode.decode(reader, reader.uint32());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.high = HighDecode.decode(reader, reader.uint32());
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.low = LowDecode.decode(reader, reader.uint32());
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 50) {
                         break;
                     }
                     message.close = CloseDecode.decode(reader, reader.uint32());
                     continue;
-                case 7:
+                }
+                case 7: {
                     if (tag !== 56) {
                         break;
                     }
-                    message.volume = reader.sint64() as Long;
+                    message.volume = Long.fromString(reader.sint64().toString());
                     continue;
-                case 8:
+                }
+                case 8: {
                     if (tag !== 65) {
                         break;
                     }
                     message.priceVolume = reader.double();
                     continue;
-                case 9:
+                }
+                case 9: {
                     if (tag !== 72) {
                         break;
                     }
-                    message.numberTrades = reader.sint64() as Long;
+                    message.numberTrades = Long.fromString(reader.sint64().toString());
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 80) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 88) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 12:
+                }
+                case 12: {
                     if (tag !== 98) {
                         break;
                     }
                     message.tradeIds.push(reader.string());
                     continue;
-                case 13:
+                }
+                case 13: {
                     if (tag !== 104) {
                         break;
                     }
-                    message.openStartTime = reader.sint64() as Long;
+                    message.openStartTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 14:
+                }
+                case 14: {
                     if (tag !== 112) {
                         break;
                     }
-                    message.closeEndTime = reader.sint64() as Long;
+                    message.closeEndTime = Long.fromString(reader.sint64().toString());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6903,9 +7836,9 @@ function createBaseInstrumentAction(): InstrumentAction {
     };
 }
 export const InstrumentActionEncode = {
-    encode(message: InstrumentAction, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-        if (!message.transactionTime.isZero()) {
-            writer.uint32(8).sint64(message.transactionTime);
+    encode(message: InstrumentAction, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.transactionTime.toString());
         }
         if (message.tradeDate !== 0) {
             writer.uint32(16).sint32(message.tradeDate);
@@ -6920,68 +7853,75 @@ export const InstrumentActionEncode = {
             writer.uint32(42).string(message.oldAlias);
         }
         if (message.instrument !== undefined) {
-            InstrumentDefinitionEncode.encode(message.instrument, writer.uint32(82).fork()).ldelim();
+            InstrumentDefinitionEncode.encode(message.instrument, writer.uint32(82).fork()).join();
         }
         if (message.newInstrument !== undefined) {
-            InstrumentDefinitionEncode.encode(message.newInstrument, writer.uint32(90).fork()).ldelim();
+            InstrumentDefinitionEncode.encode(message.newInstrument, writer.uint32(90).fork()).join();
         }
         return writer;
     }
 }, InstrumentActionDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): InstrumentAction {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentAction {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseInstrumentAction();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 8) {
                         break;
                     }
-                    message.transactionTime = reader.sint64() as Long;
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 16) {
                         break;
                     }
                     message.tradeDate = reader.sint32();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
                     message.action = reader.int32() as any;
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 34) {
                         break;
                     }
                     message.message = reader.string();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 42) {
                         break;
                     }
                     message.oldAlias = reader.string();
                     continue;
-                case 10:
+                }
+                case 10: {
                     if (tag !== 82) {
                         break;
                     }
                     message.instrument = InstrumentDefinitionDecode.decode(reader, reader.uint32());
                     continue;
-                case 11:
+                }
+                case 11: {
                     if (tag !== 90) {
                         break;
                     }
                     message.newInstrument = InstrumentDefinitionDecode.decode(reader, reader.uint32());
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
@@ -6990,15 +7930,15 @@ function createBaseRequestForQuote(): RequestForQuote {
     return { quoteRequestId: "", symbol: "", securityId: Long.ZERO, orderQuantity: 0, quoteType: 0, side: 0 };
 }
 export const RequestForQuoteEncode = {
-    encode(message: RequestForQuote, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    encode(message: RequestForQuote, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
         if (message.quoteRequestId !== "") {
             writer.uint32(10).string(message.quoteRequestId);
         }
         if (message.symbol !== "") {
             writer.uint32(18).string(message.symbol);
         }
-        if (!message.securityId.isZero()) {
-            writer.uint32(24).sint64(message.securityId);
+        if (!message.securityId.equals(Long.ZERO)) {
+            writer.uint32(24).sint64(message.securityId.toString());
         }
         if (message.orderQuantity !== 0) {
             writer.uint32(32).sint32(message.orderQuantity);
@@ -7012,59 +7952,61 @@ export const RequestForQuoteEncode = {
         return writer;
     }
 }, RequestForQuoteDecode = {
-    decode(input: _m0.Reader | Uint8Array, length?: number): RequestForQuote {
-        const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-        let end = length === undefined ? reader.len : reader.pos + length;
+    decode(input: BinaryReader | Uint8Array, length?: number): RequestForQuote {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
         const message = createBaseRequestForQuote();
         while (reader.pos < end) {
             const tag = reader.uint32();
             switch (tag >>> 3) {
-                case 1:
+                case 1: {
                     if (tag !== 10) {
                         break;
                     }
                     message.quoteRequestId = reader.string();
                     continue;
-                case 2:
+                }
+                case 2: {
                     if (tag !== 18) {
                         break;
                     }
                     message.symbol = reader.string();
                     continue;
-                case 3:
+                }
+                case 3: {
                     if (tag !== 24) {
                         break;
                     }
-                    message.securityId = reader.sint64() as Long;
+                    message.securityId = Long.fromString(reader.sint64().toString());
                     continue;
-                case 4:
+                }
+                case 4: {
                     if (tag !== 32) {
                         break;
                     }
                     message.orderQuantity = reader.sint32();
                     continue;
-                case 5:
+                }
+                case 5: {
                     if (tag !== 40) {
                         break;
                     }
                     message.quoteType = reader.sint32();
                     continue;
-                case 6:
+                }
+                case 6: {
                     if (tag !== 48) {
                         break;
                     }
                     message.side = reader.sint32();
                     continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
             }
-            reader.skipType(tag & 7);
+            reader.skip(tag & 7);
         }
         return message;
     }
 };
-if (_m0.util.Long !== Long) {
-    _m0.util.Long = Long as any;
-    _m0.configure();
-}
