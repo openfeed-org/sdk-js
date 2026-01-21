@@ -64,8 +64,8 @@ describe("OpenFeedClient", () => {
     });
 
     afterEach(() => {
-        client.dispose();
         jest.clearAllMocks();
+        client.dispose();
     });
 
     it("should handle login flow correctly", async () => {
@@ -185,7 +185,7 @@ describe("OpenFeedClient", () => {
 
         // Use fake timers to fast-forward the reconnect delay
         jest.useFakeTimers();
-        await jest.advanceTimersByTimeAsync(TIME.RECONNECT);
+        await jest.advanceTimersByTimeAsync(TIME.RECONNECT + TIME.RECONNECT_RANDOMIZE);
         jest.useRealTimers();
 
         expect(disconnectSpy).toHaveBeenCalledTimes(1);

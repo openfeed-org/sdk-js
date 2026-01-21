@@ -176,7 +176,7 @@ export class OpenFeedClient implements IOpenFeedClient {
 
             // eslint-disable-next-line no-await-in-loop
             await new Promise((resolve) => {
-                setTimeout(resolve, TIME.RECONNECT);
+                setTimeout(resolve, TIME.RECONNECT + Math.floor(Math.random() * TIME.RECONNECT_RANDOMIZE));
             });
         }
     };

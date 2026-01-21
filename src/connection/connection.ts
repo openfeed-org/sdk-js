@@ -52,7 +52,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
             let timeoutId = null;
 
             const waitPromise = new Promise((resolve) => {
-                timeoutId = setTimeout(resolve, TIME.CONNECTION_TIMEOUT);
+                timeoutId = setTimeout(resolve, TIME.CONNECTION_TIMEOUT + Math.floor(Math.random() * TIME.RECONNECT_RANDOMIZE));
             });
 
             try {
