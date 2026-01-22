@@ -123,6 +123,16 @@ export class OpenFeedListeners {
         return this.onMessageWithMetadata(message, uniqueSymbols, def);
     };
 
+    public getInstrumentByMarketId = (marketId: Long): InstrumentDefinition | undefined => {
+        const [definition] = this.instrumentByMarketId.get(marketId.toString()) ?? [undefined];
+        return definition;
+    };
+
+    public getSymbolsByMarketId = (marketId: Long): string[] => {
+        const [, symbols] = this.instrumentByMarketId.get(marketId.toString()) ?? [undefined, undefined];
+        return symbols?.map(([symbol]) => symbol) ?? [];
+    };
+
     /* eslint-disable class-methods-use-this */
     public onCleanup: () => void | Promise<void> = () => {};
     public onConnected: (connection: IOpenFeedConnection) => void | Promise<void> = () => {};
