@@ -134,11 +134,11 @@ export class OpenFeedListeners {
     };
 
     /* eslint-disable class-methods-use-this */
-    public onCleanup: () => void | Promise<void> = () => {};
+    public onCleanup: () => void | Promise<void>;
     public onConnected: (connection: IOpenFeedConnection) => void | Promise<void> = () => {};
     public onCredentialsRejected: () => void | Promise<void> = () => {};
     public onDisconnected: () => void | Promise<void> = () => {};
-    public onMessage: (message: OpenfeedGatewayMessage) => void | Promise<void> = () => {};
+    public onMessage: (message: OpenfeedGatewayMessage) => void | Promise<void>;
     public onMessageWithMetadata: (
         message: OpenfeedGatewayMessage,
         symbolNames: string[],

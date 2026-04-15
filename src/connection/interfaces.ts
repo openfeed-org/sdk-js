@@ -6,6 +6,7 @@ import type {
     InstrumentReferenceRequest,
     InstrumentReferenceResponse,
     InstrumentRequest,
+    OpenfeedGatewayRequest,
     SubscriptionType,
 } from "@gen/openfeed_api";
 import { OptionalUndefined } from "@src/utilities/messages";
@@ -13,6 +14,12 @@ import type { InstrumentDefinition } from "@gen/openfeed_instrument";
 
 export type OpenFeedInstrumentRequest = Omit<OptionalUndefined<InstrumentRequest>, "correlationId" | "token" | "version">;
 export type OpenFeedInstrumentReferenceRequest = Omit<OptionalUndefined<InstrumentReferenceRequest>, "correlationId" | "token">;
+
+type OmitDistributive<T, K extends PropertyKey> = T extends any ? (T extends object ? (T extends Long ? Long : Id<OmitRecursively<T, K>>) : T) : never;
+type Id<T> = {} & { [P in keyof T] : T[P]} // Cosmetic use only makes the tooltips expad the type can be removed 
+type OmitRecursively<T, K extends PropertyKey> = Omit<{ [P in keyof T]: OmitDistributive<T[P], K> }, K>;
+
+export type OpenfeedRequest = OmitRecursively<Omit<OpenfeedGatewayRequest, "loginRequest" | "logoutRequest">, "correlationId" | "token">;
 
 export interface IOpenFeedConnection {
     subscribe: (
@@ -29,6 +36,8 @@ export interface IOpenFeedConnection {
     getExchanges: () => Promise<ExchangeResponse_Exchange[]>;
     getInstrument: (request: OpenFeedInstrumentRequest) => Promise<InstrumentDefinition[]>;
     getInstrumentReference: (request: OpenFeedInstrumentReferenceRequest) => Promise<InstrumentReferenceResponse>;
+
+    send(msg: OpenfeedRequest): Long;
 }
 
 export interface IOpenFeedClient {

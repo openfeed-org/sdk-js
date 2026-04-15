@@ -9,6 +9,7 @@ import type {
     InstrumentReferenceRequest,
     InstrumentReferenceResponse,
     InstrumentRequest,
+    OpenfeedGatewayRequest,
     SubscriptionRequest,
     SubscriptionRequest_Request,
     SubscriptionType,
@@ -20,7 +21,7 @@ import { ResolutionSource } from "@src/utilities/async";
 import { receive, send } from "@src/utilities/communication";
 import { CorrelationId } from "@src/utilities/correlation_id";
 import { TIME } from "@src/utilities/constants";
-import { IOpenFeedConnection, IOpenFeedLogger, OpenFeedInstrumentReferenceRequest, OpenFeedInstrumentRequest } from "./interfaces";
+import { IOpenFeedConnection, IOpenFeedLogger, OpenFeedInstrumentReferenceRequest, OpenFeedInstrumentRequest, OpenfeedRequest } from "./interfaces";
 import { OpenFeedListeners } from "./listeners";
 import { DuplicateLoginError, ConnectionDisposedError } from "./errors";
 
@@ -288,6 +289,22 @@ export class OpenFeedConnection implements IOpenFeedConnection {
             this.subscriptionRequests.delete(originalRequest.correlationId.toString());
         }
     }
+
+    send = (msg: OpenfeedRequest) => {
+        const correlationId = CorrelationId.create();
+        const token = this.connectionToken;
+
+        const msg2: OpenfeedGatewayRequest = {};
+        if (msg.exchangeRequest !== undefined) msg2.exchangeRequest = { ...msg.exchangeRequest, correlationId, token };
+        else if (msg.instrumentReferenceRequest !== undefined) msg2.instrumentReferenceRequest = { ...msg.instrumentReferenceRequest, correlationId, token };
+        else if (msg.instrumentRequest !== undefined) msg2.instrumentRequest = { ...msg.instrumentRequest, correlationId, token };
+        else if (msg.listSubscriptionsRequest !== undefined) msg2.listSubscriptionsRequest = { ...msg.listSubscriptionsRequest, correlationId, token };
+        else if (msg.subscriptionRequest !== undefined) msg2.subscriptionRequest = { ...msg.subscriptionRequest, correlationId, token };
+
+        send(this.socket, msg2);
+
+        return correlationId;
+    };
 
     getExchanges = async (): Promise<ExchangeResponse_Exchange[]> => {
         if (this.whenDisconnectedSource.completed) {
