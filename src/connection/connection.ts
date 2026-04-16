@@ -290,8 +290,9 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         }
     }
 
-    send = (msg: OpenfeedRequest) => {
-        const correlationId = CorrelationId.create();
+    send = (msg: OpenfeedRequest, correlationId?: Long) => {
+        correlationId ??= CorrelationId.create();
+
         const token = this.connectionToken;
 
         const msg2: OpenfeedGatewayRequest = {};
