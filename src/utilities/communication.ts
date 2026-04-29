@@ -4,12 +4,12 @@ import { OptionalUndefined, toT } from "@src/utilities/messages";
 import type { OpenfeedGatewayMessage, OpenfeedGatewayRequest } from "@gen/openfeed_api";
 import { OpenfeedGatewayMessageDecode, OpenfeedGatewayRequestEncode } from "@gen/openfeed_api";
 
-export function encodeMessages(message: OpenfeedGatewayRequest): Uint8Array {
+export function encodeMessage(message: OpenfeedGatewayRequest): Uint8Array {
     return OpenfeedGatewayRequestEncode.encode(message).finish();
 }
 
 export function send(socket: WebSocket, message: OptionalUndefined<OpenfeedGatewayRequest>): void {
-    socket.send(encodeMessages(toT(message)));
+    socket.send(encodeMessage(toT(message)));
 }
 
 // eslint-disable-next-line no-bitwise
