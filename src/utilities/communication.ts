@@ -4,22 +4,27 @@ import { OptionalUndefined, toT } from "@src/utilities/messages";
 import type { OpenfeedGatewayMessage, OpenfeedGatewayRequest } from "@gen/openfeed_api";
 import { OpenfeedGatewayMessageDecode, OpenfeedGatewayRequestEncode } from "@gen/openfeed_api";
 
-export const send = (socket: WebSocket, message: OptionalUndefined<OpenfeedGatewayRequest>) => {
-    socket.send(OpenfeedGatewayRequestEncode.encode(toT(message)).finish());
-};
+export function encodeMessages(message: OpenfeedGatewayRequest): Uint8Array {
+    return OpenfeedGatewayRequestEncode.encode(message).finish();
+}
+
+export function send(socket: WebSocket, message: OptionalUndefined<OpenfeedGatewayRequest>): void {
+    socket.send(encodeMessages(toT(message)));
+}
 
 // eslint-disable-next-line no-bitwise
 const getShort = (a: number, b: number) => (a << 8) | (b << 0);
 
-export const receive = (msgEvent: WebSocket.MessageEvent): OpenfeedGatewayMessage[] => {
-    const array = new Uint8Array(msgEvent.data as ArrayBuffer);
+export function* decodeMessages(bytes: Uint8Array): Iterable<OpenfeedGatewayMessage> {
     let currentIndex = 0;
-    const res: OpenfeedGatewayMessage[] = [];
-    while (getShort(array[currentIndex], array[currentIndex + 1])) {
-        const shortVal = getShort(array[currentIndex], array[currentIndex + 1]) + 2;
-        const currentArray = array.subarray(currentIndex + 2, currentIndex + shortVal);
+    while (getShort(bytes[currentIndex], bytes[currentIndex + 1])) {
+        const shortVal = getShort(bytes[currentIndex], bytes[currentIndex + 1]) + 2;
+        const currentArray = bytes.subarray(currentIndex + 2, currentIndex + shortVal);
         currentIndex += shortVal;
-        res.push(OpenfeedGatewayMessageDecode.decode(currentArray));
+        yield OpenfeedGatewayMessageDecode.decode(currentArray);
     }
-    return res;
-};
+}
+
+export function receive(msgEvent: WebSocket.MessageEvent): OpenfeedGatewayMessage[] {
+    return [...decodeMessages(new Uint8Array(msgEvent.data as ArrayBuffer))];
+}
