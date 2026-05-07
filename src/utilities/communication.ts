@@ -17,10 +17,13 @@ const getShort = (a: number, b: number) => (a << 8) | (b << 0);
 
 export function* decodeMessages(bytes: Uint8Array): Iterable<OpenfeedGatewayMessage> {
     let currentIndex = 0;
-    while (getShort(bytes[currentIndex], bytes[currentIndex + 1])) {
-        const shortVal = getShort(bytes[currentIndex], bytes[currentIndex + 1]) + 2;
-        const currentArray = bytes.subarray(currentIndex + 2, currentIndex + shortVal);
-        currentIndex += shortVal;
+    while (currentIndex < bytes.length) {
+        const len = getShort(bytes[currentIndex], bytes[currentIndex + 1]);
+        if (len === 0) break;
+
+        const total = len + 2;
+        const currentArray = bytes.subarray(currentIndex + 2, currentIndex + total);
+        currentIndex += total;
         yield OpenfeedGatewayMessageDecode.decode(currentArray);
     }
 }
