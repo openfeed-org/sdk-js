@@ -5,3 +5,5 @@ export * from "./connection/listeners";
 export * from "../generated/index";
 
 export { encodeMessage, decodeMessages } from "./utilities/communication";
+
+export { OpenfeedGatewayMessageDecode, OpenfeedGatewayRequestDecode, OpenfeedGatewayRequestEncode, OpenfeedGatewayMessageEncode } from "@gen/openfeed_api";
