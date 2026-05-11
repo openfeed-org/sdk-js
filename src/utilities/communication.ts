@@ -2,10 +2,18 @@ import WebSocket from "isomorphic-ws";
 
 import { OptionalUndefined, toT } from "@src/utilities/messages";
 import type { OpenfeedGatewayMessage, OpenfeedGatewayRequest } from "@gen/openfeed_api";
-import { OpenfeedGatewayMessageDecode, OpenfeedGatewayRequestEncode } from "@gen/openfeed_api";
+import { OpenfeedGatewayMessageDecode, OpenfeedGatewayRequestDecode, OpenfeedGatewayRequestEncode, OpenfeedGatewayMessageEncode } from "@gen/openfeed_api";
 
 export function encodeMessage(message: OpenfeedGatewayRequest): Uint8Array {
     return OpenfeedGatewayRequestEncode.encode(message).finish();
+}
+
+export function decodeRequestMessage(bytes: Uint8Array): OpenfeedGatewayRequest {
+    return OpenfeedGatewayRequestDecode.decode(bytes);
+}
+
+export function encodeResponseMessage(message: OpenfeedGatewayMessage): Uint8Array {
+    return OpenfeedGatewayMessageEncode.encode(message).finish();
 }
 
 export function send(socket: WebSocket, message: OptionalUndefined<OpenfeedGatewayRequest>): void {
