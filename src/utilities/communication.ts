@@ -13,19 +13,19 @@ export function decodeRequestMessage(bytes: Uint8Array): OpenfeedGatewayRequest 
     return OpenfeedGatewayRequestDecode.decode(bytes);
 }
 
-const lengthPlaceholder = new Uint8Array(2);
-lengthPlaceholder[0] = 255;
-lengthPlaceholder[1] = 255;
+const bytes = new Uint8Array(2);
+bytes[0] = 0;
+bytes[1] = 0;
 
 export function encodeResponseMessage(message: OpenfeedGatewayMessage): Uint8Array {
     const bw = new BinaryWriter();
-    bw.raw(lengthPlaceholder);
+    bw.raw(bytes);
     OpenfeedGatewayMessageEncode.encode(message, bw);
-    const encodedMessage = bw.finish();
-    const len = encodeMessage.length - 2;
-    encodedMessage[0] = len >> 8;
-    encodedMessage[1] = len & 0xff;
-    return encodedMessage;
+    const ret = bw.finish();
+    const len = ret.length - 2;
+    ret[0] = len >> 8;
+    ret[1] = len & 0xff;
+    return ret;
 }
 
 export function send(socket: WebSocket, message: OptionalUndefined<OpenfeedGatewayRequest>): void {
