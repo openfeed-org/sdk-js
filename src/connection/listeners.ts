@@ -17,23 +17,18 @@ export class OpenFeedListeners {
     >();
 
     constructor() {
-        this.onMessage = this.addDetails;
-        this.onCleanup = this.cleanUp;
+        this.onMessage = this.#addDetails;
+        this.onCleanup = this.#cleanUp;
     }
 
-    private cleanUp = () => {
-        this.instrumentByMarketId.clear();
-    };
+    #cleanUp = () => this.instrumentByMarketId.clear();
 
-    private addDetails = (message: OpenfeedGatewayMessage) => {
+    #addDetails = (message: OpenfeedGatewayMessage) => {
         let def: InstrumentDefinition | undefined;
         let symbols: [string, string][] | undefined;
 
-        const getInstrumentDefinition = (marketId: Long) => {
-            const res = this.instrumentByMarketId.get(marketId.toString());
-
-            return res ?? [undefined, undefined];
-        };
+        const getInstrumentDefinition = (marketId: Long) => 
+            this.instrumentByMarketId.get(marketId.toString()) ?? [undefined, undefined];
 
         const includesSymbolSubscription = (arr: [string, string][], item: [string, string]) => {
             return arr.some(([symbol, correlationId]) => symbol === item[0] && correlationId === item[1]);

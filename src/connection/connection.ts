@@ -25,12 +25,16 @@ import { IOpenFeedConnection, IOpenFeedLogger, OpenFeedInstrumentReferenceReques
 import { OpenFeedListeners } from "./listeners";
 import { DuplicateLoginError, ConnectionDisposedError } from "./errors";
 
+function toStringOrNumber(id: Long): string | number {
+    return id.isSafeInteger() ? id.toInt() : id.toString();
+}
+
 export class OpenFeedConnection implements IOpenFeedConnection {
-    private readonly subscriptionRequests: Map<string, [SubscriptionRequest, ResolutionSource<void>]> = new Map();
-    private readonly exchangeRequests: Map<string, ResolutionSource<ExchangeResponse>> = new Map();
-    private readonly instrumentRequests: Map<string, ResolutionSource<InstrumentDefinition[]>> = new Map();
-    private readonly definitionsInFlight: Map<string, InstrumentDefinition[]> = new Map();
-    private readonly instrumentReferenceRequests: Map<string, ResolutionSource<InstrumentReferenceResponse>> = new Map();
+    readonly #subscriptionRequests: Map<string | number, [SubscriptionRequest, ResolutionSource<void>]> = new Map();
+    readonly #exchangeRequests: Map<string | number, ResolutionSource<ExchangeResponse>> = new Map();
+    readonly #instrumentRequests: Map<string | number, ResolutionSource<InstrumentDefinition[]>> = new Map();
+    readonly #definitionsInFlight: Map<string | number, InstrumentDefinition[]> = new Map();
+    readonly #instrumentReferenceRequests: Map<string | number, ResolutionSource<InstrumentReferenceResponse>> = new Map();
 
     private readonly whenDisconnectedSource = new ResolutionSource<void>();
 
@@ -101,48 +105,41 @@ export class OpenFeedConnection implements IOpenFeedConnection {
 
                 if (message.instrumentResponse) {
                     const { correlationId, instrumentDefinition, numberOfDefinitions } = message.instrumentResponse;
-                    const idString = correlationId.toString();
-                    const request = this.instrumentRequests.get(idString);
-                    if (!request) throw new Error(`Instrument request ID ${idString} not found`);
-                    if (!instrumentDefinition) throw new Error(`Instrument definition not found in response ID ${idString}`);
-                    let definitions = this.definitionsInFlight.get(idString);
+                    const id = toStringOrNumber(correlationId);
+                    const request = this.#instrumentRequests.get(id);
+                    if (!request) throw new Error(`Instrument request ID ${id} not found`);
+                    if (!instrumentDefinition) throw new Error(`Instrument definition not found in response ID ${id}`);
+                    let definitions = this.#definitionsInFlight.get(id);
                     if (!definitions) {
                         definitions = [instrumentDefinition];
                     } else {
                         definitions.push(instrumentDefinition);
                     }
                     if (definitions.length === numberOfDefinitions) {
-                        this.definitionsInFlight.delete(idString);
+                        this.#definitionsInFlight.delete(id);
                         request.resolve(definitions);
                     } else {
-                        this.definitionsInFlight.set(idString, definitions);
+                        this.#definitionsInFlight.set(id, definitions);
                     }
-                    continue;
                 }
 
                 if (message.instrumentReferenceResponse) {
                     const { correlationId } = message.instrumentReferenceResponse;
-                    const request = this.instrumentReferenceRequests.get(correlationId.toString());
-                    if (!request) throw new Error(`Exchange request ID ${correlationId} not found`);
-                    request.resolve(message.instrumentReferenceResponse);
-                    continue;
+                    const request = this.#instrumentReferenceRequests.get(toStringOrNumber(correlationId));
+                    request?.resolve(message.instrumentReferenceResponse);
                 }
 
                 if (message.exchangeResponse) {
                     const { correlationId } = message.exchangeResponse;
-                    const request = this.exchangeRequests.get(correlationId.toString());
-                    if (!request) throw new Error(`Exchange request ID ${correlationId} not found`);
-                    request.resolve(message.exchangeResponse);
-                    continue;
+                    const request = this.#exchangeRequests.get(toStringOrNumber(correlationId));
+                    request?.resolve(message.exchangeResponse);
                 }
 
                 if (message.subscriptionResponse) {
                     const { correlationId, unsubscribe } = message.subscriptionResponse;
                     if (!unsubscribe) {
-                        const request = this.subscriptionRequests.get(correlationId.toString());
-                        if (!request) throw new Error(`Subscription response ID ${correlationId} not found`);
-                        const [, sub] = request;
-                        sub.resolve();
+                        const request = this.#subscriptionRequests.get(toStringOrNumber(correlationId));
+                        request?.[1].resolve();
                     }
                 }
 
@@ -158,15 +155,15 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         this.socket.onerror = () => {};
         this.socket.onclose = () => {};
 
-        const cleanRequests = <T>(requests: Map<string, ResolutionSource<T>>) => {
+        const cleanRequests = <T>(requests: Map<string | number, ResolutionSource<T>>) => {
             for (const [, request] of requests) {
                 request.reject(error);
             }
         };
 
-        cleanRequests(this.exchangeRequests);
-        cleanRequests(this.instrumentRequests);
-        cleanRequests(this.instrumentReferenceRequests);
+        cleanRequests(this.#exchangeRequests);
+        cleanRequests(this.#instrumentRequests);
+        cleanRequests(this.#instrumentReferenceRequests);
 
         // This takes a while to actually fire a close event. that's why  we'll clear this connection and exit
         this.socket.close(1000, error.message);
@@ -255,7 +252,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         };
 
         const source = new ResolutionSource<void>();
-        this.subscriptionRequests.set(correlationId.toString(), [subscriptionRequest, source]);
+        this.#subscriptionRequests.set(toStringOrNumber(correlationId), [subscriptionRequest, source]);
         send(this.socket, { subscriptionRequest });
         return correlationId;
     };
@@ -265,7 +262,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
             throw new ConnectionDisposedError("This connection was closed");
         }
 
-        const subscription = this.subscriptionRequests.get(subscriptionId.toString());
+        const subscription = this.#subscriptionRequests.get(toStringOrNumber(subscriptionId));
         if (!subscription) {
             throw new Error(`Subscription ID ${subscriptionId} does not exist.`);
         }
@@ -286,7 +283,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         } catch (e) {
             // This is expected
         } finally {
-            this.subscriptionRequests.delete(originalRequest.correlationId.toString());
+            this.#subscriptionRequests.delete(toStringOrNumber(originalRequest.correlationId));
         }
     }
 
@@ -314,7 +311,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         const correlationId = CorrelationId.create();
         const source = new ResolutionSource<ExchangeResponse>();
 
-        this.exchangeRequests.set(correlationId.toString(), source);
+        this.#exchangeRequests.set(toStringOrNumber(correlationId), source);
         try {
             const exchangeRequest: ExchangeRequest = {
                 correlationId,
@@ -328,7 +325,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
             this.logger?.error(error);
             throw error;
         } finally {
-            this.exchangeRequests.delete(correlationId.toString());
+            this.#exchangeRequests.delete(toStringOrNumber(correlationId));
         }
     };
 
@@ -339,7 +336,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         const correlationId = CorrelationId.create();
         const source = new ResolutionSource<InstrumentDefinition[]>();
 
-        this.instrumentRequests.set(correlationId.toString(), source);
+        this.#instrumentRequests.set(toStringOrNumber(correlationId), source);
         try {
             const instrumentRequest = toT<InstrumentRequest>({
                 ...request,
@@ -355,7 +352,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
             this.logger?.error(error);
             throw error;
         } finally {
-            this.instrumentRequests.delete(correlationId.toString());
+            this.#instrumentRequests.delete(toStringOrNumber(correlationId));
         }
     };
 
@@ -366,7 +363,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         const correlationId = CorrelationId.create();
         const source = new ResolutionSource<InstrumentReferenceResponse>();
 
-        this.instrumentReferenceRequests.set(correlationId.toString(), source);
+        this.#instrumentReferenceRequests.set(toStringOrNumber(correlationId), source);
 
         try {
             const instrumentReferenceRequest = toT<InstrumentReferenceRequest>({ ...request, correlationId, token: this.connectionToken });
@@ -378,7 +375,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
             this.logger?.error(error);
             throw error;
         } finally {
-            this.instrumentRequests.delete(correlationId.toString());
+            this.#instrumentRequests.delete(toStringOrNumber(correlationId));
         }
     };
 
