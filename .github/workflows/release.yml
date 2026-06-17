@@ -5,14 +5,17 @@ on:
             - "*"
         paths-ignore:
             - "**.md"
+permissions:
+    id-token: write # Required for OIDC
+    contents: read # Required to checkout the code
 
 jobs:
     main:
         runs-on: ubuntu-latest
         steps:
             # setup
-            - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
               with:
                   node-version: "24"
                   registry-url: "https://registry.npmjs.org"
@@ -35,8 +38,7 @@ jobs:
             - name: Publish new build
               run: |
                   yarn publish --access public
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
             - name: List files
               run: ls -al
             - name: Create Release
