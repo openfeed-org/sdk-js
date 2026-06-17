@@ -7,7 +7,7 @@ on:
             - "**.md"
 permissions:
     id-token: write # Required for OIDC
-    contents: read # Required to checkout the code
+    contents: write # Required to create GitHub releases
 
 jobs:
     main:
@@ -37,7 +37,7 @@ jobs:
 
             - name: Publish new build
               run: |
-                  yarn publish --access public
+                  npm publish --access public --provenance
 
             - name: List files
               run: ls -al
