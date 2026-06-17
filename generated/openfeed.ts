@@ -241,6 +241,9 @@ export interface MarketSession {
     priceLimits: PriceLimits | undefined;
     marketOpenInterest: MarketOpenInterest | undefined;
     vwap: Vwap | undefined;
+    warrantBand: WarrantBand | undefined;
+    positionBand: PositionBand | undefined;
+    lastTrade: Last | undefined;
 }
 /** / Snapshot for a market */
 export interface MarketSnapshot {
@@ -325,6 +328,9 @@ export interface MarketSnapshot {
     sessions: MarketSession[];
     officialBestBidOffer: OfficialBestBidOffer | undefined;
     marketOpenInterest: MarketOpenInterest | undefined;
+    warrantBand: WarrantBand | undefined;
+    positionBand: PositionBand | undefined;
+    lastTrade: Last | undefined;
 }
 /** Used by market state to return snapshot. */
 export interface MarketSnapshotResponse {
@@ -402,6 +408,8 @@ export interface MarketUpdate {
     priceLimits?: PriceLimits | undefined;
     officialBestBidOffer?: OfficialBestBidOffer | undefined;
     marketOpenInterest?: MarketOpenInterest | undefined;
+    warrantBand?: WarrantBand | undefined;
+    positionBand?: PositionBand | undefined;
 }
 /** / Depth Price Level */
 export interface DepthPriceLevel {
@@ -488,6 +496,13 @@ export interface BestBidOffer {
     regional: boolean;
     /** / True if not persisted in the EOD database. */
     transient: boolean;
+    /** Best Odd Lot Order (BOLO) */
+    boloBidParticipantId: Uint8Array;
+    boloBidPrice: Long;
+    boloBidQuantity: Long;
+    boloOfferParticipantId: Uint8Array;
+    boloOfferPrice: Long;
+    boloOfferQuantity: Long;
 }
 /** / Official Best Bid and Offer. */
 export interface OfficialBestBidOffer {
@@ -634,6 +649,8 @@ export interface Trade {
     transient: boolean;
     /** / Index short name used to identify index. */
     indexShortName: string;
+    /** / Fractional Quantity.  Divide by quantityFractionalDenominator. */
+    quantityFractional: Long;
 }
 /** /  Trade Correction */
 export interface TradeCorrection {
@@ -668,6 +685,10 @@ export interface TradeCorrection {
     originalTradePrice: Long;
     /** Original Quantity */
     originalTradeQuantity: Long;
+    /** / Corrected Fractional Quantity. Divide by quantityFractionalDenominator. */
+    quantityFractional: Long;
+    /** / Original Fractional Quantity. Divide by quantityFractionalDenominator. */
+    originalQuantityFractional: Long;
 }
 /** Trade Cancel/Break */
 export interface TradeCancel {
@@ -683,6 +704,8 @@ export interface TradeCancel {
     distributionTime: Long;
     /** / time in nano seconds since epoch. */
     transactionTime2: Long;
+    /** / Corrected Fractional Quantity. Divide by quantityFractionalDenominator. */
+    correctedTradeQuantityFractional: Long;
 }
 export interface Open {
     transactionTime: Long;
@@ -752,6 +775,8 @@ export interface Last {
     /** / Divide by quantityDenominator */
     quantity: Long;
     currency: string;
+    /** / Quantity Fractional. Divide by quantityFractionalDenominator. */
+    quantityFractional: Long;
     session: string;
 }
 /** / 52 week */
@@ -775,6 +800,8 @@ export interface Volume {
     tradeDate: number;
     /** Total volume traded. */
     volume: Long;
+    /** / Fractional Volume. Divide by volumeFractionalDenominator. */
+    volumeFractional: Long;
 }
 /** / Total number of trades */
 export interface NumberOfTrades {
@@ -822,6 +849,35 @@ export interface MarketOpenInterest {
     /** Date only, format 2012-07-04 -> 20120704 */
     tradeDate: number;
     volume: Long;
+}
+/** / Warrant band. Used by LME. */
+export interface WarrantBand {
+    tradeDate: number;
+    type: string;
+    productCode: string;
+    bands: WarrantBandItem[];
+}
+export interface WarrantBandItem {
+    lowerValue: number;
+    upperValue: number;
+    participantCount: number;
+}
+/** Position band. Used by LME. */
+export interface PositionBand {
+    tradeDate: number;
+    productCode: string;
+    shortBands: PositionBandItem[];
+    longBands: PositionBandItem[];
+}
+export interface PositionBandItem {
+    positionLowerValue: number;
+    positionUpperValue: number;
+    promptCounts: PromptCount[];
+}
+export interface PromptCount {
+    promptDateLabel: string;
+    expiryDate: number;
+    participantCount: number;
 }
 /** / Volume Weighted Average Price */
 export interface Vwap {
@@ -941,6 +997,7 @@ export interface MarketSummary {
     prevVolume: Volume | undefined;
     /** / True if not persisted in the EOD database. */
     transient: boolean;
+    lastTrade: Last | undefined;
 }
 /** Clears sets of fields */
 export enum MarketSummary_ClearSet {
@@ -1675,6 +1732,9 @@ function createBaseMarketSession(): MarketSession {
         priceLimits: undefined,
         marketOpenInterest: undefined,
         vwap: undefined,
+        warrantBand: undefined,
+        positionBand: undefined,
+        lastTrade: undefined,
     };
 }
 export const MarketSessionEncode = {
@@ -1729,6 +1789,15 @@ export const MarketSessionEncode = {
         }
         if (message.vwap !== undefined) {
             VwapEncode.encode(message.vwap, writer.uint32(394).fork()).join();
+        }
+        if (message.warrantBand !== undefined) {
+            WarrantBandEncode.encode(message.warrantBand, writer.uint32(402).fork()).join();
+        }
+        if (message.positionBand !== undefined) {
+            PositionBandEncode.encode(message.positionBand, writer.uint32(410).fork()).join();
+        }
+        if (message.lastTrade !== undefined) {
+            LastEncode.encode(message.lastTrade, writer.uint32(418).fork()).join();
         }
         return writer;
     }
@@ -1859,6 +1928,27 @@ export const MarketSessionEncode = {
                     message.vwap = VwapDecode.decode(reader, reader.uint32());
                     continue;
                 }
+                case 50: {
+                    if (tag !== 402) {
+                        break;
+                    }
+                    message.warrantBand = WarrantBandDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 51: {
+                    if (tag !== 410) {
+                        break;
+                    }
+                    message.positionBand = PositionBandDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 52: {
+                    if (tag !== 418) {
+                        break;
+                    }
+                    message.lastTrade = LastDecode.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -1914,6 +2004,9 @@ function createBaseMarketSnapshot(): MarketSnapshot {
         sessions: [],
         officialBestBidOffer: undefined,
         marketOpenInterest: undefined,
+        warrantBand: undefined,
+        positionBand: undefined,
+        lastTrade: undefined,
     };
 }
 export const MarketSnapshotEncode = {
@@ -2049,6 +2142,15 @@ export const MarketSnapshotEncode = {
         }
         if (message.marketOpenInterest !== undefined) {
             MarketOpenInterestEncode.encode(message.marketOpenInterest, writer.uint32(466).fork()).join();
+        }
+        if (message.warrantBand !== undefined) {
+            WarrantBandEncode.encode(message.warrantBand, writer.uint32(474).fork()).join();
+        }
+        if (message.positionBand !== undefined) {
+            PositionBandEncode.encode(message.positionBand, writer.uint32(482).fork()).join();
+        }
+        if (message.lastTrade !== undefined) {
+            LastEncode.encode(message.lastTrade, writer.uint32(490).fork()).join();
         }
         return writer;
     }
@@ -2368,6 +2470,27 @@ export const MarketSnapshotEncode = {
                     message.marketOpenInterest = MarketOpenInterestDecode.decode(reader, reader.uint32());
                     continue;
                 }
+                case 59: {
+                    if (tag !== 474) {
+                        break;
+                    }
+                    message.warrantBand = WarrantBandDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 60: {
+                    if (tag !== 482) {
+                        break;
+                    }
+                    message.positionBand = PositionBandDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 61: {
+                    if (tag !== 490) {
+                        break;
+                    }
+                    message.lastTrade = LastDecode.decode(reader, reader.uint32());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -2481,6 +2604,8 @@ function createBaseMarketUpdate(): MarketUpdate {
         priceLimits: undefined,
         officialBestBidOffer: undefined,
         marketOpenInterest: undefined,
+        warrantBand: undefined,
+        positionBand: undefined,
     };
 }
 export const MarketUpdateEncode = {
@@ -2628,6 +2753,12 @@ export const MarketUpdateEncode = {
         }
         if (message.marketOpenInterest !== undefined) {
             MarketOpenInterestEncode.encode(message.marketOpenInterest, writer.uint32(426).fork()).join();
+        }
+        if (message.warrantBand !== undefined) {
+            WarrantBandEncode.encode(message.warrantBand, writer.uint32(434).fork()).join();
+        }
+        if (message.positionBand !== undefined) {
+            PositionBandEncode.encode(message.positionBand, writer.uint32(442).fork()).join();
         }
         return writer;
     }
@@ -2973,6 +3104,20 @@ export const MarketUpdateEncode = {
                         break;
                     }
                     message.marketOpenInterest = MarketOpenInterestDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 54: {
+                    if (tag !== 434) {
+                        break;
+                    }
+                    message.warrantBand = WarrantBandDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 55: {
+                    if (tag !== 442) {
+                        break;
+                    }
+                    message.positionBand = PositionBandDecode.decode(reader, reader.uint32());
                     continue;
                 }
             }
@@ -3406,6 +3551,12 @@ function createBaseBestBidOffer(): BestBidOffer {
         quoteCondition: new Uint8Array(0),
         regional: false,
         transient: false,
+        boloBidParticipantId: new Uint8Array(0),
+        boloBidPrice: Long.ZERO,
+        boloBidQuantity: Long.ZERO,
+        boloOfferParticipantId: new Uint8Array(0),
+        boloOfferPrice: Long.ZERO,
+        boloOfferQuantity: Long.ZERO,
     };
 }
 export const BestBidOfferEncode = {
@@ -3451,6 +3602,24 @@ export const BestBidOfferEncode = {
         }
         if (message.transient !== false) {
             writer.uint32(264).bool(message.transient);
+        }
+        if (message.boloBidParticipantId.length !== 0) {
+            writer.uint32(274).bytes(message.boloBidParticipantId);
+        }
+        if (!message.boloBidPrice.equals(Long.ZERO)) {
+            writer.uint32(280).sint64(message.boloBidPrice.toString());
+        }
+        if (!message.boloBidQuantity.equals(Long.ZERO)) {
+            writer.uint32(288).sint64(message.boloBidQuantity.toString());
+        }
+        if (message.boloOfferParticipantId.length !== 0) {
+            writer.uint32(298).bytes(message.boloOfferParticipantId);
+        }
+        if (!message.boloOfferPrice.equals(Long.ZERO)) {
+            writer.uint32(304).sint64(message.boloOfferPrice.toString());
+        }
+        if (!message.boloOfferQuantity.equals(Long.ZERO)) {
+            writer.uint32(312).sint64(message.boloOfferQuantity.toString());
         }
         return writer;
     }
@@ -3558,6 +3727,48 @@ export const BestBidOfferEncode = {
                         break;
                     }
                     message.transient = reader.bool();
+                    continue;
+                }
+                case 34: {
+                    if (tag !== 274) {
+                        break;
+                    }
+                    message.boloBidParticipantId = reader.bytes();
+                    continue;
+                }
+                case 35: {
+                    if (tag !== 280) {
+                        break;
+                    }
+                    message.boloBidPrice = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 36: {
+                    if (tag !== 288) {
+                        break;
+                    }
+                    message.boloBidQuantity = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 37: {
+                    if (tag !== 298) {
+                        break;
+                    }
+                    message.boloOfferParticipantId = reader.bytes();
+                    continue;
+                }
+                case 38: {
+                    if (tag !== 304) {
+                        break;
+                    }
+                    message.boloOfferPrice = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 39: {
+                    if (tag !== 312) {
+                        break;
+                    }
+                    message.boloOfferQuantity = Long.fromString(reader.sint64().toString());
                     continue;
                 }
             }
@@ -4424,6 +4635,7 @@ function createBaseTrade(): Trade {
         consolidatedPriceIndicator: "",
         transient: false,
         indexShortName: "",
+        quantityFractional: Long.ZERO,
     };
 }
 export const TradeEncode = {
@@ -4511,6 +4723,9 @@ export const TradeEncode = {
         }
         if (message.indexShortName !== "") {
             writer.uint32(290).string(message.indexShortName);
+        }
+        if (!message.quantityFractional.equals(Long.ZERO)) {
+            writer.uint32(296).sint64(message.quantityFractional.toString());
         }
         return writer;
     }
@@ -4718,6 +4933,13 @@ export const TradeEncode = {
                     message.indexShortName = reader.string();
                     continue;
                 }
+                case 37: {
+                    if (tag !== 296) {
+                        break;
+                    }
+                    message.quantityFractional = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -4752,6 +4974,8 @@ function createBaseTradeCorrection(): TradeCorrection {
         transactionTime2: Long.ZERO,
         originalTradePrice: Long.ZERO,
         originalTradeQuantity: Long.ZERO,
+        quantityFractional: Long.ZERO,
+        originalQuantityFractional: Long.ZERO,
     };
 }
 export const TradeCorrectionEncode = {
@@ -4824,6 +5048,12 @@ export const TradeCorrectionEncode = {
         }
         if (!message.originalTradeQuantity.equals(Long.ZERO)) {
             writer.uint32(240).sint64(message.originalTradeQuantity.toString());
+        }
+        if (!message.quantityFractional.equals(Long.ZERO)) {
+            writer.uint32(248).sint64(message.quantityFractional.toString());
+        }
+        if (!message.originalQuantityFractional.equals(Long.ZERO)) {
+            writer.uint32(256).sint64(message.originalQuantityFractional.toString());
         }
         return writer;
     }
@@ -4996,6 +5226,20 @@ export const TradeCorrectionEncode = {
                     message.originalTradeQuantity = Long.fromString(reader.sint64().toString());
                     continue;
                 }
+                case 31: {
+                    if (tag !== 248) {
+                        break;
+                    }
+                    message.quantityFractional = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 32: {
+                    if (tag !== 256) {
+                        break;
+                    }
+                    message.originalQuantityFractional = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
             }
             if ((tag & 7) === 4 || tag === 0) {
                 break;
@@ -5016,6 +5260,7 @@ function createBaseTradeCancel(): TradeCancel {
         currency: "",
         distributionTime: Long.ZERO,
         transactionTime2: Long.ZERO,
+        correctedTradeQuantityFractional: Long.ZERO,
     };
 }
 export const TradeCancelEncode = {
@@ -5046,6 +5291,9 @@ export const TradeCancelEncode = {
         }
         if (!message.transactionTime2.equals(Long.ZERO)) {
             writer.uint32(128).sint64(message.transactionTime2.toString());
+        }
+        if (!message.correctedTradeQuantityFractional.equals(Long.ZERO)) {
+            writer.uint32(136).sint64(message.correctedTradeQuantityFractional.toString());
         }
         return writer;
     }
@@ -5118,6 +5366,13 @@ export const TradeCancelEncode = {
                         break;
                     }
                     message.transactionTime2 = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 17: {
+                    if (tag !== 136) {
+                        break;
+                    }
+                    message.correctedTradeQuantityFractional = Long.fromString(reader.sint64().toString());
                     continue;
                 }
             }
@@ -5588,7 +5843,15 @@ export const PrevCloseEncode = {
     }
 };
 function createBaseLast(): Last {
-    return { transactionTime: Long.ZERO, tradeDate: 0, price: Long.ZERO, quantity: Long.ZERO, currency: "", session: "" };
+    return {
+        transactionTime: Long.ZERO,
+        tradeDate: 0,
+        price: Long.ZERO,
+        quantity: Long.ZERO,
+        currency: "",
+        quantityFractional: Long.ZERO,
+        session: "",
+    };
 }
 export const LastEncode = {
     encode(message: Last, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
@@ -5606,6 +5869,9 @@ export const LastEncode = {
         }
         if (message.currency !== "") {
             writer.uint32(106).string(message.currency);
+        }
+        if (!message.quantityFractional.equals(Long.ZERO)) {
+            writer.uint32(112).sint64(message.quantityFractional.toString());
         }
         if (message.session !== "") {
             writer.uint32(242).string(message.session);
@@ -5653,6 +5919,13 @@ export const LastEncode = {
                         break;
                     }
                     message.currency = reader.string();
+                    continue;
+                }
+                case 14: {
+                    if (tag !== 112) {
+                        break;
+                    }
+                    message.quantityFractional = Long.fromString(reader.sint64().toString());
                     continue;
                 }
                 case 30: {
@@ -5780,7 +6053,7 @@ export const YearLowEncode = {
     }
 };
 function createBaseVolume(): Volume {
-    return { transactionTime: Long.ZERO, tradeDate: 0, volume: Long.ZERO };
+    return { transactionTime: Long.ZERO, tradeDate: 0, volume: Long.ZERO, volumeFractional: Long.ZERO };
 }
 export const VolumeEncode = {
     encode(message: Volume, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
@@ -5792,6 +6065,9 @@ export const VolumeEncode = {
         }
         if (!message.volume.equals(Long.ZERO)) {
             writer.uint32(88).sint64(message.volume.toString());
+        }
+        if (!message.volumeFractional.equals(Long.ZERO)) {
+            writer.uint32(96).sint64(message.volumeFractional.toString());
         }
         return writer;
     }
@@ -5822,6 +6098,13 @@ export const VolumeEncode = {
                         break;
                     }
                     message.volume = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 12: {
+                    if (tag !== 96) {
+                        break;
+                    }
+                    message.volumeFractional = Long.fromString(reader.sint64().toString());
                     continue;
                 }
             }
@@ -6172,6 +6455,296 @@ export const MarketOpenInterestEncode = {
                         break;
                     }
                     message.volume = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseWarrantBand(): WarrantBand {
+    return { tradeDate: 0, type: "", productCode: "", bands: [] };
+}
+export const WarrantBandEncode = {
+    encode(message: WarrantBand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.tradeDate !== 0) {
+            writer.uint32(8).sint32(message.tradeDate);
+        }
+        if (message.type !== "") {
+            writer.uint32(18).string(message.type);
+        }
+        if (message.productCode !== "") {
+            writer.uint32(26).string(message.productCode);
+        }
+        for (const v of message.bands) {
+            WarrantBandItemEncode.encode(v!, writer.uint32(34).fork()).join();
+        }
+        return writer;
+    }
+}, WarrantBandDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): WarrantBand {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseWarrantBand();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.tradeDate = reader.sint32();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.type = reader.string();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.productCode = reader.string();
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 34) {
+                        break;
+                    }
+                    message.bands.push(WarrantBandItemDecode.decode(reader, reader.uint32()));
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseWarrantBandItem(): WarrantBandItem {
+    return { lowerValue: 0, upperValue: 0, participantCount: 0 };
+}
+export const WarrantBandItemEncode = {
+    encode(message: WarrantBandItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.lowerValue !== 0) {
+            writer.uint32(8).sint32(message.lowerValue);
+        }
+        if (message.upperValue !== 0) {
+            writer.uint32(16).sint32(message.upperValue);
+        }
+        if (message.participantCount !== 0) {
+            writer.uint32(24).sint32(message.participantCount);
+        }
+        return writer;
+    }
+}, WarrantBandItemDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): WarrantBandItem {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseWarrantBandItem();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.lowerValue = reader.sint32();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.upperValue = reader.sint32();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.participantCount = reader.sint32();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBasePositionBand(): PositionBand {
+    return { tradeDate: 0, productCode: "", shortBands: [], longBands: [] };
+}
+export const PositionBandEncode = {
+    encode(message: PositionBand, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.tradeDate !== 0) {
+            writer.uint32(8).sint32(message.tradeDate);
+        }
+        if (message.productCode !== "") {
+            writer.uint32(18).string(message.productCode);
+        }
+        for (const v of message.shortBands) {
+            PositionBandItemEncode.encode(v!, writer.uint32(26).fork()).join();
+        }
+        for (const v of message.longBands) {
+            PositionBandItemEncode.encode(v!, writer.uint32(34).fork()).join();
+        }
+        return writer;
+    }
+}, PositionBandDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): PositionBand {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBasePositionBand();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.tradeDate = reader.sint32();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.productCode = reader.string();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.shortBands.push(PositionBandItemDecode.decode(reader, reader.uint32()));
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 34) {
+                        break;
+                    }
+                    message.longBands.push(PositionBandItemDecode.decode(reader, reader.uint32()));
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBasePositionBandItem(): PositionBandItem {
+    return { positionLowerValue: 0, positionUpperValue: 0, promptCounts: [] };
+}
+export const PositionBandItemEncode = {
+    encode(message: PositionBandItem, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.positionLowerValue !== 0) {
+            writer.uint32(8).sint32(message.positionLowerValue);
+        }
+        if (message.positionUpperValue !== 0) {
+            writer.uint32(16).sint32(message.positionUpperValue);
+        }
+        for (const v of message.promptCounts) {
+            PromptCountEncode.encode(v!, writer.uint32(26).fork()).join();
+        }
+        return writer;
+    }
+}, PositionBandItemDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): PositionBandItem {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBasePositionBandItem();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.positionLowerValue = reader.sint32();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.positionUpperValue = reader.sint32();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.promptCounts.push(PromptCountDecode.decode(reader, reader.uint32()));
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBasePromptCount(): PromptCount {
+    return { promptDateLabel: "", expiryDate: 0, participantCount: 0 };
+}
+export const PromptCountEncode = {
+    encode(message: PromptCount, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.promptDateLabel !== "") {
+            writer.uint32(10).string(message.promptDateLabel);
+        }
+        if (message.expiryDate !== 0) {
+            writer.uint32(16).sint32(message.expiryDate);
+        }
+        if (message.participantCount !== 0) {
+            writer.uint32(24).sint32(message.participantCount);
+        }
+        return writer;
+    }
+}, PromptCountDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): PromptCount {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBasePromptCount();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.promptDateLabel = reader.string();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 16) {
+                        break;
+                    }
+                    message.expiryDate = reader.sint32();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.participantCount = reader.sint32();
                     continue;
                 }
             }
@@ -6887,6 +7460,7 @@ function createBaseMarketSummary(): MarketSummary {
         summaryType: 0,
         prevVolume: undefined,
         transient: false,
+        lastTrade: undefined,
     };
 }
 export const MarketSummaryEncode = {
@@ -6953,6 +7527,9 @@ export const MarketSummaryEncode = {
         }
         if (message.transient !== false) {
             writer.uint32(192).bool(message.transient);
+        }
+        if (message.lastTrade !== undefined) {
+            LastEncode.encode(message.lastTrade, writer.uint32(202).fork()).join();
         }
         return writer;
     }
@@ -7109,6 +7686,13 @@ export const MarketSummaryEncode = {
                         break;
                     }
                     message.transient = reader.bool();
+                    continue;
+                }
+                case 25: {
+                    if (tag !== 202) {
+                        break;
+                    }
+                    message.lastTrade = LastDecode.decode(reader, reader.uint32());
                     continue;
                 }
             }

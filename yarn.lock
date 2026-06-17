@@ -5334,7 +5334,7 @@ process-nextick-args@~2.0.0:
 
 "proto@git+ssh://git@github.com/openfeed-org/proto.git#master":
   version "0.0.0"
-  resolved "git+ssh://git@github.com/openfeed-org/proto.git#123c76eae34f20cb75e2b399ce405f0d6e161809"
+  resolved "git+ssh://git@github.com/openfeed-org/proto.git#40f144795c26077e0379768befc91869563dfab4"
 
 punycode@^2.1.0:
   version "2.1.1"

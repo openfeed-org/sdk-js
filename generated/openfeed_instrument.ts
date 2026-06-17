@@ -155,6 +155,10 @@ export interface InstrumentDefinition {
     contractSizeDescription: string;
     exchangeMetadata: InstrumentDefinition_ExchangeMetadata | undefined;
     roundLotSize: number;
+    /** / Divide fractional quantities by this value to get real quantities */
+    quantityFractionalDenominator: number;
+    /** / Divide fractional volumes by this value to get real volumes */
+    volumeFractionalDenominator: number;
 }
 /** ############################################# */
 export enum InstrumentDefinition_InstrumentType {
@@ -375,6 +379,8 @@ function createBaseInstrumentDefinition(): InstrumentDefinition {
         contractSizeDescription: "",
         exchangeMetadata: undefined,
         roundLotSize: 0,
+        quantityFractionalDenominator: 0,
+        volumeFractionalDenominator: 0,
     };
 }
 export const InstrumentDefinitionEncode = {
@@ -575,6 +581,12 @@ export const InstrumentDefinitionEncode = {
         }
         if (message.roundLotSize !== 0) {
             writer.uint32(1920).sint32(message.roundLotSize);
+        }
+        if (message.quantityFractionalDenominator !== 0) {
+            writer.uint32(1928).sint32(message.quantityFractionalDenominator);
+        }
+        if (message.volumeFractionalDenominator !== 0) {
+            writer.uint32(1936).sint32(message.volumeFractionalDenominator);
         }
         return writer;
     }
@@ -1046,6 +1058,20 @@ export const InstrumentDefinitionEncode = {
                         break;
                     }
                     message.roundLotSize = reader.sint32();
+                    continue;
+                }
+                case 241: {
+                    if (tag !== 1928) {
+                        break;
+                    }
+                    message.quantityFractionalDenominator = reader.sint32();
+                    continue;
+                }
+                case 242: {
+                    if (tag !== 1936) {
+                        break;
+                    }
+                    message.volumeFractionalDenominator = reader.sint32();
                     continue;
                 }
             }
