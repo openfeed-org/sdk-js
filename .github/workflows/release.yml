@@ -37,7 +37,7 @@ jobs:
 
             - name: Publish new build
               run: |
-                  yarn publish --access public
+                  npm publish --access public --provenance
 
             - name: List files
               run: ls -al
