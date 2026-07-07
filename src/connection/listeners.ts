@@ -9,6 +9,7 @@ const IDGetters: ((msg: OpenfeedGatewayMessage) => Long | undefined)[] = [
     (msg) => msg.marketUpdate?.marketId,
     (msg) => msg.ohlc?.marketId,
     (msg) => msg.volumeAtPrice?.marketId,
+    (msg) => msg.greeks?.marketId,
 ];
 export class OpenFeedListeners {
     private readonly instrumentByMarketId: Map<string, [InstrumentDefinition?, [string, string][]?]> = new Map<
@@ -27,8 +28,7 @@ export class OpenFeedListeners {
         let def: InstrumentDefinition | undefined;
         let symbols: [string, string][] | undefined;
 
-        const getInstrumentDefinition = (marketId: Long) => 
-            this.instrumentByMarketId.get(marketId.toString()) ?? [undefined, undefined];
+        const getInstrumentDefinition = (marketId: Long) => this.instrumentByMarketId.get(marketId.toString()) ?? [undefined, undefined];
 
         const includesSymbolSubscription = (arr: [string, string][], item: [string, string]) => {
             return arr.some(([symbol, correlationId]) => symbol === item[0] && correlationId === item[1]);

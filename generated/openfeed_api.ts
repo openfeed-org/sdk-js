@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import Long from "long";
-import { HeartBeat, HeartBeatEncode, HeartBeatDecode, InstrumentAction, InstrumentActionEncode, InstrumentActionDecode, MarketSnapshot, MarketSnapshotEncode, MarketSnapshotDecode, MarketStatus, MarketStatusEncode, MarketStatusDecode, MarketUpdate, MarketUpdateEncode, MarketUpdateDecode, Ohlc, OhlcEncode, OhlcDecode, Service, VolumeAtPrice, VolumeAtPriceEncode, VolumeAtPriceDecode } from "./openfeed";
+import { Greeks, GreeksEncode, GreeksDecode, HeartBeat, HeartBeatEncode, HeartBeatDecode, InstrumentAction, InstrumentActionEncode, InstrumentActionDecode, MarketSnapshot, MarketSnapshotEncode, MarketSnapshotDecode, MarketStatus, MarketStatusEncode, MarketStatusDecode, MarketUpdate, MarketUpdateEncode, MarketUpdateDecode, Ohlc, OhlcEncode, OhlcDecode, Service, VolumeAtPrice, VolumeAtPriceEncode, VolumeAtPriceDecode } from "./openfeed";
 import { InstrumentDefinition, InstrumentDefinitionEncode, InstrumentDefinitionDecode, InstrumentDefinition_InstrumentType } from "./openfeed_instrument";
 export enum Result {
     UNKNOWN_RESULT = 0,
@@ -36,6 +36,7 @@ export enum SubscriptionType {
     OHLC = 7,
     OHLC_NON_REGULAR = 8,
     SETTLEMENT = 9,
+    GREEKS = 10,
     UNRECOGNIZED = -1
 }
 /** / Symbol type for the subscription filter. */
@@ -71,6 +72,7 @@ export interface OpenfeedGatewayMessage {
     exchangeResponse?: ExchangeResponse | undefined;
     instrumentAction?: InstrumentAction | undefined;
     listSubscriptionsResponse?: ListSubscriptionsResponse | undefined;
+    greeks?: Greeks | undefined;
 }
 /**
  * //////////////////
@@ -373,6 +375,7 @@ function createBaseOpenfeedGatewayMessage(): OpenfeedGatewayMessage {
         exchangeResponse: undefined,
         instrumentAction: undefined,
         listSubscriptionsResponse: undefined,
+        greeks: undefined,
     };
 }
 export const OpenfeedGatewayMessageEncode = {
@@ -421,6 +424,9 @@ export const OpenfeedGatewayMessageEncode = {
         }
         if (message.listSubscriptionsResponse !== undefined) {
             ListSubscriptionsResponseEncode.encode(message.listSubscriptionsResponse, writer.uint32(122).fork()).join();
+        }
+        if (message.greeks !== undefined) {
+            GreeksEncode.encode(message.greeks, writer.uint32(130).fork()).join();
         }
         return writer;
     }
@@ -535,6 +541,13 @@ export const OpenfeedGatewayMessageEncode = {
                         break;
                     }
                     message.listSubscriptionsResponse = ListSubscriptionsResponseDecode.decode(reader, reader.uint32());
+                    continue;
+                }
+                case 16: {
+                    if (tag !== 130) {
+                        break;
+                    }
+                    message.greeks = GreeksDecode.decode(reader, reader.uint32());
                     continue;
                 }
             }

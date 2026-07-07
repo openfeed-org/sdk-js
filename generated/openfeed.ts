@@ -1105,6 +1105,20 @@ export interface Ohlc {
     openStartTime: Long;
     closeEndTime: Long;
 }
+/** / Option greeks and theoretical value. */
+export interface Greeks {
+    marketId: Long;
+    symbol: string;
+    /** / UTC Timestamp, nano seconds since Unix epoch */
+    transactionTime: Long;
+    theoretical: number;
+    rho: number;
+    theta: number;
+    vega: number;
+    gamma: number;
+    delta: number;
+    impVol: number;
+}
 /** / Instrument Action */
 export interface InstrumentAction {
     transactionTime: Long;
@@ -8397,6 +8411,141 @@ export const OhlcEncode = {
                         break;
                     }
                     message.closeEndTime = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseGreeks(): Greeks {
+    return {
+        marketId: Long.ZERO,
+        symbol: "",
+        transactionTime: Long.ZERO,
+        theoretical: 0,
+        rho: 0,
+        theta: 0,
+        vega: 0,
+        gamma: 0,
+        delta: 0,
+        impVol: 0,
+    };
+}
+export const GreeksEncode = {
+    encode(message: Greeks, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (!message.marketId.equals(Long.ZERO)) {
+            writer.uint32(8).sint64(message.marketId.toString());
+        }
+        if (message.symbol !== "") {
+            writer.uint32(18).string(message.symbol);
+        }
+        if (!message.transactionTime.equals(Long.ZERO)) {
+            writer.uint32(24).sint64(message.transactionTime.toString());
+        }
+        if (message.theoretical !== 0) {
+            writer.uint32(33).double(message.theoretical);
+        }
+        if (message.rho !== 0) {
+            writer.uint32(41).double(message.rho);
+        }
+        if (message.theta !== 0) {
+            writer.uint32(49).double(message.theta);
+        }
+        if (message.vega !== 0) {
+            writer.uint32(57).double(message.vega);
+        }
+        if (message.gamma !== 0) {
+            writer.uint32(65).double(message.gamma);
+        }
+        if (message.delta !== 0) {
+            writer.uint32(73).double(message.delta);
+        }
+        if (message.impVol !== 0) {
+            writer.uint32(81).double(message.impVol);
+        }
+        return writer;
+    }
+}, GreeksDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): Greeks {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGreeks();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 8) {
+                        break;
+                    }
+                    message.marketId = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.symbol = reader.string();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 24) {
+                        break;
+                    }
+                    message.transactionTime = Long.fromString(reader.sint64().toString());
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 33) {
+                        break;
+                    }
+                    message.theoretical = reader.double();
+                    continue;
+                }
+                case 5: {
+                    if (tag !== 41) {
+                        break;
+                    }
+                    message.rho = reader.double();
+                    continue;
+                }
+                case 6: {
+                    if (tag !== 49) {
+                        break;
+                    }
+                    message.theta = reader.double();
+                    continue;
+                }
+                case 7: {
+                    if (tag !== 57) {
+                        break;
+                    }
+                    message.vega = reader.double();
+                    continue;
+                }
+                case 8: {
+                    if (tag !== 65) {
+                        break;
+                    }
+                    message.gamma = reader.double();
+                    continue;
+                }
+                case 9: {
+                    if (tag !== 73) {
+                        break;
+                    }
+                    message.delta = reader.double();
+                    continue;
+                }
+                case 10: {
+                    if (tag !== 81) {
+                        break;
+                    }
+                    message.impVol = reader.double();
                     continue;
                 }
             }

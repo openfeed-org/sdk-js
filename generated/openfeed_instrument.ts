@@ -159,6 +159,7 @@ export interface InstrumentDefinition {
     quantityFractionalDenominator: number;
     /** / Divide fractional volumes by this value to get real volumes */
     volumeFractionalDenominator: number;
+    contractMetadata: InstrumentDefinition_ContractMetadata | undefined;
 }
 /** ############################################# */
 export enum InstrumentDefinition_InstrumentType {
@@ -312,6 +313,17 @@ export interface InstrumentDefinition_ExchangeMetadata {
     securitySymbol: string;
     underlyingSymbol: string;
 }
+/** / Contract Metadata */
+export interface InstrumentDefinition_ContractMetadata {
+    productCategory: string;
+    marketCode: string;
+    name: string;
+    term: string;
+    beginDate: number;
+    endDate: number;
+    deliveryPeriod: string;
+    priceType: string;
+}
 function createBaseInstrumentDefinition(): InstrumentDefinition {
     return {
         marketId: Long.ZERO,
@@ -381,6 +393,7 @@ function createBaseInstrumentDefinition(): InstrumentDefinition {
         roundLotSize: 0,
         quantityFractionalDenominator: 0,
         volumeFractionalDenominator: 0,
+        contractMetadata: undefined,
     };
 }
 export const InstrumentDefinitionEncode = {
@@ -587,6 +600,9 @@ export const InstrumentDefinitionEncode = {
         }
         if (message.volumeFractionalDenominator !== 0) {
             writer.uint32(1936).sint32(message.volumeFractionalDenominator);
+        }
+        if (message.contractMetadata !== undefined) {
+            InstrumentDefinition_ContractMetadataEncode.encode(message.contractMetadata, writer.uint32(1946).fork()).join();
         }
         return writer;
     }
@@ -1072,6 +1088,13 @@ export const InstrumentDefinitionEncode = {
                         break;
                     }
                     message.volumeFractionalDenominator = reader.sint32();
+                    continue;
+                }
+                case 243: {
+                    if (tag !== 1946) {
+                        break;
+                    }
+                    message.contractMetadata = InstrumentDefinition_ContractMetadataDecode.decode(reader, reader.uint32());
                     continue;
                 }
             }
@@ -1619,6 +1642,119 @@ export const InstrumentDefinition_ExchangeMetadataEncode = {
                         break;
                     }
                     message.underlyingSymbol = reader.string();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    }
+};
+function createBaseInstrumentDefinition_ContractMetadata(): InstrumentDefinition_ContractMetadata {
+    return {
+        productCategory: "",
+        marketCode: "",
+        name: "",
+        term: "",
+        beginDate: 0,
+        endDate: 0,
+        deliveryPeriod: "",
+        priceType: "",
+    };
+}
+export const InstrumentDefinition_ContractMetadataEncode = {
+    encode(message: InstrumentDefinition_ContractMetadata, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.productCategory !== "") {
+            writer.uint32(10).string(message.productCategory);
+        }
+        if (message.marketCode !== "") {
+            writer.uint32(18).string(message.marketCode);
+        }
+        if (message.name !== "") {
+            writer.uint32(26).string(message.name);
+        }
+        if (message.term !== "") {
+            writer.uint32(34).string(message.term);
+        }
+        if (message.beginDate !== 0) {
+            writer.uint32(40).sint32(message.beginDate);
+        }
+        if (message.endDate !== 0) {
+            writer.uint32(48).sint32(message.endDate);
+        }
+        if (message.deliveryPeriod !== "") {
+            writer.uint32(58).string(message.deliveryPeriod);
+        }
+        if (message.priceType !== "") {
+            writer.uint32(66).string(message.priceType);
+        }
+        return writer;
+    }
+}, InstrumentDefinition_ContractMetadataDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_ContractMetadata {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseInstrumentDefinition_ContractMetadata();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+                    message.productCategory = reader.string();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+                    message.marketCode = reader.string();
+                    continue;
+                }
+                case 3: {
+                    if (tag !== 26) {
+                        break;
+                    }
+                    message.name = reader.string();
+                    continue;
+                }
+                case 4: {
+                    if (tag !== 34) {
+                        break;
+                    }
+                    message.term = reader.string();
+                    continue;
+                }
+                case 5: {
+                    if (tag !== 40) {
+                        break;
+                    }
+                    message.beginDate = reader.sint32();
+                    continue;
+                }
+                case 6: {
+                    if (tag !== 48) {
+                        break;
+                    }
+                    message.endDate = reader.sint32();
+                    continue;
+                }
+                case 7: {
+                    if (tag !== 58) {
+                        break;
+                    }
+                    message.deliveryPeriod = reader.string();
+                    continue;
+                }
+                case 8: {
+                    if (tag !== 66) {
+                        break;
+                    }
+                    message.priceType = reader.string();
                     continue;
                 }
             }
