@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type MockedFunction } from "vitest";
+import { describe, it, expect, vi, afterEach, onTestFinished } from "vitest";
 import WebSocket from "isomorphic-ws";
 import { OpenFeedClient } from "@src/connection/client";
 import { OpenFeedConnection } from "@src/connection/connection";
@@ -58,27 +58,25 @@ vi.mock("@src/connection/connection", async (importOriginal) => {
 // Flush all active promises to advance the code stuck on awaits
 const yieldToEventLoop = () => new Promise(setImmediate);
 
-describe("OpenFeedClient", () => {
-    let client: OpenFeedClient;
-    let mockSocket: WebSocket;
-    let mockSocketInstances: WebSocket[];
-    let listeners: OpenFeedListeners;
-    let connectionMock: MockedFunction<typeof OpenFeedConnection>;
-
-    beforeEach(() => {
-        listeners = new OpenFeedListeners();
-        client = new OpenFeedClient("ws://test-url", testUsername, testPassword, listeners);
-        mockSocketInstances = vi.mocked(WebSocket).mock.instances;
-        mockSocket = mockSocketInstances[0];
-        connectionMock = vi.mocked(OpenFeedConnection);
+const setup = () => {
+    const listeners = new OpenFeedListeners();
+    const client = new OpenFeedClient("ws://test-url", testUsername, testPassword, listeners);
+    onTestFinished(() => {
+        client.dispose();
     });
+    const mockSocketInstances = vi.mocked(WebSocket).mock.instances;
+    const [mockSocket] = mockSocketInstances;
+    const connectionMock = vi.mocked(OpenFeedConnection);
+    return { client, mockSocket, mockSocketInstances, listeners, connectionMock };
+};
 
+describe("OpenFeedClient", () => {
     afterEach(() => {
         vi.clearAllMocks();
-        client.dispose();
     });
 
     it("should handle login flow correctly", async () => {
+        const { client, mockSocket, listeners, connectionMock } = setup();
         const sendSpy = communication.send;
 
         // Simulate socket open event
@@ -126,6 +124,7 @@ describe("OpenFeedClient", () => {
     });
 
     it("should throw an error if it receives invalid credentials", async () => {
+        const { client, mockSocket } = setup();
         const sendSpy = communication.send;
 
         // Simulate socket open event
@@ -158,6 +157,7 @@ describe("OpenFeedClient", () => {
     // This is our most complex test, as it tests the full flow of the client:
     // It logs in, subscribes to a service, disconnects, reconnects, and ensures resubscribe happens automatically
     it("should handle disconnect and attempt to reconnect while there is a subscription", async () => {
+        const { client, mockSocketInstances, listeners } = setup();
         const sendSpy = communication.send;
         const disconnectSpy = vi.spyOn(listeners, "onDisconnected");
 

@@ -64,13 +64,6 @@ export default defineConfig(
         },
     },
     {
-        // tests: setup in beforeEach
-        files: ["test/**/*.ts"],
-        rules: {
-            "init-declarations": "off",
-        },
-    },
-    {
         // the SDK's error types, kept together
         files: ["src/connection/errors.ts"],
         rules: {

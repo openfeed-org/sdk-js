@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { OpenFeedListeners } from "@src/connection/listeners";
 import { OpenfeedGatewayMessage, Result, SubscriptionType } from "@gen/openfeed_api";
 import Long from "long";
@@ -123,26 +123,26 @@ const MESSAGES = {
     } as Partial<OpenfeedGatewayMessage> as OpenfeedGatewayMessage,
 };
 
+const setup = () => {
+    const listeners = new OpenFeedListeners();
+    const onMessageWithMetadataSpy = vi.spyOn(listeners, "onMessageWithMetadata");
+    return { listeners, onMessageWithMetadataSpy };
+};
+
 describe("OpenFeedListeners", () => {
-    let listeners: OpenFeedListeners;
-    let onMessageWithMetadataSpy: MockInstance;
-
-    beforeEach(() => {
-        listeners = new OpenFeedListeners();
-        onMessageWithMetadataSpy = vi.spyOn(listeners, "onMessageWithMetadata");
-    });
-
     afterEach(() => {
         vi.clearAllMocks();
     });
 
     it("should handle single subscriptionResponse messages", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW, [ALIAS_REGULAR_NEW], undefined);
     });
 
     it("should handle multiple different type subscription messages correctly", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // This one is possible, and we wouldn't like to end up with copies of the same symbol in this case
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD);
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD);
@@ -152,6 +152,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should handle multiple subscriptionResponse messages correctly", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // Not expecting this to happen in regular use, but we still wouldn't like to end up with copies of the same symbol in this case
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
@@ -161,6 +162,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should handle instrumentDefinition messages correctly", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We require the subscriptionResponse message to arrive first
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
         void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
@@ -170,6 +172,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should handle marketSnapshot messages correctly", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
         void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
@@ -183,6 +186,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should not connect anything on error subscription", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We expect the other messages not to be related with the subscription request if it failed. The listeners will still pass the messages to the client.
         const messagesInOrder = [
             MESSAGES.DUMMY_SUBSCRIPTION_UNAUTHORIZED,
@@ -205,6 +209,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should handle marketUpdate messages correctly", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
         void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
@@ -218,6 +223,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should handle volumeAtPrice messages correctly", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
         void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
@@ -231,6 +237,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should handle ohlc messages correctly", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
         void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
@@ -244,6 +251,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should handle unsubscription messages correctly", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
         void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD);
         void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_OLD);
@@ -261,6 +269,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should handle alias_changed instrument action correctly", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We expect the messages to arrive in the following order - subscriptionResponse, instrumentDefinition, marketSnapshot
         // after an alias change - we expect the subscriptionResponse and instrumentDefinition to be repeated so that we can reconnect everything
         const messagesInOrder = [
@@ -303,6 +312,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should not drop a subscription when receiving an error unsubscription response message", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We expect the messages to arrive in the following order - subscriptionResponse, instrumentDefinition, marketSnapshot
         const messagesInOrder = [
             MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD,
@@ -339,6 +349,7 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should not drop a subscription when receiving an unrelated unsubscription response message", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
         // We expect the messages to arrive in the following order - subscriptionResponse, instrumentDefinition, marketSnapshot
         const messagesInOrder = [
             MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD,

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach, onTestFinished } from "vitest";
 import WebSocket from "isomorphic-ws";
 
 import { OpenFeedConnection } from "@src/connection/connection";
@@ -16,27 +16,27 @@ const communication = vi.mocked(communicationModule);
 
 const emptyEvent = {} as WebSocket.MessageEvent;
 
-describe("OpenFeedConnection", () => {
-    let connection: OpenFeedConnection;
-    let mockSocket: WebSocket;
-    let listeners: OpenFeedListeners;
+const setup = () => {
+    const mockSocket = {
+        onmessage: vi.fn(),
+        close: vi.fn(),
+    } as unknown as WebSocket;
 
-    beforeEach(() => {
-        mockSocket = {
-            onmessage: vi.fn(),
-            close: vi.fn(),
-        } as unknown as WebSocket;
-
-        listeners = new OpenFeedListeners();
-        connection = new OpenFeedConnection("test-token", mockSocket, listeners);
-    });
-
-    afterEach(() => {
+    const listeners = new OpenFeedListeners();
+    const connection = new OpenFeedConnection("test-token", mockSocket, listeners);
+    onTestFinished(() => {
         connection.dispose();
+    });
+    return { connection, mockSocket, listeners };
+};
+
+describe("OpenFeedConnection", () => {
+    afterEach(() => {
         vi.clearAllMocks();
     });
 
     it("should handle heartBeat messages", () => {
+        const { mockSocket, listeners } = setup();
         const heartBeatSpy = vi.spyOn(listeners, "onHeartBeat");
         communication.receive.mockReturnValue([asMessage({ heartBeat: true })]);
 
@@ -45,6 +45,7 @@ describe("OpenFeedConnection", () => {
         expect(heartBeatSpy).toHaveBeenCalledTimes(1);
     });
     it("should handle instrumentResponse messages", async () => {
+        const { connection, mockSocket } = setup();
         const sendSpy = communication.send;
         const instrumentPromise = connection.getInstrument({ symbol: "test-symbol", instrumentType: [], spreadType: [] });
 
@@ -69,6 +70,7 @@ describe("OpenFeedConnection", () => {
     });
 
     it("should handle instrumentReferenceResponse messages", async () => {
+        const { connection, mockSocket } = setup();
         const sendSpy = communication.send;
         const instrumentReferencePromise = connection.getInstrumentReference({ symbol: "test-symbol" });
 
@@ -87,6 +89,7 @@ describe("OpenFeedConnection", () => {
     });
 
     it("should handle exchangeResponse messages", async () => {
+        const { connection, mockSocket } = setup();
         const sendSpy = communication.send;
         const exchangePromise = connection.getExchanges();
 
@@ -109,6 +112,7 @@ describe("OpenFeedConnection", () => {
     });
 
     it("should handle subscriptionResponse messages", () => {
+        const { connection, mockSocket, listeners } = setup();
         const sendSpy = communication.send;
         const messageSpy = vi.spyOn(listeners, "onMessage");
 
