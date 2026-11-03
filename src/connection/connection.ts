@@ -386,7 +386,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
             this.logger?.error(error);
             throw error;
         } finally {
-            this.#instrumentRequests.delete(toStringOrNumber(correlationId));
+            this.#instrumentReferenceRequests.delete(toStringOrNumber(correlationId));
         }
     };
 
