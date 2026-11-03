@@ -1,26 +1,41 @@
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import WebSocket from "isomorphic-ws";
 import { OpenFeedClient } from "@src/connection/client";
+import { OpenFeedConnection } from "@src/connection/connection";
 import { OpenFeedListeners } from "@src/connection/listeners";
+import * as communicationModule from "@src/utilities/communication";
 import { version } from "@gen/version";
 import { Result, SubscriptionType } from "@gen/openfeed_api";
 import { Service } from "@gen/openfeed";
 import { TIME } from "@src/utilities/constants";
 
-jest.mock("@src/utilities/communication", () => ({
-    send: jest.fn(),
-    receive: jest.fn(),
+vi.mock("@src/utilities/communication", () => ({
+    send: vi.fn(),
+    receive: vi.fn(),
 }));
-jest.mock("isomorphic-ws");
+// Manual mock: vitest automocking would also mock the onopen/onmessage accessors, which swallows the handlers the client assigns
+vi.mock("isomorphic-ws", () => {
+    const MockWebSocket = Object.assign(
+        vi.fn(function (this: Record<string, unknown>) {
+            this.close = vi.fn();
+        }),
+        { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 }
+    );
+    return { default: MockWebSocket };
+});
 
-const testVersion = "mocked-os-version";
-const testRelease = "mocked-os-release";
-const testArch = "mocked-os-arch";
+// vi.mock factories are hoisted above the rest of the file, so the values they use must be hoisted too
+const { testVersion, testRelease, testArch } = vi.hoisted(() => ({
+    testVersion: "mocked-os-version",
+    testRelease: "mocked-os-release",
+    testArch: "mocked-os-arch",
+}));
 
 // Mock os module because it usees async import (a bit more complicated, but tests our string building)
-jest.mock("os", () => ({
-    version: jest.fn().mockReturnValue(testVersion),
-    release: jest.fn().mockReturnValue(testRelease),
-    arch: jest.fn().mockReturnValue(testArch),
+vi.mock("os", () => ({
+    version: vi.fn().mockReturnValue(testVersion),
+    release: vi.fn().mockReturnValue(testRelease),
+    arch: vi.fn().mockReturnValue(testArch),
 }));
 
 const emptyMessageEvent = {} as WebSocket.MessageEvent;
@@ -29,15 +44,15 @@ const emptyCloseEvent = {} as WebSocket.CloseEvent;
 const testUsername = "test-username";
 const testPassword = "test-password";
 
-// Mock the import as the following:
-// connectionMock = jest.spyOn(jest.requireActual("@src/connection/connection"), "OpenFeedConnection");
-// doesn't seem to work to spy on the constructor
-jest.mock("@src/connection/connection", () => {
-    const originalModule = jest.requireActual("@src/connection/connection");
+// Wrap the real constructor in a mock so we can assert on how it was called.
+// It has to be a `function` (not an arrow) so it can be invoked with `new`.
+vi.mock("@src/connection/connection", async (importOriginal) => {
+    const originalModule = await importOriginal<typeof import("@src/connection/connection")>();
+    const OriginalConnection = originalModule.OpenFeedConnection as unknown as new (...args: unknown[]) => unknown;
     return {
         ...originalModule,
-        OpenFeedConnection: jest.fn().mockImplementation((...args: any[]) => {
-            return new originalModule.OpenFeedConnection(...args);
+        OpenFeedConnection: vi.fn(function (...args: unknown[]) {
+            return new OriginalConnection(...args);
         }),
     };
 });
@@ -50,26 +65,25 @@ describe("OpenFeedClient", () => {
     let mockSocket: WebSocket;
     let mockSocketInstances: WebSocket[];
     let listeners: OpenFeedListeners;
-    let communication: { send: jest.Mock; receive: jest.Mock };
-    let connectionMock: jest.SpyInstance;
+    let communication: { send: Mock; receive: Mock };
+    let connectionMock: Mock;
 
     beforeEach(() => {
         listeners = new OpenFeedListeners();
         client = new OpenFeedClient("ws://test-url", testUsername, testPassword, listeners);
-        communication = jest.requireMock("@src/utilities/communication");
-        const MockSocket = jest.requireMock("isomorphic-ws");
-        mockSocketInstances = MockSocket.mock.instances;
+        communication = communicationModule as unknown as { send: Mock; receive: Mock };
+        mockSocketInstances = vi.mocked(WebSocket).mock.instances;
         mockSocket = mockSocketInstances[0];
-        connectionMock = jest.requireMock("@src/connection/connection").OpenFeedConnection;
+        connectionMock = vi.mocked(OpenFeedConnection) as unknown as Mock;
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         client.dispose();
     });
 
     it("should handle login flow correctly", async () => {
-        const sendSpy = jest.spyOn(communication, "send");
+        const sendSpy = communication.send;
 
         // Simulate socket open event
         mockSocket.onopen?.(emptyMessageEvent);
@@ -116,7 +130,7 @@ describe("OpenFeedClient", () => {
     });
 
     it("should throw an error if it receives invalid credentials", async () => {
-        const sendSpy = jest.spyOn(communication, "send");
+        const sendSpy = communication.send;
 
         // Simulate socket open event
         mockSocket.onopen?.(emptyMessageEvent);
@@ -148,8 +162,8 @@ describe("OpenFeedClient", () => {
     // This is our most complex test, as it tests the full flow of the client:
     // It logs in, subscribes to a service, disconnects, reconnects, and ensures resubscribe happens automatically
     it("should handle disconnect and attempt to reconnect while there is a subscription", async () => {
-        const sendSpy = jest.spyOn(communication, "send");
-        const disconnectSpy = jest.spyOn(listeners, "onDisconnected");
+        const sendSpy = communication.send;
+        const disconnectSpy = vi.spyOn(listeners, "onDisconnected");
 
         // Simulate socket open event
         mockSocketInstances[0].onopen?.(emptyMessageEvent);
@@ -184,9 +198,9 @@ describe("OpenFeedClient", () => {
         mockSocketInstances[0].onclose?.(emptyCloseEvent);
 
         // Use fake timers to fast-forward the reconnect delay
-        jest.useFakeTimers();
-        await jest.advanceTimersByTimeAsync(TIME.RECONNECT + TIME.RECONNECT_RANDOMIZE);
-        jest.useRealTimers();
+        vi.useFakeTimers();
+        await vi.advanceTimersByTimeAsync(TIME.RECONNECT + TIME.RECONNECT_RANDOMIZE);
+        vi.useRealTimers();
 
         expect(disconnectSpy).toHaveBeenCalledTimes(1);
 

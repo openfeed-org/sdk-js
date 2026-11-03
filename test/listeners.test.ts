@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from "vitest";
 import { OpenFeedListeners } from "@src/connection/listeners";
 import { OpenfeedGatewayMessage, Result, SubscriptionType } from "@gen/openfeed_api";
 import Long from "long";
@@ -124,15 +125,15 @@ const MESSAGES = {
 
 describe("OpenFeedListeners", () => {
     let listeners: OpenFeedListeners;
-    let onMessageWithMetadataSpy: jest.SpyInstance;
+    let onMessageWithMetadataSpy: MockInstance;
 
     beforeEach(() => {
         listeners = new OpenFeedListeners();
-        onMessageWithMetadataSpy = jest.spyOn(listeners, "onMessageWithMetadata");
+        onMessageWithMetadataSpy = vi.spyOn(listeners, "onMessageWithMetadata");
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it("should handle single subscriptionResponse messages", () => {
