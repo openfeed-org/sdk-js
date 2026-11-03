@@ -10,7 +10,7 @@
     "author": "Dejan Maksimovic <maximovic.d@gmail.com>",
     "license": "MIT",
     "scripts": {
-        "prepare": "husky install",
+        "prepare": "husky",
         "upgrade:proto": "yarn upgrade proto",
         "generate:proto": "cd node_modules/proto && protoc --plugin=../../node_modules/.bin/protoc-gen-ts_proto --ts_proto_opt=outputJsonMethods=false --ts_proto_opt=outputPartialMethods=false --ts_proto_opt=exportCommonSymbols=false --ts_proto_opt=esModuleInterop=true --ts_proto_opt=forceLong=long --ts_proto_opt=useExactTypes=false --ts_proto_out=../../generated *.proto",
         "generate:version": "genversion --es6 -s -d ./generated/version.ts",
@@ -37,7 +37,7 @@
         "eslint-config-prettier": "^10.1.8",
         "genversion": "^3.2.0",
         "google-protobuf": "^4.0.3",
-        "husky": "^8.0.0",
+        "husky": "^9.1.7",
         "prettier": "^3.9.10",
         "proto": "git+ssh://git@github.com/openfeed-org/proto.git#master",
         "standard-version": "^9.5.0",
