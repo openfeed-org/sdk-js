@@ -6,7 +6,19 @@
     "browser": "dist/index.js",
     "type": "module",
     "types": "dist/src/index.d.ts",
-    "repository": "https://github.com/openfeed-org/sdk-js",
+    "exports": {
+        ".": {
+            "types": "./dist/src/index.d.ts",
+            "browser": "./dist/index.js",
+            "node": "./dist/node.js",
+            "default": "./dist/index.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/openfeed-org/sdk-js.git"
+    },
     "author": "Dejan Maksimovic <maximovic.d@gmail.com>",
     "license": "MIT",
     "scripts": {
@@ -25,9 +37,12 @@
         "test": "vitest run",
         "lint": "eslint .",
         "format": "prettier --write .",
-        "format:check": "prettier --check ."
+        "format:check": "prettier --check .",
+        "check:package": "publint --pack npm && attw --pack . --profile esm-only",
+        "check:esm": "node --input-type=module -e \"const sdk = await import('@openfeed/sdk-js'); if (typeof sdk.OpenFeedClient !== 'function') process.exit(1)\""
     },
     "devDependencies": {
+        "@arethetypeswrong/cli": "^0.18.5",
         "@commitlint/cli": "^21.2.4",
         "@commitlint/config-conventional": "^21.2.4",
         "@eslint/js": "^10.0.1",
@@ -40,6 +55,7 @@
         "husky": "^9.1.7",
         "prettier": "^3.9.10",
         "proto": "git+ssh://git@github.com/openfeed-org/proto.git#master",
+        "publint": "^0.3.25",
         "standard-version": "^9.5.0",
         "ts-proto": "^2.18.3",
         "tsx": "^4.23.15",
