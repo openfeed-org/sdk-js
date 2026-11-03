@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import WebSocket from "isomorphic-ws";
 
 import { OpenFeedConnection } from "@src/connection/connection";
@@ -6,11 +6,13 @@ import { OpenFeedListeners } from "@src/connection/listeners";
 import * as communicationModule from "@src/utilities/communication";
 import { Service } from "@gen/openfeed";
 import { SubscriptionType } from "@gen/openfeed_api";
+import { asMessage, defined } from "./helpers";
 
 vi.mock("@src/utilities/communication", () => ({
     send: vi.fn(),
     receive: vi.fn(),
 }));
+const communication = vi.mocked(communicationModule);
 
 const emptyEvent = {} as WebSocket.MessageEvent;
 
@@ -18,7 +20,6 @@ describe("OpenFeedConnection", () => {
     let connection: OpenFeedConnection;
     let mockSocket: WebSocket;
     let listeners: OpenFeedListeners;
-    let communication: { send: Mock; receive: Mock };
 
     beforeEach(() => {
         mockSocket = {
@@ -28,7 +29,6 @@ describe("OpenFeedConnection", () => {
 
         listeners = new OpenFeedListeners();
         connection = new OpenFeedConnection("test-token", mockSocket, listeners);
-        communication = communicationModule as unknown as { send: Mock; receive: Mock };
     });
 
     afterEach(() => {
@@ -38,7 +38,7 @@ describe("OpenFeedConnection", () => {
 
     it("should handle heartBeat messages", () => {
         const heartBeatSpy = vi.spyOn(listeners, "onHeartBeat");
-        communication.receive.mockReturnValue([{ heartBeat: true }]);
+        communication.receive.mockReturnValue([asMessage({ heartBeat: true })]);
 
         mockSocket.onmessage?.(emptyEvent);
 
@@ -49,7 +49,8 @@ describe("OpenFeedConnection", () => {
         const instrumentPromise = connection.getInstrument({ symbol: "test-symbol", instrumentType: [], spreadType: [] });
 
         expect(sendSpy).toHaveBeenCalledTimes(1);
-        const [[, { instrumentRequest }]] = sendSpy.mock.calls;
+        const [[, sent]] = sendSpy.mock.calls;
+        const instrumentRequest = defined(sent.instrumentRequest);
         expect(instrumentRequest.symbol).toBe("test-symbol");
         const id = instrumentRequest.correlationId;
         const mockID = {};
@@ -58,7 +59,7 @@ describe("OpenFeedConnection", () => {
             { instrumentResponse: { correlationId: id, instrumentDefinition: mockID, numberOfDefinitions: 2 } },
             { instrumentResponse: { correlationId: id, instrumentDefinition: mockID, numberOfDefinitions: 2 } },
         ];
-        communication.receive.mockReturnValue(mockInstrumentResponse);
+        communication.receive.mockReturnValue(mockInstrumentResponse.map(asMessage));
         mockSocket.onmessage?.(emptyEvent);
 
         const res = await instrumentPromise;
@@ -72,12 +73,13 @@ describe("OpenFeedConnection", () => {
         const instrumentReferencePromise = connection.getInstrumentReference({ symbol: "test-symbol" });
 
         expect(sendSpy).toHaveBeenCalledTimes(1);
-        const [[, { instrumentReferenceRequest }]] = sendSpy.mock.calls;
+        const [[, sent]] = sendSpy.mock.calls;
+        const instrumentReferenceRequest = defined(sent.instrumentReferenceRequest);
         expect(instrumentReferenceRequest.symbol).toBe("test-symbol");
         const id = instrumentReferenceRequest.correlationId;
         const mockReferenceResponse = { correlationId: id };
 
-        communication.receive.mockReturnValue([{ instrumentReferenceResponse: mockReferenceResponse }]);
+        communication.receive.mockReturnValue([asMessage({ instrumentReferenceResponse: mockReferenceResponse })]);
         mockSocket.onmessage?.(emptyEvent);
 
         const res = await instrumentReferencePromise;
@@ -89,14 +91,15 @@ describe("OpenFeedConnection", () => {
         const exchangePromise = connection.getExchanges();
 
         expect(sendSpy).toHaveBeenCalledTimes(1);
-        const [[, { exchangeRequest }]] = sendSpy.mock.calls;
+        const [[, sent]] = sendSpy.mock.calls;
+        const exchangeRequest = defined(sent.exchangeRequest);
         const id = exchangeRequest.correlationId;
         const mockExchangeResponse = {
             correlationId: id,
             exchanges: [{ code: "exchange1" }, { code: "exchange2" }],
         };
 
-        communication.receive.mockReturnValue([{ exchangeResponse: mockExchangeResponse }]);
+        communication.receive.mockReturnValue([asMessage({ exchangeResponse: mockExchangeResponse })]);
         mockSocket.onmessage?.(emptyEvent);
 
         const res = await exchangePromise;
@@ -115,7 +118,8 @@ describe("OpenFeedConnection", () => {
         const subCorrelationId = connection.subscribe(Service.REAL_TIME, subscriptionType, snapshotIntervalSeconds, testSymbols, null, null, null);
 
         expect(sendSpy).toHaveBeenCalledTimes(1);
-        const [[, { subscriptionRequest }]] = sendSpy.mock.calls;
+        const [[, sent]] = sendSpy.mock.calls;
+        const subscriptionRequest = defined(sent.subscriptionRequest);
         const { requests } = subscriptionRequest;
         expect(requests.length).toBe(testSymbols.length);
         expect(requests[0].symbol).toBe("test-symbol-1");
@@ -132,7 +136,7 @@ describe("OpenFeedConnection", () => {
 
         const mockSubscriptionResponse = { correlationId: id, unsubscribe: false };
 
-        communication.receive.mockReturnValue([{ subscriptionResponse: mockSubscriptionResponse }]);
+        communication.receive.mockReturnValue([asMessage({ subscriptionResponse: mockSubscriptionResponse })]);
 
         expect(messageSpy).toHaveBeenCalledTimes(0);
         mockSocket.onmessage?.(emptyEvent);
