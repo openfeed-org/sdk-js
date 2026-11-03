@@ -3,6 +3,11 @@ import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
 import dts from "vite-plugin-dts";
 
+// Node's ES module resolution (`moduleResolution: nodenext` in client projects) needs file extensions on relative imports.
+// The JavaScript is bundled into single files, so only the declarations have relative imports, and they get `.js` here
+const relativeImport = /(\bfrom\s+|\bimport\()(["'])(\.{1,2}\/[^"']+?)(?<!\.js)\2/g;
+const addJsExtensions = (content) => content.replace(relativeImport, "$1$2$3.js$2");
+
 export default defineConfig({
     plugins: [
         checker({ typescript: true }),
@@ -16,6 +21,7 @@ export default defineConfig({
             entryRoot: ".",
             include: ["src", "generated"],
             exclude: ["src/test.ts"],
+            beforeWriteFile: (filePath, content) => ({ filePath, content: addJsExtensions(content) }),
         }),
     ],
     build: {

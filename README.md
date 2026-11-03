@@ -37,14 +37,16 @@ yarn generate:version
 
 ### Checks
 
-| Command             | What it does                                    |
-| ------------------- | ----------------------------------------------- |
-| `yarn test`         | Runs the tests (Vitest)                         |
-| `yarn lint`         | Lints the project (ESLint)                      |
-| `yarn format`       | Formats the project (Prettier)                  |
-| `yarn format:check` | Checks the formatting without changing anything |
+| Command              | What it does                                    |
+| -------------------- | ----------------------------------------------- |
+| `yarn test`          | Runs the tests (Vitest)                         |
+| `yarn lint`          | Lints the project (ESLint)                      |
+| `yarn format`        | Formats the project (Prettier)                  |
+| `yarn format:check`  | Checks the formatting without changing anything |
+| `yarn check:package` | Checks the built package with publint and attw  |
+| `yarn check:esm`     | Imports the built package from Node as ESM      |
 
-CI runs `lint`, `format:check` and `test` on every branch.
+`check:package` and `check:esm` need a build first. CI runs all of these on every branch, and the package checks again before publishing.
 
 ### Building
 

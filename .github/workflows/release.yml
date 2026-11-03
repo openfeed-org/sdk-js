@@ -34,6 +34,11 @@ jobs:
                   ls -al dist
                   echo $GITHUB_REF_NAME
 
+            - name: Check the package
+              run: |
+                  yarn check:package
+                  yarn check:esm
+
             - name: Publish new build
               run: |
                   npm publish --access public --provenance
