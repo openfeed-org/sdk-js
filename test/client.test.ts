@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, type MockedFunction } from "vitest";
 import WebSocket from "isomorphic-ws";
 import { OpenFeedClient } from "@src/connection/client";
 import { OpenFeedConnection } from "@src/connection/connection";
@@ -8,11 +8,13 @@ import { version } from "@gen/version";
 import { Result, SubscriptionType } from "@gen/openfeed_api";
 import { Service } from "@gen/openfeed";
 import { TIME } from "@src/utilities/constants";
+import { asMessage, defined } from "./helpers";
 
 vi.mock("@src/utilities/communication", () => ({
     send: vi.fn(),
     receive: vi.fn(),
 }));
+const communication = vi.mocked(communicationModule);
 // Manual mock: vitest automocking would also mock the onopen/onmessage accessors, which swallows the handlers the client assigns
 vi.mock("isomorphic-ws", () => {
     const MockWebSocket = Object.assign(
@@ -61,16 +63,14 @@ describe("OpenFeedClient", () => {
     let mockSocket: WebSocket;
     let mockSocketInstances: WebSocket[];
     let listeners: OpenFeedListeners;
-    let communication: { send: Mock; receive: Mock };
-    let connectionMock: Mock;
+    let connectionMock: MockedFunction<typeof OpenFeedConnection>;
 
     beforeEach(() => {
         listeners = new OpenFeedListeners();
         client = new OpenFeedClient("ws://test-url", testUsername, testPassword, listeners);
-        communication = communicationModule as unknown as { send: Mock; receive: Mock };
         mockSocketInstances = vi.mocked(WebSocket).mock.instances;
         mockSocket = mockSocketInstances[0];
-        connectionMock = vi.mocked(OpenFeedConnection) as unknown as Mock;
+        connectionMock = vi.mocked(OpenFeedConnection);
     });
 
     afterEach(() => {
@@ -90,7 +90,7 @@ describe("OpenFeedClient", () => {
         // Check that the login request was sent
         expect(sendSpy).toHaveBeenCalledTimes(1);
         const [[, loginRequest]] = sendSpy.mock.calls;
-        const { correlationId, clientVersion, ...restRequest } = loginRequest.loginRequest;
+        const { correlationId, clientVersion, ...restRequest } = defined(loginRequest.loginRequest);
 
         expect(restRequest).toMatchObject({
             username: testUsername,
@@ -113,7 +113,7 @@ describe("OpenFeedClient", () => {
             },
         };
 
-        communication.receive.mockReturnValue([loginResponse]);
+        communication.receive.mockReturnValue([asMessage(loginResponse)]);
 
         mockSocket.onmessage?.(emptyMessageEvent);
 
@@ -138,7 +138,7 @@ describe("OpenFeedClient", () => {
         expect(sendSpy).toHaveBeenCalledTimes(1);
 
         const [[, loginRequest]] = sendSpy.mock.calls;
-        const { correlationId } = loginRequest.loginRequest;
+        const { correlationId } = defined(loginRequest.loginRequest);
         // Simulate invalid credentials response
         const loginResponse = {
             loginResponse: {
@@ -149,7 +149,7 @@ describe("OpenFeedClient", () => {
             },
         };
 
-        communication.receive.mockReturnValue([loginResponse]);
+        communication.receive.mockReturnValue([asMessage(loginResponse)]);
         mockSocket.onmessage?.(emptyMessageEvent);
 
         await expect(client.connection).rejects.toThrow();
@@ -168,7 +168,7 @@ describe("OpenFeedClient", () => {
         await yieldToEventLoop();
 
         const [[, loginRequest]] = sendSpy.mock.calls;
-        const { correlationId } = loginRequest.loginRequest;
+        const { correlationId } = defined(loginRequest.loginRequest);
 
         // Simulate loginResponse message
         const loginResponse = {
@@ -178,7 +178,7 @@ describe("OpenFeedClient", () => {
             },
         };
 
-        communication.receive.mockReturnValue([loginResponse]);
+        communication.receive.mockReturnValue([asMessage(loginResponse)]);
         mockSocketInstances[0].onmessage?.(emptyMessageEvent);
 
         const service = Service.DELAYED;
@@ -209,7 +209,7 @@ describe("OpenFeedClient", () => {
         expect(sendSpy).toHaveBeenCalledTimes(3);
 
         const [, , [, loginRequest2]] = sendSpy.mock.calls;
-        const { correlationId: correlationId2 } = loginRequest2.loginRequest;
+        const { correlationId: correlationId2 } = defined(loginRequest2.loginRequest);
 
         // Simulate loginResponse message
         const loginResponse2 = {
@@ -219,7 +219,7 @@ describe("OpenFeedClient", () => {
             },
         };
 
-        communication.receive.mockReturnValue([loginResponse2]);
+        communication.receive.mockReturnValue([asMessage(loginResponse2)]);
         mockSocketInstances[1].onmessage?.(emptyMessageEvent);
 
         await yieldToEventLoop();
@@ -227,12 +227,12 @@ describe("OpenFeedClient", () => {
         expect(sendSpy).toHaveBeenCalledTimes(4);
 
         const [, , , [, subscriptionRequest]] = sendSpy.mock.calls;
-        expect(subscriptionRequest.subscriptionRequest.requests[0]).toMatchObject({
+        expect(defined(subscriptionRequest.subscriptionRequest).requests[0]).toMatchObject({
             symbol: testSymbols[0],
             subscriptionType: [subscriptionType],
             snapshotIntervalSeconds,
         });
-        expect(subscriptionRequest.subscriptionRequest).toMatchObject({
+        expect(defined(subscriptionRequest.subscriptionRequest)).toMatchObject({
             service,
             unsubscribe: false,
         });

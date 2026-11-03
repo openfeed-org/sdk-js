@@ -64,13 +64,10 @@ export default defineConfig(
         },
     },
     {
-        // tests: setup in beforeEach, and untyped mock call args
+        // tests: setup in beforeEach
         files: ["test/**/*.ts"],
         rules: {
             "init-declarations": "off",
-            "@typescript-eslint/no-unsafe-assignment": "off",
-            "@typescript-eslint/no-unsafe-member-access": "off",
-            "@typescript-eslint/no-unsafe-call": "off",
         },
     },
     {
