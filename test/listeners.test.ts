@@ -137,15 +137,15 @@ describe("OpenFeedListeners", () => {
     });
 
     it("should handle single subscriptionResponse messages", () => {
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW, [ALIAS_REGULAR_NEW], undefined);
     });
 
     it("should handle multiple different type subscription messages correctly", () => {
         // This one is possible, and we wouldn't like to end up with copies of the same symbol in this case
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD);
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD, [ALIAS_REGULAR_OLD], undefined);
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD, [ALIAS_REGULAR_OLD], undefined);
@@ -153,8 +153,8 @@ describe("OpenFeedListeners", () => {
 
     it("should handle multiple subscriptionResponse messages correctly", () => {
         // Not expecting this to happen in regular use, but we still wouldn't like to end up with copies of the same symbol in this case
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW, [ALIAS_REGULAR_NEW], undefined);
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW, [ALIAS_REGULAR_NEW], undefined);
@@ -162,8 +162,8 @@ describe("OpenFeedListeners", () => {
 
     it("should handle instrumentDefinition messages correctly", () => {
         // We require the subscriptionResponse message to arrive first
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW, [ALIAS_REGULAR_NEW], undefined);
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW, [ALIAS_REGULAR_NEW], undefined);
@@ -171,9 +171,9 @@ describe("OpenFeedListeners", () => {
 
     it("should handle marketSnapshot messages correctly", () => {
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.DUMMY_SNAPSHOT_MESSAGE);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.DUMMY_SNAPSHOT_MESSAGE);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(
             MESSAGES.DUMMY_SNAPSHOT_MESSAGE,
@@ -192,7 +192,7 @@ describe("OpenFeedListeners", () => {
 
         // Simulate the arrival of the messages
         messagesInOrder.forEach((message) => {
-            listeners.onMessage(message);
+            void listeners.onMessage(message);
         });
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.DUMMY_SUBSCRIPTION_UNAUTHORIZED, [], undefined);
@@ -206,9 +206,9 @@ describe("OpenFeedListeners", () => {
 
     it("should handle marketUpdate messages correctly", () => {
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.DUMMY_UPDATE_MESSAGE);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.DUMMY_UPDATE_MESSAGE);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(
             MESSAGES.DUMMY_UPDATE_MESSAGE,
@@ -219,9 +219,9 @@ describe("OpenFeedListeners", () => {
 
     it("should handle volumeAtPrice messages correctly", () => {
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.VOLUME_AT_PRICE_MESSAGE);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.VOLUME_AT_PRICE_MESSAGE);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(
             MESSAGES.VOLUME_AT_PRICE_MESSAGE,
@@ -232,9 +232,9 @@ describe("OpenFeedListeners", () => {
 
     it("should handle ohlc messages correctly", () => {
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
-        listeners.onMessage(MESSAGES.OHLC_MESSAGE);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_NEW);
+        void listeners.onMessage(MESSAGES.OHLC_MESSAGE);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(
             MESSAGES.OHLC_MESSAGE,
@@ -245,10 +245,10 @@ describe("OpenFeedListeners", () => {
 
     it("should handle unsubscription messages correctly", () => {
         // We require the subscriptionResponse and instrumentDefinition message to arrive first
-        listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD);
-        listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_OLD);
-        listeners.onMessage(MESSAGES.DUMMY_UNSUBSCRIPTION_DEPTH);
-        listeners.onMessage(MESSAGES.DUMMY_SNAPSHOT_MESSAGE);
+        void listeners.onMessage(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD);
+        void listeners.onMessage(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_OLD);
+        void listeners.onMessage(MESSAGES.DUMMY_UNSUBSCRIPTION_DEPTH);
+        void listeners.onMessage(MESSAGES.DUMMY_SNAPSHOT_MESSAGE);
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_DEPTH_OLD, [ALIAS_REGULAR_OLD], undefined);
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.INSTRUMENT_DEFINITION_MESSAGE_OLD, [ALIAS_REGULAR_OLD], undefined);
@@ -275,7 +275,7 @@ describe("OpenFeedListeners", () => {
 
         // Simulate the arrival of the messages
         messagesInOrder.forEach((message) => {
-            listeners.onMessage(message);
+            void listeners.onMessage(message);
         });
 
         // Verify that onMessageWithMetadata was called with the correct arguments
@@ -315,7 +315,7 @@ describe("OpenFeedListeners", () => {
 
         // Simulate the arrival of the messages
         messagesInOrder.forEach((message) => {
-            listeners.onMessage(message);
+            void listeners.onMessage(message);
         });
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD, [ALIAS_REGULAR_OLD], undefined);
@@ -350,7 +350,7 @@ describe("OpenFeedListeners", () => {
 
         // Simulate the arrival of the messages
         messagesInOrder.forEach((message) => {
-            listeners.onMessage(message);
+            void listeners.onMessage(message);
         });
 
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD, [ALIAS_REGULAR_OLD], undefined);

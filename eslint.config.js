@@ -64,11 +64,10 @@ export default defineConfig(
         },
     },
     {
-        // tests: setup in beforeEach, untyped mock call args, and listener calls they don't await
+        // tests: setup in beforeEach, and untyped mock call args
         files: ["test/**/*.ts"],
         rules: {
             "init-declarations": "off",
-            "@typescript-eslint/no-floating-promises": "off",
             "@typescript-eslint/no-unsafe-assignment": "off",
             "@typescript-eslint/no-unsafe-member-access": "off",
             "@typescript-eslint/no-unsafe-call": "off",
