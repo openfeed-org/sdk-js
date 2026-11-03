@@ -1,43 +1,46 @@
 import path from "path";
 import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
+import dts from "vite-plugin-dts";
 
 export default defineConfig({
-    plugins: [checker({ typescript: true })],
+    plugins: [
+        checker({ typescript: true }),
+        /**
+         * Emits .d.ts files next to the bundle. `paths` aliases from tsconfig (@src/*, @gen/*)
+         * are rewritten to relative imports, since consumers can't resolve them.
+         * entryRoot "." keeps the dist/src + dist/generated layout that package.json "types" points to.
+         */
+        dts({
+            tsconfigPath: "./tsconfig.json",
+            entryRoot: ".",
+            include: ["src", "generated"],
+            exclude: ["src/test.ts"],
+        }),
+    ],
     build: {
         minify: false,
         outDir: "dist",
         lib: {
             name: "OpenfeedSDKJS",
-            entry: path.resolve(__dirname, "src/index.ts"),
+            entry: path.resolve(import.meta.dirname, "src/index.ts"),
         },
-        rollupOptions: {
-            /**
-             * Explanation to bundler what packages are expected to be EXTERNAL
-             * aka from project that uses this library
-             *
-             * We added peer dependency to our package.json
-             * NOTE: that we need to keep versions same, otherwise we will have two "same" libraries
-             *      we can avoid this by putting "*" as version in peer dependencies
-             *      overall that makes more confusion and stuff mostly break when developer upgrades major version of package
-             */
-            input: path.resolve(__dirname, "src/index.ts"),
+        rolldownOptions: {
+            input: path.resolve(import.meta.dirname, "src/index.ts"),
             output: [
-                // bundle and export singular files (in case somebody wants to import single component)
                 {
                     entryFileNames: ({ name }) => `${name}.js`,
                     format: "esm",
                     dir: "dist",
-                    // preserveModules: true,
                 },
             ],
         },
     },
     resolve: {
         alias: {
-            "@src": path.resolve(process.cwd(), "src"),
-            "@gen": path.resolve(process.cwd(), "generated"),
-            os: path.resolve(process.cwd(), "src/utilities/empty.ts"),
+            "@src": path.resolve(import.meta.dirname, "src"),
+            "@gen": path.resolve(import.meta.dirname, "generated"),
+            os: path.resolve(import.meta.dirname, "src/utilities/empty.ts"),
         },
     },
 });
