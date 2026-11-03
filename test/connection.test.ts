@@ -1,13 +1,15 @@
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
 import WebSocket from "isomorphic-ws";
 
 import { OpenFeedConnection } from "@src/connection/connection";
 import { OpenFeedListeners } from "@src/connection/listeners";
+import * as communicationModule from "@src/utilities/communication";
 import { Service } from "@gen/openfeed";
 import { SubscriptionType } from "@gen/openfeed_api";
 
-jest.mock("@src/utilities/communication", () => ({
-    send: jest.fn(),
-    receive: jest.fn(),
+vi.mock("@src/utilities/communication", () => ({
+    send: vi.fn(),
+    receive: vi.fn(),
 }));
 
 const emptyEvent = {} as WebSocket.MessageEvent;
@@ -16,26 +18,26 @@ describe("OpenFeedConnection", () => {
     let connection: OpenFeedConnection;
     let mockSocket: WebSocket;
     let listeners: OpenFeedListeners;
-    let communication: { send: jest.Mock; receive: jest.Mock };
+    let communication: { send: Mock; receive: Mock };
 
     beforeEach(() => {
         mockSocket = {
-            onmessage: jest.fn(),
-            close: jest.fn(),
+            onmessage: vi.fn(),
+            close: vi.fn(),
         } as unknown as WebSocket;
 
         listeners = new OpenFeedListeners();
         connection = new OpenFeedConnection("test-token", mockSocket, listeners);
-        communication = jest.requireMock("@src/utilities/communication");
+        communication = communicationModule as unknown as { send: Mock; receive: Mock };
     });
 
     afterEach(() => {
         connection.dispose();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it("should handle heartBeat messages", () => {
-        const heartBeatSpy = jest.spyOn(listeners, "onHeartBeat");
+        const heartBeatSpy = vi.spyOn(listeners, "onHeartBeat");
         communication.receive.mockReturnValue([{ heartBeat: true }]);
 
         mockSocket.onmessage?.(emptyEvent);
@@ -43,7 +45,7 @@ describe("OpenFeedConnection", () => {
         expect(heartBeatSpy).toHaveBeenCalledTimes(1);
     });
     it("should handle instrumentResponse messages", async () => {
-        const sendSpy = jest.spyOn(communication, "send");
+        const sendSpy = communication.send;
         const instrumentPromise = connection.getInstrument({ symbol: "test-symbol", instrumentType: [], spreadType: [] });
 
         expect(sendSpy).toHaveBeenCalledTimes(1);
@@ -66,7 +68,7 @@ describe("OpenFeedConnection", () => {
     });
 
     it("should handle instrumentReferenceResponse messages", async () => {
-        const sendSpy = jest.spyOn(communication, "send");
+        const sendSpy = communication.send;
         const instrumentReferencePromise = connection.getInstrumentReference({ symbol: "test-symbol" });
 
         expect(sendSpy).toHaveBeenCalledTimes(1);
@@ -83,7 +85,7 @@ describe("OpenFeedConnection", () => {
     });
 
     it("should handle exchangeResponse messages", async () => {
-        const sendSpy = jest.spyOn(communication, "send");
+        const sendSpy = communication.send;
         const exchangePromise = connection.getExchanges();
 
         expect(sendSpy).toHaveBeenCalledTimes(1);
@@ -104,8 +106,8 @@ describe("OpenFeedConnection", () => {
     });
 
     it("should handle subscriptionResponse messages", async () => {
-        const sendSpy = jest.spyOn(communication, "send");
-        const messageSpy = jest.spyOn(listeners, "onMessage");
+        const sendSpy = communication.send;
+        const messageSpy = vi.spyOn(listeners, "onMessage");
 
         const subscriptionType = SubscriptionType.CUMULATIVE_VOLUME;
         const snapshotIntervalSeconds = 3;

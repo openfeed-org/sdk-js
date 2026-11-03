@@ -1,10 +1,9 @@
 {
     "compilerOptions": {
-        "baseUrl": "./",
         "target": "ESNext",
         "useDefineForClassFields": true,
-        "module": "CommonJS",
-        "moduleResolution": "Node",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
         "noEmit": true,
         "strict": true,
         "sourceMap": true,
@@ -14,7 +13,7 @@
         "noUnusedParameters": false,
         "noImplicitReturns": true,
         "rootDir": "./",
-        "types": ["jest"],
+        "types": ["node"],
         "paths": {
             "@src/*": ["./src/*"],
             "@gen/*": ["./generated/*"]
