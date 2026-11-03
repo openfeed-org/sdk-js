@@ -1,0 +1,6 @@
+dist
+# ts-proto output, rewritten on every `yarn generate`
+generated
+*.md
+LICENSE
+index.html
