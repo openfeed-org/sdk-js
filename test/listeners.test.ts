@@ -182,7 +182,7 @@ describe("OpenFeedListeners", () => {
         );
     });
 
-    it("should not connect anything on error subscription", async () => {
+    it("should not connect anything on error subscription", () => {
         // We expect the other messages not to be related with the subscription request if it failed. The listeners will still pass the messages to the client.
         const messagesInOrder = [
             MESSAGES.DUMMY_SUBSCRIPTION_UNAUTHORIZED,
@@ -302,7 +302,7 @@ describe("OpenFeedListeners", () => {
         );
     });
 
-    it("should not drop a subscription when receiving an error unsubscription response message", async () => {
+    it("should not drop a subscription when receiving an error unsubscription response message", () => {
         // We expect the messages to arrive in the following order - subscriptionResponse, instrumentDefinition, marketSnapshot
         const messagesInOrder = [
             MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD,
@@ -338,7 +338,7 @@ describe("OpenFeedListeners", () => {
         );
     });
 
-    it("should not drop a subscription when receiving an unrelated unsubscription response message", async () => {
+    it("should not drop a subscription when receiving an unrelated unsubscription response message", () => {
         // We expect the messages to arrive in the following order - subscriptionResponse, instrumentDefinition, marketSnapshot
         const messagesInOrder = [
             MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_OLD,

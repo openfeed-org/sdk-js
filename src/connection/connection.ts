@@ -2,19 +2,20 @@ import WebSocket from "isomorphic-ws";
 import Long from "long";
 
 import { OptionalUndefined, toT } from "@src/utilities/messages";
-import type {
-    ExchangeRequest,
-    ExchangeResponse,
-    ExchangeResponse_Exchange,
-    InstrumentReferenceRequest,
-    InstrumentReferenceResponse,
-    InstrumentRequest,
-    OpenfeedGatewayRequest,
-    SubscriptionRequest,
-    SubscriptionRequest_Request,
-    SubscriptionType,
+import {
+    type ExchangeRequest,
+    type ExchangeResponse,
+    type ExchangeResponse_Exchange,
+    type InstrumentReferenceRequest,
+    type InstrumentReferenceResponse,
+    type InstrumentRequest,
+    type OpenfeedGatewayMessage,
+    type OpenfeedGatewayRequest,
+    type SubscriptionRequest,
+    type SubscriptionRequest_Request,
+    type SubscriptionType,
+    Result,
 } from "@gen/openfeed_api";
-import { Result } from "@gen/openfeed_api";
 import type { InstrumentDefinition } from "@gen/openfeed_instrument";
 import type { Service } from "@gen/openfeed";
 import { ResolutionSource } from "@src/utilities/async";
@@ -25,9 +26,7 @@ import { IOpenFeedConnection, IOpenFeedLogger, OpenFeedInstrumentReferenceReques
 import { OpenFeedListeners } from "./listeners";
 import { DuplicateLoginError, ConnectionDisposedError } from "./errors";
 
-function toStringOrNumber(id: Long): string | number {
-    return id.isSafeInteger() ? id.toInt() : id.toString();
-}
+const toStringOrNumber = (id: Long): string | number => (id.isSafeInteger() ? id.toInt() : id.toString());
 
 export class OpenFeedConnection implements IOpenFeedConnection {
     readonly #subscriptionRequests: Map<string | number, [SubscriptionRequest, ResolutionSource<void>]> = new Map();
@@ -48,27 +47,21 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         this.socket.onerror = this.onError;
         this.socket.onclose = this.onClose;
 
-        this.runConnectionWatchLoop();
+        void this.runConnectionWatchLoop();
     }
 
     private messageTriggered = false;
     private runConnectionWatchLoop = async () => {
         for (;;) {
-            let timeoutId = null;
-
-            const waitPromise = new Promise((resolve) => {
-                timeoutId = setTimeout(resolve, TIME.CONNECTION_TIMEOUT + Math.floor(Math.random() * TIME.RECONNECT_RANDOMIZE));
-            });
+            const wait = new ResolutionSource<void>();
+            const timeoutId = setTimeout(wait.resolve, TIME.CONNECTION_TIMEOUT + Math.floor(Math.random() * TIME.RECONNECT_RANDOMIZE));
 
             try {
-                // eslint-disable-next-line no-await-in-loop
-                await Promise.race([waitPromise, this.whenDisconnectedSource.whenCompleted]);
+                await Promise.race([wait.whenCompleted, this.whenDisconnectedSource.whenCompleted]);
             } catch {
                 // This does not need to do anything
             }
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
+            clearTimeout(timeoutId);
 
             if (this.whenDisconnectedSource.completed) {
                 break;
@@ -92,68 +85,80 @@ export class OpenFeedConnection implements IOpenFeedConnection {
             const messages = receive(event);
 
             for (const message of messages) {
-                if (message.heartBeat) {
-                    this.listeners.onHeartBeat(message.heartBeat);
-                    continue;
-                }
-
-                if (message.logoutResponse?.status?.result === Result.DUPLICATE_LOGIN) {
-                    this.logger?.warn("Duplicate login");
-                    this.disconnect(new DuplicateLoginError("Duplicate login"));
+                if (!this.handleMessage(message)) {
                     return;
                 }
-
-                if (message.instrumentResponse) {
-                    const { correlationId, instrumentDefinition, numberOfDefinitions } = message.instrumentResponse;
-                    const id = toStringOrNumber(correlationId);
-                    const request = this.#instrumentRequests.get(id);
-                    if (!request) throw new Error(`Instrument request ID ${id} not found`);
-                    if (!instrumentDefinition) throw new Error(`Instrument definition not found in response ID ${id}`);
-                    let definitions = this.#definitionsInFlight.get(id);
-                    if (!definitions) {
-                        definitions = [instrumentDefinition];
-                    } else {
-                        definitions.push(instrumentDefinition);
-                    }
-                    if (definitions.length === numberOfDefinitions) {
-                        this.#definitionsInFlight.delete(id);
-                        request.resolve(definitions);
-                    } else {
-                        this.#definitionsInFlight.set(id, definitions);
-                    }
-                }
-
-                if (message.instrumentReferenceResponse) {
-                    const { correlationId } = message.instrumentReferenceResponse;
-                    const request = this.#instrumentReferenceRequests.get(toStringOrNumber(correlationId));
-                    request?.resolve(message.instrumentReferenceResponse);
-                }
-
-                if (message.exchangeResponse) {
-                    const { correlationId } = message.exchangeResponse;
-                    const request = this.#exchangeRequests.get(toStringOrNumber(correlationId));
-                    request?.resolve(message.exchangeResponse);
-                }
-
-                if (message.subscriptionResponse) {
-                    const { correlationId, unsubscribe } = message.subscriptionResponse;
-                    if (!unsubscribe) {
-                        const request = this.#subscriptionRequests.get(toStringOrNumber(correlationId));
-                        request?.[1].resolve();
-                    }
-                }
-
-                this.listeners.onMessage(message);
             }
         } catch (error) {
             this.logger?.error(error);
         }
     };
 
+    /** Returns false when the connection was closed, and the rest of the messages should be dropped */
+    private handleMessage(message: OpenfeedGatewayMessage): boolean {
+        if (message.heartBeat) {
+            void this.listeners.onHeartBeat(message.heartBeat);
+            return true;
+        }
+
+        if (message.logoutResponse?.status?.result === Result.DUPLICATE_LOGIN) {
+            this.logger?.warn("Duplicate login");
+            this.disconnect(new DuplicateLoginError("Duplicate login"));
+            return false;
+        }
+
+        if (message.instrumentResponse) {
+            const { correlationId, instrumentDefinition, numberOfDefinitions } = message.instrumentResponse;
+            const id = toStringOrNumber(correlationId);
+            const request = this.#instrumentRequests.get(id);
+            if (!request) {
+                throw new Error(`Instrument request ID ${String(id)} not found`);
+            }
+            if (!instrumentDefinition) {
+                throw new Error(`Instrument definition not found in response ID ${String(id)}`);
+            }
+            let definitions = this.#definitionsInFlight.get(id);
+            if (definitions) {
+                definitions.push(instrumentDefinition);
+            } else {
+                definitions = [instrumentDefinition];
+            }
+            if (definitions.length === numberOfDefinitions) {
+                this.#definitionsInFlight.delete(id);
+                request.resolve(definitions);
+            } else {
+                this.#definitionsInFlight.set(id, definitions);
+            }
+        }
+
+        if (message.instrumentReferenceResponse) {
+            const { correlationId } = message.instrumentReferenceResponse;
+            const request = this.#instrumentReferenceRequests.get(toStringOrNumber(correlationId));
+            request?.resolve(message.instrumentReferenceResponse);
+        }
+
+        if (message.exchangeResponse) {
+            const { correlationId } = message.exchangeResponse;
+            const request = this.#exchangeRequests.get(toStringOrNumber(correlationId));
+            request?.resolve(message.exchangeResponse);
+        }
+
+        if (message.subscriptionResponse) {
+            const { correlationId, unsubscribe } = message.subscriptionResponse;
+            if (!unsubscribe) {
+                const request = this.#subscriptionRequests.get(toStringOrNumber(correlationId));
+                request?.[1].resolve();
+            }
+        }
+
+        void this.listeners.onMessage(message);
+        return true;
+    }
+
     private disconnect(error: Error) {
-        this.socket.onmessage = () => {};
-        this.socket.onerror = () => {};
-        this.socket.onclose = () => {};
+        this.socket.onmessage = null;
+        this.socket.onerror = null;
+        this.socket.onclose = null;
 
         const cleanRequests = <T>(requests: Map<string | number, ResolutionSource<T>>) => {
             for (const [, request] of requests) {
@@ -264,12 +269,12 @@ export class OpenFeedConnection implements IOpenFeedConnection {
 
         const subscription = this.#subscriptionRequests.get(toStringOrNumber(subscriptionId));
         if (!subscription) {
-            throw new Error(`Subscription ID ${subscriptionId} does not exist.`);
+            throw new Error(`Subscription ID ${subscriptionId.toString()} does not exist.`);
         }
         const [originalRequest, sub] = subscription;
 
         // We won't wait for this to complete to keep things quicker, but we need to keep an eye on it
-        this.fireUnsubscribeWhenReady(originalRequest, sub);
+        void this.fireUnsubscribeWhenReady(originalRequest, sub);
     };
 
     // We are keeping this fire and forget, because our problems
@@ -280,24 +285,30 @@ export class OpenFeedConnection implements IOpenFeedConnection {
             // the response message will cause symbol to be removed in listeners
             const subscriptionRequest = { ...originalRequest, unsubscribe: true };
             send(this.socket, { subscriptionRequest });
-        } catch (e) {
+        } catch {
             // This is expected
         } finally {
             this.#subscriptionRequests.delete(toStringOrNumber(originalRequest.correlationId));
         }
     }
 
-    send = (msg: OpenfeedRequest, correlationId?: Long) => {
-        correlationId ??= CorrelationId.create();
+    send = (msg: OpenfeedRequest, requestedCorrelationId?: Long) => {
+        const correlationId = requestedCorrelationId ?? CorrelationId.create();
 
         const token = this.connectionToken;
 
         const msg2: OpenfeedGatewayRequest = {};
-        if (msg.exchangeRequest !== undefined) msg2.exchangeRequest = { ...msg.exchangeRequest, correlationId, token };
-        else if (msg.instrumentReferenceRequest !== undefined) msg2.instrumentReferenceRequest = { ...msg.instrumentReferenceRequest, correlationId, token };
-        else if (msg.instrumentRequest !== undefined) msg2.instrumentRequest = { ...msg.instrumentRequest, correlationId, token };
-        else if (msg.listSubscriptionsRequest !== undefined) msg2.listSubscriptionsRequest = { ...msg.listSubscriptionsRequest, correlationId, token };
-        else if (msg.subscriptionRequest !== undefined) msg2.subscriptionRequest = { ...msg.subscriptionRequest, correlationId, token };
+        if (msg.exchangeRequest !== undefined) {
+            msg2.exchangeRequest = { ...msg.exchangeRequest, correlationId, token };
+        } else if (msg.instrumentReferenceRequest !== undefined) {
+            msg2.instrumentReferenceRequest = { ...msg.instrumentReferenceRequest, correlationId, token };
+        } else if (msg.instrumentRequest !== undefined) {
+            msg2.instrumentRequest = { ...msg.instrumentRequest, correlationId, token };
+        } else if (msg.listSubscriptionsRequest !== undefined) {
+            msg2.listSubscriptionsRequest = { ...msg.listSubscriptionsRequest, correlationId, token };
+        } else if (msg.subscriptionRequest !== undefined) {
+            msg2.subscriptionRequest = { ...msg.subscriptionRequest, correlationId, token };
+        }
 
         send(this.socket, msg2);
 
@@ -380,5 +391,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
     };
 
     whenDisconnected = () => this.whenDisconnectedSource.whenCompleted;
-    dispose = () => this.disconnect(new ConnectionDisposedError("Disposed"));
+    dispose = () => {
+        this.disconnect(new ConnectionDisposedError("Disposed"));
+    };
 }

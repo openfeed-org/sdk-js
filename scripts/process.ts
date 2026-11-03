@@ -19,7 +19,7 @@ const names: [string, string, string][] = [];
 // First transformer for splitting the encode/decode methods into separate objects
 // and renaming the uses of them, while saving the names for the second transformer
 // (this is done in two steps because the second transformer needs to know the new names)
-function createTransformer(context: ts.TransformationContext): ts.Transformer<ts.SourceFile> {
+const createTransformer = (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
     const visitCalls: ts.Visitor = (node: ts.Node) => {
         if (ts.isCallExpression(node)) {
             const callee = node.expression;
@@ -56,7 +56,7 @@ function createTransformer(context: ts.TransformationContext): ts.Transformer<ts
                 const { declarations } = declarationList;
                 for (const declaration of declarations) {
                     if (ts.isVariableDeclaration(declaration) && declaration.name.kind === ts.SyntaxKind.Identifier) {
-                        const constName = (declaration.name as ts.Identifier).text;
+                        const constName = declaration.name.text;
                         const constValue = declaration.initializer;
                         if (constValue && ts.isObjectLiteralExpression(constValue)) {
                             const { properties } = constValue;
@@ -110,11 +110,11 @@ function createTransformer(context: ts.TransformationContext): ts.Transformer<ts
         // Otherwise, return the original source file
         return sf;
     };
-}
+};
 
 // Import transformer to rename imports in the source files
 const createImportsTransformer = (originalName: string, newNameEncode: string, newNameDecode: string) => {
-    function visitImportsTransformer(context: ts.TransformationContext): ts.Transformer<ts.SourceFile> {
+    const visitImportsTransformer = (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> => {
         const visitImports: ts.Visitor = (node: ts.Node) => {
             if (ts.isImportDeclaration(node)) {
                 if (node.importClause?.namedBindings && ts.isNamedImports(node.importClause.namedBindings)) {
@@ -137,15 +137,15 @@ const createImportsTransformer = (originalName: string, newNameEncode: string, n
                         return element;
                     });
 
-                    const uniqueElements = newElements.reduce((acc, element) => {
+                    const uniqueElements = newElements.reduce<ts.ImportSpecifier[]>((acc, element) => {
                         if (acc.some((el) => el.name.text === element.name.text)) {
                             return acc;
                         }
                         return [...acc, element];
-                    }, [] as ts.ImportSpecifier[]);
+                    }, []);
 
                     const newNamedBindings = ts.factory.createNamedImports(uniqueElements);
-                    const newImportClause = ts.factory.createImportClause(node.importClause.isTypeOnly, node.importClause.name, newNamedBindings);
+                    const newImportClause = ts.factory.createImportClause(node.importClause.phaseModifier, node.importClause.name, newNamedBindings);
                     const newImportDeclaration = ts.factory.createImportDeclaration(node.modifiers, newImportClause, node.moduleSpecifier);
 
                     return newImportDeclaration;
@@ -167,7 +167,7 @@ const createImportsTransformer = (originalName: string, newNameEncode: string, n
             // Otherwise, return the original source file
             return sf;
         };
-    }
+    };
 
     return visitImportsTransformer;
 };
@@ -178,12 +178,12 @@ sourceFiles.forEach((sourceFile) => {
     const res1 = ts.transform(sourceFile, [createTransformer]);
     const printer = ts.createPrinter();
 
-    const res2 = ts.transform(res1.transformed[0] as ts.SourceFile, [
+    const res2 = ts.transform(res1.transformed[0], [
         ...names.map(([oldName, newNameEncode, newNameDecode]) => createImportsTransformer(oldName, newNameEncode, newNameDecode)),
     ]);
 
     // Remove interface by name
-    let transformed = res2.transformed[0] as ts.SourceFile;
+    let [transformed] = res2.transformed;
     const filteredStatements = transformed.statements.filter((stmt) => !(ts.isInterfaceDeclaration(stmt) && stmt.name.text === INTERFACE_TO_REMOVE));
     transformed = ts.factory.updateSourceFile(transformed, filteredStatements);
 
@@ -206,14 +206,15 @@ sourceFiles = [
     ),
 ];
 
-function createIndexFileTransformer(context: ts.TransformationContext): ts.Transformer<ts.SourceFile> {
-    return (sf: ts.SourceFile) => {
+const createIndexFileTransformer =
+    (context: ts.TransformationContext): ts.Transformer<ts.SourceFile> =>
+    (sf: ts.SourceFile) => {
         const fileName = `./${sf.fileName.split("/")[1].slice(0, -3)}`;
         const regularNodes: string[] = [];
         const visit: ts.Visitor = (node: ts.Node) => {
             // Check if the node is an ExportDeclaration, ExportAssignment, or EnumDeclaration
             if (ts.isExportDeclaration(node) || ts.isExportAssignment(node) || ts.isEnumDeclaration(node)) {
-                if (ts.isEnumDeclaration(node) && node.name) {
+                if (ts.isEnumDeclaration(node)) {
                     regularNodes.push(node.name.getText());
                     return node;
                 }
@@ -227,9 +228,7 @@ function createIndexFileTransformer(context: ts.TransformationContext): ts.Trans
         const typeExportStatement = ts.factory.createExportDeclaration(undefined, true, undefined, ts.factory.createStringLiteral(fileName));
 
         // Create export specifiers for each regular node
-        const exportSpecifiers = regularNodes.map((node) => {
-            return ts.factory.createExportSpecifier(false, undefined, ts.factory.createIdentifier(node));
-        });
+        const exportSpecifiers = regularNodes.map((node) => ts.factory.createExportSpecifier(false, undefined, ts.factory.createIdentifier(node)));
 
         const namedExport = ts.factory.createNamedExports(exportSpecifiers);
         const exportStatement = ts.factory.createExportDeclaration(undefined, false, namedExport, ts.factory.createStringLiteral(fileName));
@@ -241,13 +240,12 @@ function createIndexFileTransformer(context: ts.TransformationContext): ts.Trans
 
         return createdFile;
     };
-}
 
 const res = ts.transform(sourceFiles, [createIndexFileTransformer]);
 const printer = ts.createPrinter();
 
 const transformedIndexSourceCode = ["/* eslint-disable */"]
-    .concat(res.transformed.map((transformedFile) => printer.printFile(transformedFile as ts.SourceFile)))
+    .concat(res.transformed.map((transformedFile) => printer.printFile(transformedFile)))
     .join("\n");
 
 // Write the transformed source code back to the indexSource file

@@ -1,20 +1,19 @@
 import { version } from "@gen/version";
 
-export const getClientVersion = async (clientId?: string) => {
-    let platformDescription: string;
-    if (typeof window !== "undefined") {
-        // Browser environmasync ent
-        platformDescription = navigator.userAgent;
-    } else {
-        // Node.js environment
-        const os = await import("os");
-        try {
-            platformDescription = `Node.js ${process.version}; ${os.version?.()} ${os.release?.()}; ${os.arch?.()};`;
-        } catch (e) {
-            platformDescription = `Unknown OS; ${os.version?.() ?? ""} ${os.release?.() ?? ""}; ${os.arch?.() ?? ""};`;
-        }
+const describeNodePlatform = async (): Promise<string> => {
+    // The browser bundle aliases `os` to an empty module, so in a browser without `window` (a web worker) every export is missing
+    const os: Partial<typeof import("os")> = await import("os");
+    const osVersion = os.version?.() ?? "";
+    const osRelease = os.release?.() ?? "";
+    const osArch = os.arch?.() ?? "";
+    try {
+        return `Node.js ${process.version}; ${osVersion} ${osRelease}; ${osArch};`;
+    } catch {
+        return `Unknown OS; ${osVersion} ${osRelease}; ${osArch};`;
     }
+};
 
-    const clientVersion = `sdk-js:${version};client-id:${clientId ?? "default"};platform:${platformDescription}`;
-    return clientVersion;
+export const getClientVersion = async (clientId?: string) => {
+    const platformDescription = typeof window === "undefined" ? await describeNodePlatform() : navigator.userAgent;
+    return `sdk-js:${version};client-id:${clientId ?? "default"};platform:${platformDescription}`;
 };

@@ -2,8 +2,7 @@ import WebSocket from "isomorphic-ws";
 import Long from "long";
 
 import { OptionalUndefined } from "@src/utilities/messages";
-import type { SubscriptionType, OpenfeedGatewayRequest } from "@gen/openfeed_api";
-import { Result } from "@gen/openfeed_api";
+import { type SubscriptionType, type OpenfeedGatewayRequest, Result } from "@gen/openfeed_api";
 import type { Service } from "@gen/openfeed";
 import { ResolutionSource } from "@src/utilities/async";
 import { CorrelationId } from "@src/utilities/correlation_id";
@@ -35,11 +34,13 @@ export class OpenFeedClient implements IOpenFeedClient {
         private readonly logger?: IOpenFeedLogger,
         private readonly clientId?: string
     ) {
-        this.runConnectLoop();
+        void this.runConnectLoop();
     }
 
     private onOpen = async () => {
-        if (!this.socket) return;
+        if (!this.socket) {
+            return;
+        }
 
         const clientVersion = await getClientVersion(this.clientId);
         const loginRequest: OptionalUndefined<OpenfeedGatewayRequest> = {
@@ -58,7 +59,7 @@ export class OpenFeedClient implements IOpenFeedClient {
     private onMessage = async (event: WebSocket.MessageEvent) => {
         const [message] = receive(event);
         if (message.loginResponse?.token && this.socket) {
-            this._connection = new OpenFeedConnection(message.loginResponse?.token, this.socket, this.listeners, this.logger);
+            this._connection = new OpenFeedConnection(message.loginResponse.token, this.socket, this.listeners, this.logger);
             this.whenConnectedInternalSource.resolve(this._connection);
             this.whenConnectedSource.resolve(this._connection);
 
@@ -121,32 +122,32 @@ export class OpenFeedClient implements IOpenFeedClient {
                 this.socket = new WebSocket(this.url);
                 this.socket.binaryType = "arraybuffer";
 
-                this.socket.onopen = this.onOpen;
+                this.socket.onopen = () => void this.onOpen();
                 // We will override the 3 below in the connection and it will be the new listener
-                this.socket.onmessage = this.onMessage;
+                this.socket.onmessage = (event) => void this.onMessage(event);
                 this.socket.onerror = this.onError;
                 this.socket.onclose = this.onClose;
 
-                // eslint-disable-next-line no-await-in-loop
                 await this.whenConnectedInternalSource.whenCompleted;
 
-                // eslint-disable-next-line no-await-in-loop
                 await this.loopResetSource.whenCompleted;
             } catch (e) {
                 this.logger?.error("Error when connecting to socket:", e);
-                const socket = this.socket!;
-                // these will fire, even though the connection error means we should be already disconnected
-                socket.onerror = () => {};
-                socket.onclose = () => {};
-                socket.onopen = () => {};
+                const { socket } = this;
+                if (socket) {
+                    // these will fire, even though the connection error means we should be already disconnected
+                    socket.onerror = null;
+                    socket.onclose = null;
+                    socket.onopen = null;
 
-                if (socket.readyState !== WebSocket.CLOSED && socket.readyState !== WebSocket.CLOSING) {
-                    socket.close(1000, "Socket closed");
+                    if (socket.readyState !== WebSocket.CLOSED && socket.readyState !== WebSocket.CLOSING) {
+                        socket.close(1000, "Socket closed");
+                    }
                 }
 
                 if (e instanceof DuplicateLoginError || e instanceof InvalidCredentialsError) {
                     this.logger?.warn("Stopping the client because of unrecoverable error");
-                    // eslint-disable-next-line no-await-in-loop
+
                     await this.listeners.onCredentialsRejected();
                     this.cleanUp();
                     break;
@@ -154,10 +155,10 @@ export class OpenFeedClient implements IOpenFeedClient {
 
                 if (e instanceof ConnectionDisposedError) {
                     this.logger?.warn("Stopping the client because of disposal");
-                    /* eslint-disable no-await-in-loop */
+
                     await this.listeners.onCleanup();
                     await this.listeners.onDisconnected();
-                    /* eslint-enable no-await-in-loop */
+
                     this.cleanUp();
                     break;
                 }
@@ -174,7 +175,6 @@ export class OpenFeedClient implements IOpenFeedClient {
             this.subscribeResetSource.resolve();
             this.subscribeResetSource = new ResolutionSource<void>();
 
-            // eslint-disable-next-line no-await-in-loop
             await new Promise((resolve) => {
                 setTimeout(resolve, TIME.RECONNECT + Math.floor(Math.random() * TIME.RECONNECT_RANDOMIZE));
             });
@@ -199,12 +199,13 @@ export class OpenFeedClient implements IOpenFeedClient {
         channels: number[] | null,
         cancelSource: ResolutionSource<void>
     ) => {
+        // A function, so TypeScript doesn't carry an earlier answer across the awaits below
+        const isCancelled = () => cancelSource.completed;
         for (;;) {
             try {
-                // race will trigger even if rejected
-                // eslint-disable-next-line no-await-in-loop
+                // race will trigger even if rejected, and resolves with nothing when cancelled
                 const connection = await Promise.race([this.connection, cancelSource.whenCompleted]);
-                if (cancelSource.completed || /* can't actually happen */ !connection) {
+                if (isCancelled() || !connection) {
                     return;
                 }
 
@@ -218,20 +219,19 @@ export class OpenFeedClient implements IOpenFeedClient {
                     channels
                 );
 
-                // eslint-disable-next-line no-await-in-loop
                 await Promise.race([this.subscribeResetSource.whenCompleted, cancelSource.whenCompleted]);
 
-                if (cancelSource.completed) {
+                if (isCancelled()) {
                     try {
                         connection.unsubscribe(subscriptionId);
-                    } catch (e) {
+                    } catch {
                         // unsubscribe throws if the connection is not available, this is expected
                     }
                     return;
                 }
             } catch (error) {
                 this.logger?.warn("Subscription error:", error);
-                // eslint-disable-next-line no-await-in-loop
+
                 await new Promise((resolve) => {
                     setTimeout(resolve, TIME.SUBSCRIPTION_RETRY);
                 });
@@ -253,7 +253,7 @@ export class OpenFeedClient implements IOpenFeedClient {
         const cancelSource = new ResolutionSource<void>();
         this.subscriptions.set(id.toString(), cancelSource);
 
-        this.runSubscribeLoop(service, subscriptionType, snapshotIntervalSeconds, symbols, marketIds, exchanges, channels, cancelSource);
+        void this.runSubscribeLoop(service, subscriptionType, snapshotIntervalSeconds, symbols, marketIds, exchanges, channels, cancelSource);
 
         return id;
     };
@@ -261,7 +261,7 @@ export class OpenFeedClient implements IOpenFeedClient {
     public unsubscribe = (subscriptionId: Long) => {
         const cancelSource = this.subscriptions.get(subscriptionId.toString());
         if (!cancelSource) {
-            throw new Error(`Subscription ID ${subscriptionId} does not exist.`);
+            throw new Error(`Subscription ID ${subscriptionId.toString()} does not exist.`);
         }
 
         this.subscriptions.delete(subscriptionId.toString());
@@ -269,7 +269,9 @@ export class OpenFeedClient implements IOpenFeedClient {
     };
 
     public get connection() {
-        if (this._connection) return Promise.resolve(this._connection);
+        if (this._connection) {
+            return Promise.resolve(this._connection);
+        }
         if (this.whenConnectedSource.completed) {
             throw new ConnectionDisposedError("Connection disposed");
         }
