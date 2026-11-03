@@ -105,7 +105,7 @@ describe("OpenFeedConnection", () => {
         expect(res[1].code).toBe("exchange2");
     });
 
-    it("should handle subscriptionResponse messages", async () => {
+    it("should handle subscriptionResponse messages", () => {
         const sendSpy = communication.send;
         const messageSpy = vi.spyOn(listeners, "onMessage");
 

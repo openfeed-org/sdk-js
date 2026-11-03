@@ -19,5 +19,5 @@
             "@gen/*": ["./generated/*"]
         }
     },
-    "include": ["./src", "./generated", "./scripts/", "./test/"]
+    "include": ["./src", "./generated", "./scripts/", "./test/", "./vitest.config.ts"]
 }

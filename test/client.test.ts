@@ -16,7 +16,7 @@ vi.mock("@src/utilities/communication", () => ({
 // Manual mock: vitest automocking would also mock the onopen/onmessage accessors, which swallows the handlers the client assigns
 vi.mock("isomorphic-ws", () => {
     const MockWebSocket = Object.assign(
-        vi.fn(function (this: Record<string, unknown>) {
+        vi.fn(function FakeWebSocket(this: Record<string, unknown>) {
             this.close = vi.fn();
         }),
         { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 }
@@ -44,16 +44,12 @@ const emptyCloseEvent = {} as WebSocket.CloseEvent;
 const testUsername = "test-username";
 const testPassword = "test-password";
 
-// Wrap the real constructor in a mock so we can assert on how it was called.
-// It has to be a `function` (not an arrow) so it can be invoked with `new`.
+// Wrap the real class in a mock so we can assert on how it was constructed
 vi.mock("@src/connection/connection", async (importOriginal) => {
     const originalModule = await importOriginal<typeof import("@src/connection/connection")>();
-    const OriginalConnection = originalModule.OpenFeedConnection as unknown as new (...args: unknown[]) => unknown;
     return {
         ...originalModule,
-        OpenFeedConnection: vi.fn(function (...args: unknown[]) {
-            return new OriginalConnection(...args);
-        }),
+        OpenFeedConnection: vi.fn(class extends originalModule.OpenFeedConnection {}),
     };
 });
 

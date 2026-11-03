@@ -1,10 +1,10 @@
 import Long from "long";
 
-export class CorrelationId {
-    private static correlationId = Long.fromNumber(-1);
+let lastCorrelationId = Long.fromNumber(-1);
 
-    public static create = () => {
-        this.correlationId = this.correlationId.add(1);
-        return this.correlationId;
-    };
-}
+export const CorrelationId = {
+    create: (): Long => {
+        lastCorrelationId = lastCorrelationId.add(1);
+        return lastCorrelationId;
+    },
+};
