@@ -4,25 +4,27 @@
 
 There are only two objects that you will need in order to work with OpenFeed: a connection client (represented by the `IOpenFeedClient` interface) and a listener.
 
-The connecton client object will connect to the OpenFeed servers and maintain that connection until disposed. It can be used to send requests to subscribe to symbols and exchanges.
+The connection client object will connect to the OpenFeed servers and maintain that connection until disposed. It can be used to send requests to subscribe to symbols and exchanges.
 
-The listener object (represented by the `OpenFeedListeners` class) contains five callback delegates that you can wire to your own callback functions in order to process messages coming from the connection.
+The listener object (represented by the `OpenFeedListeners` class) contains callback delegates that you can wire to your own callback functions in order to process messages coming from the connection.
 
 ## The Listeners
 
-The listener object, represented by the `OpenFeedListeners` class is dead-simple, just five variables, that point to functions that handle the connected, disconnected, credentials rejected and new message events sent from the connection client.
+The listener object, represented by the `OpenFeedListeners` class is dead-simple, just a few variables, that point to functions that handle the connected, disconnected, credentials rejected, heartbeat and new message events sent from the connection client.
 
 ```ts
 class OpenFeedListeners {
     public onConnected: (connection: IOpenFeedConnection) => void | Promise<void> = () => {};
     public onCredentialsRejected: () => void | Promise<void> = () => {};
     public onDisconnected: () => void | Promise<void> = () => {};
-    public onMessage: (message: OpenfeedGatewayMessage) => void | Promise<void> = () => {};
+    public onMessage: (message: OpenfeedGatewayMessage) => void | Promise<void>;
     public onMessageWithMetadata: (
         message: OpenfeedGatewayMessage,
         symbolNames: string[],
         instrument?: InstrumentDefinition
     ) => void | Promise<void> = () => {};
+    public onHeartBeat: (heartBeat: HeartBeat) => void | Promise<void> = () => {};
+    public onCleanup: () => void | Promise<void>;
 }
 ```
 
@@ -53,7 +55,9 @@ The `onMessageWithMetadata` callback will be called when a new message is receiv
 
 The last callback we wired is `onCredentialsRejected`, which will be called if you attempt to connect with wrong credentials or there was a second login with the same credentials. This is a terminal state - if you receive this callbacks no other callbacks will be called and no other connection attempts will be made. The only sensible thing to do in this case is to dispose the connection client object and then create a new one with the correct credentials.
 
-It is OK not to implement all these callbacks as they all have an existing null implementation.
+Two callbacks aren't wired in the example. `onHeartBeat` is called with each heartbeat the server sends, if you want to track that the connection is alive. `onCleanup` is used internally to clear the instrument definitions and symbol names kept for `onMessageWithMetadata` when the connection drops, so leave it as it is.
+
+It is OK not to implement all these callbacks as they all have an existing default implementation.
 
 ### Asynchronous Handlers
 
@@ -75,21 +79,23 @@ listeners.onMessage = async (msg) => {
 
 ## Connection Client
 
-The connection client is represented by the `IOpenfeedClient` interface:
+The connection client is represented by the `IOpenFeedClient` interface:
 
 ```ts
 interface IOpenFeedClient {
-    get connection(): Promise<IOpenfeedConnection>;
+    get connection(): Promise<IOpenFeedConnection>;
 
     subscribe: (
         service: Service,
         subscriptionType: SubscriptionType,
+        snapshotIntervalSeconds: number,
         symbols: string[] | null,
         marketIds: Long[] | null,
         exchanges: string[] | null,
         channels: number[] | null
     ) => Long;
     unsubscribe: (subscriptionId: Long) => void;
+    dispose: () => void;
 }
 ```
 
@@ -150,6 +156,7 @@ enum SubscriptionType {
     CUMULATIVE_VOLUME = 6,
     OHLC = 7,
     OHLC_NON_REGULAR = 8,
+    SETTLEMENT = 9,
 }
 ```
 
@@ -158,12 +165,7 @@ enum SubscriptionType {
 Now that we know how to use the listener and client objects, let's put together a little demo that subscribes to all MSFT messages and prints what's happening to the console:
 
 ```ts
-import { OpenFeedClient } from "./connection/client";
-
-import { Service } from "../generated/openfeed";
-import { SubscriptionType } from "../generated/openfeed_api";
-import { OpenFeedListeners } from "./connection/listeners";
-import { IOpenFeedLogger } from "./connection/interfaces";
+import { OpenFeedClient, OpenFeedListeners, Service, SubscriptionType, type IOpenFeedLogger } from "@openfeed/sdk-js";
 
 const connect = async () => {
     const logger: IOpenFeedLogger = console;
@@ -208,7 +210,7 @@ const connect = async () => {
 connect();
 ```
 
-This program is a simple amalgamation of what we learned before. We first set up a listener and connect the callbacks that simply print everything that's happening to the console. We update the username and password with our credentials, and then finally we create a client, subscibe to all messages for the symbol MSFT, and dispose of the client after we have unsubscribed from the symbol feed.
+This program is a simple amalgamation of what we learned before. We first set up a listener and connect the callbacks that simply print everything that's happening to the console. We update the username and password with our credentials, and then finally we create a client, subscribe to all messages for the symbol MSFT, and dispose of the client after we have unsubscribed from the symbol feed.
 
 ## More Information
 
