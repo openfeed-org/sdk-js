@@ -29,5 +29,11 @@ jobs:
                   yarn
                   yarn generate:version
 
+            - name: Lint
+              run: yarn lint
+
+            - name: Check formatting
+              run: yarn format:check
+
             - name: Run tests
               run: yarn test

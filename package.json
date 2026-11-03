@@ -22,7 +22,10 @@
         "build:prepare-release": "standard-version -t ''",
         "run:browser": "yarn generate:version && vite dev",
         "run:node": "yarn generate:version && tsx ./src/test.ts",
-        "test": "vitest run"
+        "test": "vitest run",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
     },
     "devDependencies": {
         "@commitlint/cli": "^21.2.4",
