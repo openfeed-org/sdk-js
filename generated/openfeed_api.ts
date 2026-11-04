@@ -293,67 +293,77 @@ export const OpenfeedGatewayRequestEncode = {
 }, OpenfeedGatewayRequestDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): OpenfeedGatewayRequest {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseOpenfeedGatewayRequest();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.loginRequest = LoginRequestDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.logoutRequest = LogoutRequestDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.subscriptionRequest = SubscriptionRequestDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 34) {
-                        break;
-                    }
-                    message.instrumentRequest = InstrumentRequestDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 42) {
-                        break;
-                    }
-                    message.instrumentReferenceRequest = InstrumentReferenceRequestDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 50) {
-                        break;
-                    }
-                    message.exchangeRequest = ExchangeRequestDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 7: {
-                    if (tag !== 58) {
-                        break;
-                    }
-                    message.listSubscriptionsRequest = ListSubscriptionsRequestDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseOpenfeedGatewayRequest();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.loginRequest = LoginRequestDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.logoutRequest = LogoutRequestDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.subscriptionRequest = SubscriptionRequestDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 34) {
+                            break;
+                        }
+                        message.instrumentRequest = InstrumentRequestDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 42) {
+                            break;
+                        }
+                        message.instrumentReferenceRequest = InstrumentReferenceRequestDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 50) {
+                            break;
+                        }
+                        message.exchangeRequest = ExchangeRequestDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 7: {
+                        if (tag !== 58) {
+                            break;
+                        }
+                        message.listSubscriptionsRequest = ListSubscriptionsRequestDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseOpenfeedGatewayMessage(): OpenfeedGatewayMessage {
@@ -427,123 +437,133 @@ export const OpenfeedGatewayMessageEncode = {
 }, OpenfeedGatewayMessageDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): OpenfeedGatewayMessage {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseOpenfeedGatewayMessage();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.loginResponse = LoginResponseDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.logoutResponse = LogoutResponseDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.instrumentResponse = InstrumentResponseDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 34) {
-                        break;
-                    }
-                    message.instrumentReferenceResponse = InstrumentReferenceResponseDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 42) {
-                        break;
-                    }
-                    message.subscriptionResponse = SubscriptionResponseDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 50) {
-                        break;
-                    }
-                    message.marketStatus = MarketStatusDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 7: {
-                    if (tag !== 58) {
-                        break;
-                    }
-                    message.heartBeat = HeartBeatDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 8: {
-                    if (tag !== 66) {
-                        break;
-                    }
-                    message.instrumentDefinition = InstrumentDefinitionDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 9: {
-                    if (tag !== 74) {
-                        break;
-                    }
-                    message.marketSnapshot = MarketSnapshotDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 10: {
-                    if (tag !== 82) {
-                        break;
-                    }
-                    message.marketUpdate = MarketUpdateDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 11: {
-                    if (tag !== 90) {
-                        break;
-                    }
-                    message.volumeAtPrice = VolumeAtPriceDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 12: {
-                    if (tag !== 98) {
-                        break;
-                    }
-                    message.ohlc = OhlcDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 13: {
-                    if (tag !== 106) {
-                        break;
-                    }
-                    message.exchangeResponse = ExchangeResponseDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 14: {
-                    if (tag !== 114) {
-                        break;
-                    }
-                    message.instrumentAction = InstrumentActionDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 15: {
-                    if (tag !== 122) {
-                        break;
-                    }
-                    message.listSubscriptionsResponse = ListSubscriptionsResponseDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseOpenfeedGatewayMessage();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.loginResponse = LoginResponseDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.logoutResponse = LogoutResponseDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.instrumentResponse = InstrumentResponseDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 34) {
+                            break;
+                        }
+                        message.instrumentReferenceResponse = InstrumentReferenceResponseDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 42) {
+                            break;
+                        }
+                        message.subscriptionResponse = SubscriptionResponseDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 50) {
+                            break;
+                        }
+                        message.marketStatus = MarketStatusDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 7: {
+                        if (tag !== 58) {
+                            break;
+                        }
+                        message.heartBeat = HeartBeatDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 8: {
+                        if (tag !== 66) {
+                            break;
+                        }
+                        message.instrumentDefinition = InstrumentDefinitionDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 9: {
+                        if (tag !== 74) {
+                            break;
+                        }
+                        message.marketSnapshot = MarketSnapshotDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 10: {
+                        if (tag !== 82) {
+                            break;
+                        }
+                        message.marketUpdate = MarketUpdateDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 11: {
+                        if (tag !== 90) {
+                            break;
+                        }
+                        message.volumeAtPrice = VolumeAtPriceDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 12: {
+                        if (tag !== 98) {
+                            break;
+                        }
+                        message.ohlc = OhlcDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 13: {
+                        if (tag !== 106) {
+                            break;
+                        }
+                        message.exchangeResponse = ExchangeResponseDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 14: {
+                        if (tag !== 114) {
+                            break;
+                        }
+                        message.instrumentAction = InstrumentActionDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 15: {
+                        if (tag !== 122) {
+                            break;
+                        }
+                        message.listSubscriptionsResponse = ListSubscriptionsResponseDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseStatus(): Status {
@@ -565,39 +585,49 @@ export const StatusEncode = {
 }, StatusDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): Status {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseStatus();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.result = reader.int32() as any;
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.message = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 24) {
-                        break;
-                    }
-                    message.service = reader.int32() as any;
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseStatus();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.result = reader.int32() as any;
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.message = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 24) {
+                            break;
+                        }
+                        message.service = reader.int32() as any;
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseLoginRequest(): LoginRequest {
@@ -628,60 +658,70 @@ export const LoginRequestEncode = {
 }, LoginRequestDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): LoginRequest {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseLoginRequest();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.username = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.password = reader.string();
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 34) {
-                        break;
-                    }
-                    message.clientVersion = reader.string();
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 40) {
-                        break;
-                    }
-                    message.protocolVersion = reader.sint32();
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 50) {
-                        break;
-                    }
-                    message.jwt = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseLoginRequest();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.username = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.password = reader.string();
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 34) {
+                            break;
+                        }
+                        message.clientVersion = reader.string();
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 40) {
+                            break;
+                        }
+                        message.protocolVersion = reader.sint32();
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 50) {
+                            break;
+                        }
+                        message.jwt = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseLoginResponse(): LoginResponse {
@@ -703,39 +743,49 @@ export const LoginResponseEncode = {
 }, LoginResponseDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): LoginResponse {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseLoginResponse();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.status = StatusDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.token = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseLoginResponse();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.status = StatusDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.token = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseLogoutRequest(): LogoutRequest {
@@ -754,32 +804,42 @@ export const LogoutRequestEncode = {
 }, LogoutRequestDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): LogoutRequest {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseLogoutRequest();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.token = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseLogoutRequest();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.token = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseLogoutResponse(): LogoutResponse {
@@ -798,32 +858,42 @@ export const LogoutResponseEncode = {
 }, LogoutResponseDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): LogoutResponse {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseLogoutResponse();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.status = StatusDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseLogoutResponse();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.status = StatusDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentRequest(): InstrumentRequest {
@@ -847,11 +917,13 @@ export const InstrumentRequestEncode = {
         if (message.token !== "") {
             writer.uint32(18).string(message.token);
         }
-        writer.uint32(26).fork();
-        for (const v of message.instrumentType) {
-            writer.int32(v);
+        if (message.instrumentType.length !== 0) {
+            writer.uint32(26).fork();
+            for (const v of message.instrumentType) {
+                writer.int32(v);
+            }
+            writer.join();
         }
-        writer.join();
         for (const v of message.spreadType) {
             writer.uint32(34).string(v!);
         }
@@ -875,88 +947,98 @@ export const InstrumentRequestEncode = {
 }, InstrumentRequestDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentRequest {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentRequest();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.token = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag === 24) {
-                        message.instrumentType.push(reader.int32() as any);
-                        continue;
-                    }
-                    if (tag === 26) {
-                        const end2 = reader.uint32() + reader.pos;
-                        while (reader.pos < end2) {
-                            message.instrumentType.push(reader.int32() as any);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
+        }
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentRequest();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
                         }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
                         continue;
                     }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.token = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag === 24) {
+                            message.instrumentType.push(reader.int32() as any);
+                            continue;
+                        }
+                        if (tag === 26) {
+                            const end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2) {
+                                message.instrumentType.push(reader.int32() as any);
+                            }
+                            continue;
+                        }
+                        break;
+                    }
+                    case 4: {
+                        if (tag !== 34) {
+                            break;
+                        }
+                        message.spreadType.push(reader.string());
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 40) {
+                            break;
+                        }
+                        message.version = reader.sint32();
+                        continue;
+                    }
+                    case 10: {
+                        if (tag !== 82) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 11: {
+                        if (tag !== 88) {
+                            break;
+                        }
+                        message.marketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 12: {
+                        if (tag !== 98) {
+                            break;
+                        }
+                        message.exchange = reader.string();
+                        continue;
+                    }
+                    case 13: {
+                        if (tag !== 104) {
+                            break;
+                        }
+                        message.channelId = reader.sint32();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
                     break;
                 }
-                case 4: {
-                    if (tag !== 34) {
-                        break;
-                    }
-                    message.spreadType.push(reader.string());
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 40) {
-                        break;
-                    }
-                    message.version = reader.sint32();
-                    continue;
-                }
-                case 10: {
-                    if (tag !== 82) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 11: {
-                    if (tag !== 88) {
-                        break;
-                    }
-                    message.marketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 12: {
-                    if (tag !== 98) {
-                        break;
-                    }
-                    message.exchange = reader.string();
-                    continue;
-                }
-                case 13: {
-                    if (tag !== 104) {
-                        break;
-                    }
-                    message.channelId = reader.sint32();
-                    continue;
-                }
+                reader.skip(tag & 7);
             }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+            return message;
         }
-        return message;
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentResponse(): InstrumentResponse {
@@ -1006,81 +1088,91 @@ export const InstrumentResponseEncode = {
 }, InstrumentResponseDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentResponse {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentResponse();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.status = StatusDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 24) {
-                        break;
-                    }
-                    message.numberOfDefinitions = reader.sint32();
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 34) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 40) {
-                        break;
-                    }
-                    message.marketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 50) {
-                        break;
-                    }
-                    message.exchange = reader.string();
-                    continue;
-                }
-                case 7: {
-                    if (tag !== 56) {
-                        break;
-                    }
-                    message.channelId = reader.sint32();
-                    continue;
-                }
-                case 8: {
-                    if (tag !== 64) {
-                        break;
-                    }
-                    message.exchangeId = reader.sint32();
-                    continue;
-                }
-                case 15: {
-                    if (tag !== 122) {
-                        break;
-                    }
-                    message.instrumentDefinition = InstrumentDefinitionDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentResponse();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.status = StatusDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 24) {
+                            break;
+                        }
+                        message.numberOfDefinitions = reader.sint32();
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 34) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 40) {
+                            break;
+                        }
+                        message.marketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 50) {
+                            break;
+                        }
+                        message.exchange = reader.string();
+                        continue;
+                    }
+                    case 7: {
+                        if (tag !== 56) {
+                            break;
+                        }
+                        message.channelId = reader.sint32();
+                        continue;
+                    }
+                    case 8: {
+                        if (tag !== 64) {
+                            break;
+                        }
+                        message.exchangeId = reader.sint32();
+                        continue;
+                    }
+                    case 15: {
+                        if (tag !== 122) {
+                            break;
+                        }
+                        message.instrumentDefinition = InstrumentDefinitionDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentReferenceRequest(): InstrumentReferenceRequest {
@@ -1118,60 +1210,70 @@ export const InstrumentReferenceRequestEncode = {
 }, InstrumentReferenceRequestDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentReferenceRequest {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentReferenceRequest();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.token = reader.string();
-                    continue;
-                }
-                case 10: {
-                    if (tag !== 82) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 11: {
-                    if (tag !== 88) {
-                        break;
-                    }
-                    message.marketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 12: {
-                    if (tag !== 98) {
-                        break;
-                    }
-                    message.exchange = reader.string();
-                    continue;
-                }
-                case 13: {
-                    if (tag !== 104) {
-                        break;
-                    }
-                    message.channelId = reader.sint32();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentReferenceRequest();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.token = reader.string();
+                        continue;
+                    }
+                    case 10: {
+                        if (tag !== 82) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 11: {
+                        if (tag !== 88) {
+                            break;
+                        }
+                        message.marketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 12: {
+                        if (tag !== 98) {
+                            break;
+                        }
+                        message.exchange = reader.string();
+                        continue;
+                    }
+                    case 13: {
+                        if (tag !== 104) {
+                            break;
+                        }
+                        message.channelId = reader.sint32();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentReferenceResponse(): InstrumentReferenceResponse {
@@ -1233,102 +1335,112 @@ export const InstrumentReferenceResponseEncode = {
 }, InstrumentReferenceResponseDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentReferenceResponse {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentReferenceResponse();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.status = StatusDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 24) {
-                        break;
-                    }
-                    message.numberOfDefinitions = reader.sint32();
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 32) {
-                        break;
-                    }
-                    message.channelId = reader.sint32();
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 40) {
-                        break;
-                    }
-                    message.marketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 50) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 7: {
-                    if (tag !== 58) {
-                        break;
-                    }
-                    message.exchange = reader.string();
-                    continue;
-                }
-                case 8: {
-                    if (tag !== 66) {
-                        break;
-                    }
-                    message.ddfSymbol = reader.string();
-                    continue;
-                }
-                case 9: {
-                    if (tag !== 74) {
-                        break;
-                    }
-                    message.ddfExchange = reader.string();
-                    continue;
-                }
-                case 10: {
-                    if (tag !== 82) {
-                        break;
-                    }
-                    message.ddfBaseCode = reader.string();
-                    continue;
-                }
-                case 11: {
-                    if (tag !== 90) {
-                        break;
-                    }
-                    message.exchangeSymbol = reader.string();
-                    continue;
-                }
-                case 12: {
-                    if (tag !== 96) {
-                        break;
-                    }
-                    message.exchangeId = reader.sint32();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentReferenceResponse();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.status = StatusDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 24) {
+                            break;
+                        }
+                        message.numberOfDefinitions = reader.sint32();
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 32) {
+                            break;
+                        }
+                        message.channelId = reader.sint32();
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 40) {
+                            break;
+                        }
+                        message.marketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 50) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 7: {
+                        if (tag !== 58) {
+                            break;
+                        }
+                        message.exchange = reader.string();
+                        continue;
+                    }
+                    case 8: {
+                        if (tag !== 66) {
+                            break;
+                        }
+                        message.ddfSymbol = reader.string();
+                        continue;
+                    }
+                    case 9: {
+                        if (tag !== 74) {
+                            break;
+                        }
+                        message.ddfExchange = reader.string();
+                        continue;
+                    }
+                    case 10: {
+                        if (tag !== 82) {
+                            break;
+                        }
+                        message.ddfBaseCode = reader.string();
+                        continue;
+                    }
+                    case 11: {
+                        if (tag !== 90) {
+                            break;
+                        }
+                        message.exchangeSymbol = reader.string();
+                        continue;
+                    }
+                    case 12: {
+                        if (tag !== 96) {
+                            break;
+                        }
+                        message.exchangeId = reader.sint32();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseExchangeRequest(): ExchangeRequest {
@@ -1347,32 +1459,42 @@ export const ExchangeRequestEncode = {
 }, ExchangeRequestDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): ExchangeRequest {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseExchangeRequest();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.token = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseExchangeRequest();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.token = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseExchangeResponse(): ExchangeResponse {
@@ -1394,39 +1516,49 @@ export const ExchangeResponseEncode = {
 }, ExchangeResponseDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): ExchangeResponse {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseExchangeResponse();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.status = StatusDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.exchanges.push(ExchangeResponse_ExchangeDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseExchangeResponse();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.status = StatusDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.exchanges.push(ExchangeResponse_ExchangeDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseExchangeResponse_Exchange(): ExchangeResponse_Exchange {
@@ -1451,46 +1583,56 @@ export const ExchangeResponse_ExchangeEncode = {
 }, ExchangeResponse_ExchangeDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): ExchangeResponse_Exchange {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseExchangeResponse_Exchange();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.code = reader.string();
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.description = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.aliases.push(reader.string());
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 32) {
-                        break;
-                    }
-                    message.exchangeId = reader.sint32();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseExchangeResponse_Exchange();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.code = reader.string();
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.description = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.aliases.push(reader.string());
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 32) {
+                            break;
+                        }
+                        message.exchangeId = reader.sint32();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseBulkSubscriptionFilter(): BulkSubscriptionFilter {
@@ -1509,32 +1651,42 @@ export const BulkSubscriptionFilterEncode = {
 }, BulkSubscriptionFilterDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): BulkSubscriptionFilter {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseBulkSubscriptionFilter();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.symbolType = reader.int32() as any;
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.symbolPattern = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseBulkSubscriptionFilter();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.symbolType = reader.int32() as any;
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.symbolPattern = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseSubscriptionRequest(): SubscriptionRequest {
@@ -1562,53 +1714,63 @@ export const SubscriptionRequestEncode = {
 }, SubscriptionRequestDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): SubscriptionRequest {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseSubscriptionRequest();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.token = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 24) {
-                        break;
-                    }
-                    message.service = reader.int32() as any;
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 32) {
-                        break;
-                    }
-                    message.unsubscribe = reader.bool();
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 42) {
-                        break;
-                    }
-                    message.requests.push(SubscriptionRequest_RequestDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseSubscriptionRequest();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.token = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 24) {
+                            break;
+                        }
+                        message.service = reader.int32() as any;
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 32) {
+                            break;
+                        }
+                        message.unsubscribe = reader.bool();
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 42) {
+                            break;
+                        }
+                        message.requests.push(SubscriptionRequest_RequestDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseSubscriptionRequest_Request(): SubscriptionRequest_Request {
@@ -1640,19 +1802,23 @@ export const SubscriptionRequest_RequestEncode = {
         if (message.channelId !== undefined) {
             writer.uint32(32).sint32(message.channelId);
         }
-        writer.uint32(82).fork();
-        for (const v of message.subscriptionType) {
-            writer.int32(v);
+        if (message.subscriptionType.length !== 0) {
+            writer.uint32(82).fork();
+            for (const v of message.subscriptionType) {
+                writer.int32(v);
+            }
+            writer.join();
         }
-        writer.join();
         if (message.snapshotIntervalSeconds !== 0) {
             writer.uint32(88).sint32(message.snapshotIntervalSeconds);
         }
-        writer.uint32(98).fork();
-        for (const v of message.instrumentType) {
-            writer.int32(v);
+        if (message.instrumentType.length !== 0) {
+            writer.uint32(98).fork();
+            for (const v of message.instrumentType) {
+                writer.int32(v);
+            }
+            writer.join();
         }
-        writer.join();
         for (const v of message.bulkSubscriptionFilter) {
             BulkSubscriptionFilterEncode.encode(v!, writer.uint32(106).fork()).join();
         }
@@ -1670,109 +1836,119 @@ export const SubscriptionRequest_RequestEncode = {
 }, SubscriptionRequest_RequestDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): SubscriptionRequest_Request {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseSubscriptionRequest_Request();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.marketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.exchange = reader.string();
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 32) {
-                        break;
-                    }
-                    message.channelId = reader.sint32();
-                    continue;
-                }
-                case 10: {
-                    if (tag === 80) {
-                        message.subscriptionType.push(reader.int32() as any);
-                        continue;
-                    }
-                    if (tag === 82) {
-                        const end2 = reader.uint32() + reader.pos;
-                        while (reader.pos < end2) {
-                            message.subscriptionType.push(reader.int32() as any);
-                        }
-                        continue;
-                    }
-                    break;
-                }
-                case 11: {
-                    if (tag !== 88) {
-                        break;
-                    }
-                    message.snapshotIntervalSeconds = reader.sint32();
-                    continue;
-                }
-                case 12: {
-                    if (tag === 96) {
-                        message.instrumentType.push(reader.int32() as any);
-                        continue;
-                    }
-                    if (tag === 98) {
-                        const end2 = reader.uint32() + reader.pos;
-                        while (reader.pos < end2) {
-                            message.instrumentType.push(reader.int32() as any);
-                        }
-                        continue;
-                    }
-                    break;
-                }
-                case 13: {
-                    if (tag !== 106) {
-                        break;
-                    }
-                    message.bulkSubscriptionFilter.push(BulkSubscriptionFilterDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-                case 14: {
-                    if (tag !== 114) {
-                        break;
-                    }
-                    message.spreadTypeFilter.push(reader.string());
-                    continue;
-                }
-                case 15: {
-                    if (tag !== 120) {
-                        break;
-                    }
-                    message.subscriptionDoNotSendInstruments = reader.bool();
-                    continue;
-                }
-                case 16: {
-                    if (tag !== 128) {
-                        break;
-                    }
-                    message.subscriptionDoNotSendSnapshots = reader.bool();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseSubscriptionRequest_Request();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 16) {
+                            break;
+                        }
+                        message.marketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.exchange = reader.string();
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 32) {
+                            break;
+                        }
+                        message.channelId = reader.sint32();
+                        continue;
+                    }
+                    case 10: {
+                        if (tag === 80) {
+                            message.subscriptionType.push(reader.int32() as any);
+                            continue;
+                        }
+                        if (tag === 82) {
+                            const end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2) {
+                                message.subscriptionType.push(reader.int32() as any);
+                            }
+                            continue;
+                        }
+                        break;
+                    }
+                    case 11: {
+                        if (tag !== 88) {
+                            break;
+                        }
+                        message.snapshotIntervalSeconds = reader.sint32();
+                        continue;
+                    }
+                    case 12: {
+                        if (tag === 96) {
+                            message.instrumentType.push(reader.int32() as any);
+                            continue;
+                        }
+                        if (tag === 98) {
+                            const end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2) {
+                                message.instrumentType.push(reader.int32() as any);
+                            }
+                            continue;
+                        }
+                        break;
+                    }
+                    case 13: {
+                        if (tag !== 106) {
+                            break;
+                        }
+                        message.bulkSubscriptionFilter.push(BulkSubscriptionFilterDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                    case 14: {
+                        if (tag !== 114) {
+                            break;
+                        }
+                        message.spreadTypeFilter.push(reader.string());
+                        continue;
+                    }
+                    case 15: {
+                        if (tag !== 120) {
+                            break;
+                        }
+                        message.subscriptionDoNotSendInstruments = reader.bool();
+                        continue;
+                    }
+                    case 16: {
+                        if (tag !== 128) {
+                            break;
+                        }
+                        message.subscriptionDoNotSendSnapshots = reader.bool();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseSubscriptionResponse(): SubscriptionResponse {
@@ -1826,88 +2002,98 @@ export const SubscriptionResponseEncode = {
 }, SubscriptionResponseDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): SubscriptionResponse {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseSubscriptionResponse();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.status = StatusDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 32) {
-                        break;
-                    }
-                    message.marketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 42) {
-                        break;
-                    }
-                    message.exchange = reader.string();
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 48) {
-                        break;
-                    }
-                    message.channelId = reader.sint32();
-                    continue;
-                }
-                case 7: {
-                    if (tag !== 56) {
-                        break;
-                    }
-                    message.numberOfDefinitions = reader.sint32();
-                    continue;
-                }
-                case 8: {
-                    if (tag !== 64) {
-                        break;
-                    }
-                    message.subscriptionType = reader.int32() as any;
-                    continue;
-                }
-                case 9: {
-                    if (tag !== 72) {
-                        break;
-                    }
-                    message.unsubscribe = reader.bool();
-                    continue;
-                }
-                case 10: {
-                    if (tag !== 80) {
-                        break;
-                    }
-                    message.snapshotIntervalSeconds = reader.sint32();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseSubscriptionResponse();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.status = StatusDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 32) {
+                            break;
+                        }
+                        message.marketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 42) {
+                            break;
+                        }
+                        message.exchange = reader.string();
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 48) {
+                            break;
+                        }
+                        message.channelId = reader.sint32();
+                        continue;
+                    }
+                    case 7: {
+                        if (tag !== 56) {
+                            break;
+                        }
+                        message.numberOfDefinitions = reader.sint32();
+                        continue;
+                    }
+                    case 8: {
+                        if (tag !== 64) {
+                            break;
+                        }
+                        message.subscriptionType = reader.int32() as any;
+                        continue;
+                    }
+                    case 9: {
+                        if (tag !== 72) {
+                            break;
+                        }
+                        message.unsubscribe = reader.bool();
+                        continue;
+                    }
+                    case 10: {
+                        if (tag !== 80) {
+                            break;
+                        }
+                        message.snapshotIntervalSeconds = reader.sint32();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseListSubscriptionsRequest(): ListSubscriptionsRequest {
@@ -1929,39 +2115,49 @@ export const ListSubscriptionsRequestEncode = {
 }, ListSubscriptionsRequestDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsRequest {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseListSubscriptionsRequest();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.token = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.username = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseListSubscriptionsRequest();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.token = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.username = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseListSubscriptionsResponse(): ListSubscriptionsResponse {
@@ -1986,46 +2182,56 @@ export const ListSubscriptionsResponseEncode = {
 }, ListSubscriptionsResponseDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsResponse {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseListSubscriptionsResponse();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.correlationId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.status = StatusDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.username = reader.string();
-                    continue;
-                }
-                case 10: {
-                    if (tag !== 82) {
-                        break;
-                    }
-                    message.sessions.push(ListSubscriptionsResponse_SessionDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseListSubscriptionsResponse();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.correlationId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.status = StatusDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.username = reader.string();
+                        continue;
+                    }
+                    case 10: {
+                        if (tag !== 82) {
+                            break;
+                        }
+                        message.sessions.push(ListSubscriptionsResponse_SessionDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseListSubscriptionsResponse_Session(): ListSubscriptionsResponse_Session {
@@ -2053,53 +2259,63 @@ export const ListSubscriptionsResponse_SessionEncode = {
 }, ListSubscriptionsResponse_SessionDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsResponse_Session {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseListSubscriptionsResponse_Session();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.loginTime = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.token = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.clientVersion = reader.string();
-                    continue;
-                }
-                case 10: {
-                    if (tag !== 82) {
-                        break;
-                    }
-                    message.marketSubscriptions.push(ListSubscriptionsResponse_SubscriptionDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-                case 11: {
-                    if (tag !== 90) {
-                        break;
-                    }
-                    message.exchangeSubscriptions.push(ListSubscriptionsResponse_SubscriptionDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseListSubscriptionsResponse_Session();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.loginTime = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.token = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.clientVersion = reader.string();
+                        continue;
+                    }
+                    case 10: {
+                        if (tag !== 82) {
+                            break;
+                        }
+                        message.marketSubscriptions.push(ListSubscriptionsResponse_SubscriptionDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                    case 11: {
+                        if (tag !== 90) {
+                            break;
+                        }
+                        message.exchangeSubscriptions.push(ListSubscriptionsResponse_SubscriptionDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseListSubscriptionsResponse_Subscription(): ListSubscriptionsResponse_Subscription {
@@ -2130,60 +2346,70 @@ export const ListSubscriptionsResponse_SubscriptionEncode = {
 }, ListSubscriptionsResponse_SubscriptionDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsResponse_Subscription {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseListSubscriptionsResponse_Subscription();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.subscriptionId = reader.string();
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.symbolId = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 24) {
-                        break;
-                    }
-                    message.marketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 34) {
-                        break;
-                    }
-                    message.symbolCounts.push(ListSubscriptionsResponse_SymbolCountDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-                case 10: {
-                    if (tag !== 82) {
-                        break;
-                    }
-                    message.exchange = reader.string();
-                    continue;
-                }
-                case 11: {
-                    if (tag !== 90) {
-                        break;
-                    }
-                    message.root = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseListSubscriptionsResponse_Subscription();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.subscriptionId = reader.string();
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.symbolId = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 24) {
+                            break;
+                        }
+                        message.marketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 34) {
+                            break;
+                        }
+                        message.symbolCounts.push(ListSubscriptionsResponse_SymbolCountDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                    case 10: {
+                        if (tag !== 82) {
+                            break;
+                        }
+                        message.exchange = reader.string();
+                        continue;
+                    }
+                    case 11: {
+                        if (tag !== 90) {
+                            break;
+                        }
+                        message.root = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseListSubscriptionsResponse_SymbolCount(): ListSubscriptionsResponse_SymbolCount {
@@ -2202,31 +2428,41 @@ export const ListSubscriptionsResponse_SymbolCountEncode = {
 }, ListSubscriptionsResponse_SymbolCountDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): ListSubscriptionsResponse_SymbolCount {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseListSubscriptionsResponse_SymbolCount();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.count = reader.sint32();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseListSubscriptionsResponse_SymbolCount();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 16) {
+                            break;
+                        }
+                        message.count = reader.sint32();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
