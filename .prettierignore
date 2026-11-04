@@ -4,3 +4,5 @@ generated
 *.md
 LICENSE
 index.html
+# release-please rewrites it in its own format in every release PR
+.release-please-manifest.json
