@@ -69,11 +69,13 @@ yarn generate
 
 This pulls the latest proto files, generates the TypeScript code with `ts-proto`, and post-processes it (splitting encoders from decoders to keep the bundle small, and writing `generated/index.ts`). Commit the changes to `generated/` and `yarn.lock`.
 
-### Preparing a new version
+### Releasing
 
-For updating the version and automatically collecting changes, run:
+Releases are made by [release-please](https://github.com/googleapis/release-please), from the conventional commits on `master`:
 
-```shell
-yarn build:prepare-release
-git push --follow-tags origin master
-```
+1. Every push to `master` opens or updates a release PR, with the next version and its `CHANGELOG.md` entries.
+2. Merging the release PR tags the version and creates the GitHub release.
+3. The same workflow builds and checks that version, then stages it on npm.
+4. A maintainer approves the staged version on npmjs.com (or with `npm stage approve`) with 2FA, which makes it public.
+
+`feat` commits bump the minor version, `fix` and `perf` the patch, and a `!` or a `BREAKING CHANGE:` footer the major. Commits of other types (`build`, `chore`, `ci`, `docs`, `refactor`, `style`, `test`) don't trigger a release or appear in the changelog. Release notes from before release-please are in [`.releases/`](.releases/).
