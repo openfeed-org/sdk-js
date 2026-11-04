@@ -159,6 +159,7 @@ export interface InstrumentDefinition {
     quantityFractionalDenominator: number;
     /** / Divide fractional volumes by this value to get real volumes */
     volumeFractionalDenominator: number;
+    contractMetadata: InstrumentDefinition_ContractMetadata | undefined;
 }
 /** ############################################# */
 export enum InstrumentDefinition_InstrumentType {
@@ -312,6 +313,17 @@ export interface InstrumentDefinition_ExchangeMetadata {
     securitySymbol: string;
     underlyingSymbol: string;
 }
+/** / Contract Metadata */
+export interface InstrumentDefinition_ContractMetadata {
+    productCategory: string;
+    marketCode: string;
+    name: string;
+    term: string;
+    beginDate: number;
+    endDate: number;
+    deliveryPeriod: string;
+    priceType: string;
+}
 function createBaseInstrumentDefinition(): InstrumentDefinition {
     return {
         marketId: Long.ZERO,
@@ -381,6 +393,7 @@ function createBaseInstrumentDefinition(): InstrumentDefinition {
         roundLotSize: 0,
         quantityFractionalDenominator: 0,
         volumeFractionalDenominator: 0,
+        contractMetadata: undefined,
     };
 }
 export const InstrumentDefinitionEncode = {
@@ -391,11 +404,13 @@ export const InstrumentDefinitionEncode = {
         if (message.instrumentType !== 0) {
             writer.uint32(16).int32(message.instrumentType);
         }
-        writer.uint32(26).fork();
-        for (const v of message.supportBookTypes) {
-            writer.int32(v);
+        if (message.supportBookTypes.length !== 0) {
+            writer.uint32(26).fork();
+            for (const v of message.supportBookTypes) {
+                writer.int32(v);
+            }
+            writer.join();
         }
-        writer.join();
         if (message.bookDepth !== 0) {
             writer.uint32(32).sint32(message.bookDepth);
         }
@@ -588,499 +603,519 @@ export const InstrumentDefinitionEncode = {
         if (message.volumeFractionalDenominator !== 0) {
             writer.uint32(1936).sint32(message.volumeFractionalDenominator);
         }
+        if (message.contractMetadata !== undefined) {
+            InstrumentDefinition_ContractMetadataEncode.encode(message.contractMetadata, writer.uint32(1946).fork()).join();
+        }
         return writer;
     }
 }, InstrumentDefinitionDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.marketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.instrumentType = reader.int32() as any;
-                    continue;
-                }
-                case 3: {
-                    if (tag === 24) {
-                        message.supportBookTypes.push(reader.int32() as any);
-                        continue;
-                    }
-                    if (tag === 26) {
-                        const end2 = reader.uint32() + reader.pos;
-                        while (reader.pos < end2) {
-                            message.supportBookTypes.push(reader.int32() as any);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
+        }
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
                         }
+                        message.marketId = Long.fromString(reader.sint64().toString());
                         continue;
                     }
+                    case 2: {
+                        if (tag !== 16) {
+                            break;
+                        }
+                        message.instrumentType = reader.int32() as any;
+                        continue;
+                    }
+                    case 3: {
+                        if (tag === 24) {
+                            message.supportBookTypes.push(reader.int32() as any);
+                            continue;
+                        }
+                        if (tag === 26) {
+                            const end2 = reader.uint32() + reader.pos;
+                            while (reader.pos < end2) {
+                                message.supportBookTypes.push(reader.int32() as any);
+                            }
+                            continue;
+                        }
+                        break;
+                    }
+                    case 4: {
+                        if (tag !== 32) {
+                            break;
+                        }
+                        message.bookDepth = reader.sint32();
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 42) {
+                            break;
+                        }
+                        message.vendorId = reader.string();
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 50) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 7: {
+                        if (tag !== 58) {
+                            break;
+                        }
+                        message.description = reader.string();
+                        continue;
+                    }
+                    case 8: {
+                        if (tag !== 66) {
+                            break;
+                        }
+                        message.cfiCode = reader.string();
+                        continue;
+                    }
+                    case 9: {
+                        if (tag !== 74) {
+                            break;
+                        }
+                        message.currencyCode = reader.string();
+                        continue;
+                    }
+                    case 10: {
+                        if (tag !== 82) {
+                            break;
+                        }
+                        message.exchangeCode = reader.string();
+                        continue;
+                    }
+                    case 11: {
+                        if (tag !== 93) {
+                            break;
+                        }
+                        message.minimumPriceIncrement = reader.float();
+                        continue;
+                    }
+                    case 12: {
+                        if (tag !== 101) {
+                            break;
+                        }
+                        message.contractPointValue = reader.float();
+                        continue;
+                    }
+                    case 13: {
+                        if (tag !== 106) {
+                            break;
+                        }
+                        message.schedule = InstrumentDefinition_ScheduleDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 14: {
+                        if (tag !== 114) {
+                            break;
+                        }
+                        message.calendar = InstrumentDefinition_CalendarDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 15: {
+                        if (tag !== 120) {
+                            break;
+                        }
+                        message.recordCreateTime = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 16: {
+                        if (tag !== 128) {
+                            break;
+                        }
+                        message.recordUpdateTime = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 17: {
+                        if (tag !== 138) {
+                            break;
+                        }
+                        message.timeZoneName = reader.string();
+                        continue;
+                    }
+                    case 18: {
+                        if (tag !== 146) {
+                            break;
+                        }
+                        message.instrumentGroup = reader.string();
+                        continue;
+                    }
+                    case 19: {
+                        if (tag !== 154) {
+                            break;
+                        }
+                        message.symbolExpiration = InstrumentDefinition_MaturityDateDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 20: {
+                        if (tag !== 160) {
+                            break;
+                        }
+                        message.state = reader.int32() as any;
+                        continue;
+                    }
+                    case 21: {
+                        if (tag !== 168) {
+                            break;
+                        }
+                        message.channel = reader.sint32();
+                        continue;
+                    }
+                    case 22: {
+                        if (tag !== 176) {
+                            break;
+                        }
+                        message.underlyingMarketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 23: {
+                        if (tag !== 186) {
+                            break;
+                        }
+                        message.priceFormat = InstrumentDefinition_PriceFormatDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 24: {
+                        if (tag !== 194) {
+                            break;
+                        }
+                        message.optionStrikePriceFormat = InstrumentDefinition_PriceFormatDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 28: {
+                        if (tag !== 224) {
+                            break;
+                        }
+                        message.priceDenominator = reader.sint32();
+                        continue;
+                    }
+                    case 29: {
+                        if (tag !== 232) {
+                            break;
+                        }
+                        message.quantityDenominator = reader.sint32();
+                        continue;
+                    }
+                    case 30: {
+                        if (tag !== 240) {
+                            break;
+                        }
+                        message.isTradable = reader.bool();
+                        continue;
+                    }
+                    case 50: {
+                        if (tag !== 400) {
+                            break;
+                        }
+                        message.transactionTime = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 99: {
+                        if (tag !== 794) {
+                            break;
+                        }
+                        message.auxiliaryData = reader.bytes();
+                        continue;
+                    }
+                    case 100: {
+                        if (tag !== 802) {
+                            break;
+                        }
+                        message.symbols.push(InstrumentDefinition_SymbolDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                    case 200: {
+                        if (tag !== 1600) {
+                            break;
+                        }
+                        message.optionStrike = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 202: {
+                        if (tag !== 1616) {
+                            break;
+                        }
+                        message.optionType = reader.int32() as any;
+                        continue;
+                    }
+                    case 203: {
+                        if (tag !== 1624) {
+                            break;
+                        }
+                        message.optionStyle = reader.int32() as any;
+                        continue;
+                    }
+                    case 204: {
+                        if (tag !== 1632) {
+                            break;
+                        }
+                        message.optionStrikeDenominator = reader.sint32();
+                        continue;
+                    }
+                    case 210: {
+                        if (tag !== 1682) {
+                            break;
+                        }
+                        message.spreadCode = reader.string();
+                        continue;
+                    }
+                    case 211: {
+                        if (tag !== 1690) {
+                            break;
+                        }
+                        message.spreadLeg.push(InstrumentDefinition_SpreadLegDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                    case 212: {
+                        if (tag !== 1696) {
+                            break;
+                        }
+                        message.userDefinedSpread = reader.bool();
+                        continue;
+                    }
+                    case 213: {
+                        if (tag !== 1706) {
+                            break;
+                        }
+                        message.marketTier = reader.string();
+                        continue;
+                    }
+                    case 214: {
+                        if (tag !== 1714) {
+                            break;
+                        }
+                        message.financialStatusIndicator = reader.string();
+                        continue;
+                    }
+                    case 215: {
+                        if (tag !== 1722) {
+                            break;
+                        }
+                        message.isin = reader.string();
+                        continue;
+                    }
+                    case 216: {
+                        if (tag !== 1730) {
+                            break;
+                        }
+                        message.currencyPair = InstrumentDefinition_CurrencyPairDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 217: {
+                        if (tag !== 1736) {
+                            break;
+                        }
+                        message.exchangeSendsVolume = reader.bool();
+                        continue;
+                    }
+                    case 218: {
+                        if (tag !== 1744) {
+                            break;
+                        }
+                        message.exchangeSendsHigh = reader.bool();
+                        continue;
+                    }
+                    case 219: {
+                        if (tag !== 1752) {
+                            break;
+                        }
+                        message.exchangeSendsLow = reader.bool();
+                        continue;
+                    }
+                    case 220: {
+                        if (tag !== 1760) {
+                            break;
+                        }
+                        message.exchangeSendsOpen = reader.bool();
+                        continue;
+                    }
+                    case 221: {
+                        if (tag !== 1768) {
+                            break;
+                        }
+                        message.consolidatedFeedInstrument = reader.bool();
+                        continue;
+                    }
+                    case 222: {
+                        if (tag !== 1776) {
+                            break;
+                        }
+                        message.openOutcryInstrument = reader.bool();
+                        continue;
+                    }
+                    case 223: {
+                        if (tag !== 1784) {
+                            break;
+                        }
+                        message.syntheticAmericanOptionInstrument = reader.bool();
+                        continue;
+                    }
+                    case 224: {
+                        if (tag !== 1794) {
+                            break;
+                        }
+                        message.barchartExchangeCode = reader.string();
+                        continue;
+                    }
+                    case 225: {
+                        if (tag !== 1802) {
+                            break;
+                        }
+                        message.barchartBaseCode = reader.string();
+                        continue;
+                    }
+                    case 226: {
+                        if (tag !== 1808) {
+                            break;
+                        }
+                        message.volumeDenominator = reader.sint32();
+                        continue;
+                    }
+                    case 227: {
+                        if (tag !== 1816) {
+                            break;
+                        }
+                        message.bidOfferQuantityDenominator = reader.sint32();
+                        continue;
+                    }
+                    case 228: {
+                        if (tag !== 1826) {
+                            break;
+                        }
+                        message.primaryListingMarketParticipantId = reader.string();
+                        continue;
+                    }
+                    case 229: {
+                        if (tag !== 1834) {
+                            break;
+                        }
+                        message.subscriptionSymbol = reader.string();
+                        continue;
+                    }
+                    case 230: {
+                        if (tag !== 1842) {
+                            break;
+                        }
+                        message.contractMaturity = InstrumentDefinition_MaturityDateDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 231: {
+                        if (tag !== 1850) {
+                            break;
+                        }
+                        message.underlying = reader.string();
+                        continue;
+                    }
+                    case 232: {
+                        if (tag !== 1858) {
+                            break;
+                        }
+                        message.commodity = reader.string();
+                        continue;
+                    }
+                    case 233: {
+                        if (tag !== 1864) {
+                            break;
+                        }
+                        message.exchangeId = reader.sint32();
+                        continue;
+                    }
+                    case 234: {
+                        if (tag !== 1872) {
+                            break;
+                        }
+                        message.priceScalingExponent = reader.sint32();
+                        continue;
+                    }
+                    case 235: {
+                        if (tag !== 1880) {
+                            break;
+                        }
+                        message.underlyingOpenfeedMarketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 236: {
+                        if (tag !== 1890) {
+                            break;
+                        }
+                        message.barchartExchange = reader.string();
+                        continue;
+                    }
+                    case 237: {
+                        if (tag !== 1896) {
+                            break;
+                        }
+                        message.contractSize = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 238: {
+                        if (tag !== 1906) {
+                            break;
+                        }
+                        message.contractSizeDescription = reader.string();
+                        continue;
+                    }
+                    case 239: {
+                        if (tag !== 1914) {
+                            break;
+                        }
+                        message.exchangeMetadata = InstrumentDefinition_ExchangeMetadataDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                    case 240: {
+                        if (tag !== 1920) {
+                            break;
+                        }
+                        message.roundLotSize = reader.sint32();
+                        continue;
+                    }
+                    case 241: {
+                        if (tag !== 1928) {
+                            break;
+                        }
+                        message.quantityFractionalDenominator = reader.sint32();
+                        continue;
+                    }
+                    case 242: {
+                        if (tag !== 1936) {
+                            break;
+                        }
+                        message.volumeFractionalDenominator = reader.sint32();
+                        continue;
+                    }
+                    case 243: {
+                        if (tag !== 1946) {
+                            break;
+                        }
+                        message.contractMetadata = InstrumentDefinition_ContractMetadataDecode.decode(reader, reader.uint32());
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
                     break;
                 }
-                case 4: {
-                    if (tag !== 32) {
-                        break;
-                    }
-                    message.bookDepth = reader.sint32();
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 42) {
-                        break;
-                    }
-                    message.vendorId = reader.string();
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 50) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 7: {
-                    if (tag !== 58) {
-                        break;
-                    }
-                    message.description = reader.string();
-                    continue;
-                }
-                case 8: {
-                    if (tag !== 66) {
-                        break;
-                    }
-                    message.cfiCode = reader.string();
-                    continue;
-                }
-                case 9: {
-                    if (tag !== 74) {
-                        break;
-                    }
-                    message.currencyCode = reader.string();
-                    continue;
-                }
-                case 10: {
-                    if (tag !== 82) {
-                        break;
-                    }
-                    message.exchangeCode = reader.string();
-                    continue;
-                }
-                case 11: {
-                    if (tag !== 93) {
-                        break;
-                    }
-                    message.minimumPriceIncrement = reader.float();
-                    continue;
-                }
-                case 12: {
-                    if (tag !== 101) {
-                        break;
-                    }
-                    message.contractPointValue = reader.float();
-                    continue;
-                }
-                case 13: {
-                    if (tag !== 106) {
-                        break;
-                    }
-                    message.schedule = InstrumentDefinition_ScheduleDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 14: {
-                    if (tag !== 114) {
-                        break;
-                    }
-                    message.calendar = InstrumentDefinition_CalendarDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 15: {
-                    if (tag !== 120) {
-                        break;
-                    }
-                    message.recordCreateTime = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 16: {
-                    if (tag !== 128) {
-                        break;
-                    }
-                    message.recordUpdateTime = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 17: {
-                    if (tag !== 138) {
-                        break;
-                    }
-                    message.timeZoneName = reader.string();
-                    continue;
-                }
-                case 18: {
-                    if (tag !== 146) {
-                        break;
-                    }
-                    message.instrumentGroup = reader.string();
-                    continue;
-                }
-                case 19: {
-                    if (tag !== 154) {
-                        break;
-                    }
-                    message.symbolExpiration = InstrumentDefinition_MaturityDateDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 20: {
-                    if (tag !== 160) {
-                        break;
-                    }
-                    message.state = reader.int32() as any;
-                    continue;
-                }
-                case 21: {
-                    if (tag !== 168) {
-                        break;
-                    }
-                    message.channel = reader.sint32();
-                    continue;
-                }
-                case 22: {
-                    if (tag !== 176) {
-                        break;
-                    }
-                    message.underlyingMarketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 23: {
-                    if (tag !== 186) {
-                        break;
-                    }
-                    message.priceFormat = InstrumentDefinition_PriceFormatDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 24: {
-                    if (tag !== 194) {
-                        break;
-                    }
-                    message.optionStrikePriceFormat = InstrumentDefinition_PriceFormatDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 28: {
-                    if (tag !== 224) {
-                        break;
-                    }
-                    message.priceDenominator = reader.sint32();
-                    continue;
-                }
-                case 29: {
-                    if (tag !== 232) {
-                        break;
-                    }
-                    message.quantityDenominator = reader.sint32();
-                    continue;
-                }
-                case 30: {
-                    if (tag !== 240) {
-                        break;
-                    }
-                    message.isTradable = reader.bool();
-                    continue;
-                }
-                case 50: {
-                    if (tag !== 400) {
-                        break;
-                    }
-                    message.transactionTime = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 99: {
-                    if (tag !== 794) {
-                        break;
-                    }
-                    message.auxiliaryData = reader.bytes();
-                    continue;
-                }
-                case 100: {
-                    if (tag !== 802) {
-                        break;
-                    }
-                    message.symbols.push(InstrumentDefinition_SymbolDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-                case 200: {
-                    if (tag !== 1600) {
-                        break;
-                    }
-                    message.optionStrike = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 202: {
-                    if (tag !== 1616) {
-                        break;
-                    }
-                    message.optionType = reader.int32() as any;
-                    continue;
-                }
-                case 203: {
-                    if (tag !== 1624) {
-                        break;
-                    }
-                    message.optionStyle = reader.int32() as any;
-                    continue;
-                }
-                case 204: {
-                    if (tag !== 1632) {
-                        break;
-                    }
-                    message.optionStrikeDenominator = reader.sint32();
-                    continue;
-                }
-                case 210: {
-                    if (tag !== 1682) {
-                        break;
-                    }
-                    message.spreadCode = reader.string();
-                    continue;
-                }
-                case 211: {
-                    if (tag !== 1690) {
-                        break;
-                    }
-                    message.spreadLeg.push(InstrumentDefinition_SpreadLegDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-                case 212: {
-                    if (tag !== 1696) {
-                        break;
-                    }
-                    message.userDefinedSpread = reader.bool();
-                    continue;
-                }
-                case 213: {
-                    if (tag !== 1706) {
-                        break;
-                    }
-                    message.marketTier = reader.string();
-                    continue;
-                }
-                case 214: {
-                    if (tag !== 1714) {
-                        break;
-                    }
-                    message.financialStatusIndicator = reader.string();
-                    continue;
-                }
-                case 215: {
-                    if (tag !== 1722) {
-                        break;
-                    }
-                    message.isin = reader.string();
-                    continue;
-                }
-                case 216: {
-                    if (tag !== 1730) {
-                        break;
-                    }
-                    message.currencyPair = InstrumentDefinition_CurrencyPairDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 217: {
-                    if (tag !== 1736) {
-                        break;
-                    }
-                    message.exchangeSendsVolume = reader.bool();
-                    continue;
-                }
-                case 218: {
-                    if (tag !== 1744) {
-                        break;
-                    }
-                    message.exchangeSendsHigh = reader.bool();
-                    continue;
-                }
-                case 219: {
-                    if (tag !== 1752) {
-                        break;
-                    }
-                    message.exchangeSendsLow = reader.bool();
-                    continue;
-                }
-                case 220: {
-                    if (tag !== 1760) {
-                        break;
-                    }
-                    message.exchangeSendsOpen = reader.bool();
-                    continue;
-                }
-                case 221: {
-                    if (tag !== 1768) {
-                        break;
-                    }
-                    message.consolidatedFeedInstrument = reader.bool();
-                    continue;
-                }
-                case 222: {
-                    if (tag !== 1776) {
-                        break;
-                    }
-                    message.openOutcryInstrument = reader.bool();
-                    continue;
-                }
-                case 223: {
-                    if (tag !== 1784) {
-                        break;
-                    }
-                    message.syntheticAmericanOptionInstrument = reader.bool();
-                    continue;
-                }
-                case 224: {
-                    if (tag !== 1794) {
-                        break;
-                    }
-                    message.barchartExchangeCode = reader.string();
-                    continue;
-                }
-                case 225: {
-                    if (tag !== 1802) {
-                        break;
-                    }
-                    message.barchartBaseCode = reader.string();
-                    continue;
-                }
-                case 226: {
-                    if (tag !== 1808) {
-                        break;
-                    }
-                    message.volumeDenominator = reader.sint32();
-                    continue;
-                }
-                case 227: {
-                    if (tag !== 1816) {
-                        break;
-                    }
-                    message.bidOfferQuantityDenominator = reader.sint32();
-                    continue;
-                }
-                case 228: {
-                    if (tag !== 1826) {
-                        break;
-                    }
-                    message.primaryListingMarketParticipantId = reader.string();
-                    continue;
-                }
-                case 229: {
-                    if (tag !== 1834) {
-                        break;
-                    }
-                    message.subscriptionSymbol = reader.string();
-                    continue;
-                }
-                case 230: {
-                    if (tag !== 1842) {
-                        break;
-                    }
-                    message.contractMaturity = InstrumentDefinition_MaturityDateDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 231: {
-                    if (tag !== 1850) {
-                        break;
-                    }
-                    message.underlying = reader.string();
-                    continue;
-                }
-                case 232: {
-                    if (tag !== 1858) {
-                        break;
-                    }
-                    message.commodity = reader.string();
-                    continue;
-                }
-                case 233: {
-                    if (tag !== 1864) {
-                        break;
-                    }
-                    message.exchangeId = reader.sint32();
-                    continue;
-                }
-                case 234: {
-                    if (tag !== 1872) {
-                        break;
-                    }
-                    message.priceScalingExponent = reader.sint32();
-                    continue;
-                }
-                case 235: {
-                    if (tag !== 1880) {
-                        break;
-                    }
-                    message.underlyingOpenfeedMarketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 236: {
-                    if (tag !== 1890) {
-                        break;
-                    }
-                    message.barchartExchange = reader.string();
-                    continue;
-                }
-                case 237: {
-                    if (tag !== 1896) {
-                        break;
-                    }
-                    message.contractSize = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 238: {
-                    if (tag !== 1906) {
-                        break;
-                    }
-                    message.contractSizeDescription = reader.string();
-                    continue;
-                }
-                case 239: {
-                    if (tag !== 1914) {
-                        break;
-                    }
-                    message.exchangeMetadata = InstrumentDefinition_ExchangeMetadataDecode.decode(reader, reader.uint32());
-                    continue;
-                }
-                case 240: {
-                    if (tag !== 1920) {
-                        break;
-                    }
-                    message.roundLotSize = reader.sint32();
-                    continue;
-                }
-                case 241: {
-                    if (tag !== 1928) {
-                        break;
-                    }
-                    message.quantityFractionalDenominator = reader.sint32();
-                    continue;
-                }
-                case 242: {
-                    if (tag !== 1936) {
-                        break;
-                    }
-                    message.volumeFractionalDenominator = reader.sint32();
-                    continue;
-                }
+                reader.skip(tag & 7);
             }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+            return message;
         }
-        return message;
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_Schedule(): InstrumentDefinition_Schedule {
@@ -1096,25 +1131,35 @@ export const InstrumentDefinition_ScheduleEncode = {
 }, InstrumentDefinition_ScheduleDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_Schedule {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_Schedule();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.sessions.push(InstrumentDefinition_TimeSpanDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_Schedule();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.sessions.push(InstrumentDefinition_TimeSpanDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_TimeSpan(): InstrumentDefinition_TimeSpan {
@@ -1133,32 +1178,42 @@ export const InstrumentDefinition_TimeSpanEncode = {
 }, InstrumentDefinition_TimeSpanDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_TimeSpan {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_TimeSpan();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.timeStart = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.timeFinish = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_TimeSpan();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.timeStart = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 16) {
+                            break;
+                        }
+                        message.timeFinish = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_Calendar(): InstrumentDefinition_Calendar {
@@ -1174,25 +1229,35 @@ export const InstrumentDefinition_CalendarEncode = {
 }, InstrumentDefinition_CalendarDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_Calendar {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_Calendar();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.events.push(InstrumentDefinition_EventDecode.decode(reader, reader.uint32()));
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_Calendar();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.events.push(InstrumentDefinition_EventDecode.decode(reader, reader.uint32()));
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_Event(): InstrumentDefinition_Event {
@@ -1211,32 +1276,42 @@ export const InstrumentDefinition_EventEncode = {
 }, InstrumentDefinition_EventDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_Event {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_Event();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.type = reader.int32() as any;
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.date = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_Event();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.type = reader.int32() as any;
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 16) {
+                            break;
+                        }
+                        message.date = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_SpreadLeg(): InstrumentDefinition_SpreadLeg {
@@ -1267,60 +1342,70 @@ export const InstrumentDefinition_SpreadLegEncode = {
 }, InstrumentDefinition_SpreadLegDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_SpreadLeg {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_SpreadLeg();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.marketId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.ratio = reader.sint32();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 34) {
-                        break;
-                    }
-                    message.longSymbol = reader.string();
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 45) {
-                        break;
-                    }
-                    message.legOptionDelta = reader.float();
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 53) {
-                        break;
-                    }
-                    message.legPrice = reader.float();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_SpreadLeg();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.marketId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 16) {
+                            break;
+                        }
+                        message.ratio = reader.sint32();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 34) {
+                            break;
+                        }
+                        message.longSymbol = reader.string();
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 45) {
+                            break;
+                        }
+                        message.legOptionDelta = reader.float();
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 53) {
+                            break;
+                        }
+                        message.legPrice = reader.float();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_MaturityDate(): InstrumentDefinition_MaturityDate {
@@ -1342,39 +1427,49 @@ export const InstrumentDefinition_MaturityDateEncode = {
 }, InstrumentDefinition_MaturityDateDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_MaturityDate {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_MaturityDate();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.year = reader.sint32();
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.month = reader.sint32();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 24) {
-                        break;
-                    }
-                    message.day = reader.sint32();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_MaturityDate();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.year = reader.sint32();
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 16) {
+                            break;
+                        }
+                        message.month = reader.sint32();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 24) {
+                            break;
+                        }
+                        message.day = reader.sint32();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_Symbol(): InstrumentDefinition_Symbol {
@@ -1396,39 +1491,49 @@ export const InstrumentDefinition_SymbolEncode = {
 }, InstrumentDefinition_SymbolDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_Symbol {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_Symbol();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.vendor = reader.string();
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.symbol = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 26) {
-                        break;
-                    }
-                    message.longSymbol = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_Symbol();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.vendor = reader.string();
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.symbol = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.longSymbol = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_PriceFormat(): InstrumentDefinition_PriceFormat {
@@ -1453,46 +1558,56 @@ export const InstrumentDefinition_PriceFormatEncode = {
 }, InstrumentDefinition_PriceFormatDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_PriceFormat {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_PriceFormat();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.isFractional = reader.bool();
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 16) {
-                        break;
-                    }
-                    message.denominator = reader.sint32();
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 32) {
-                        break;
-                    }
-                    message.subDenominator = reader.sint32();
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 48) {
-                        break;
-                    }
-                    message.subFormat = reader.int32() as any;
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_PriceFormat();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.isFractional = reader.bool();
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 16) {
+                            break;
+                        }
+                        message.denominator = reader.sint32();
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 32) {
+                            break;
+                        }
+                        message.subDenominator = reader.sint32();
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 48) {
+                            break;
+                        }
+                        message.subFormat = reader.int32() as any;
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_CurrencyPair(): InstrumentDefinition_CurrencyPair {
@@ -1511,32 +1626,42 @@ export const InstrumentDefinition_CurrencyPairEncode = {
 }, InstrumentDefinition_CurrencyPairDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_CurrencyPair {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_CurrencyPair();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 10) {
-                        break;
-                    }
-                    message.currency1 = reader.string();
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.currency2 = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_CurrencyPair();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.currency1 = reader.string();
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.currency2 = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
 function createBaseInstrumentDefinition_ExchangeMetadata(): InstrumentDefinition_ExchangeMetadata {
@@ -1574,59 +1699,192 @@ export const InstrumentDefinition_ExchangeMetadataEncode = {
 }, InstrumentDefinition_ExchangeMetadataDecode = {
     decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_ExchangeMetadata {
         const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-        const end = length === undefined ? reader.len : reader.pos + length;
-        const message = createBaseInstrumentDefinition_ExchangeMetadata();
-        while (reader.pos < end) {
-            const tag = reader.uint32();
-            switch (tag >>> 3) {
-                case 1: {
-                    if (tag !== 8) {
-                        break;
-                    }
-                    message.securityId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 2: {
-                    if (tag !== 18) {
-                        break;
-                    }
-                    message.channelId = reader.string();
-                    continue;
-                }
-                case 3: {
-                    if (tag !== 24) {
-                        break;
-                    }
-                    message.sbeId = reader.sint32();
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 32) {
-                        break;
-                    }
-                    message.underlyingSecurityId = Long.fromString(reader.sint64().toString());
-                    continue;
-                }
-                case 5: {
-                    if (tag !== 42) {
-                        break;
-                    }
-                    message.securitySymbol = reader.string();
-                    continue;
-                }
-                case 6: {
-                    if (tag !== 50) {
-                        break;
-                    }
-                    message.underlyingSymbol = reader.string();
-                    continue;
-                }
-            }
-            if ((tag & 7) === 4 || tag === 0) {
-                break;
-            }
-            reader.skip(tag & 7);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
         }
-        return message;
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_ExchangeMetadata();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 8) {
+                            break;
+                        }
+                        message.securityId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.channelId = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 24) {
+                            break;
+                        }
+                        message.sbeId = reader.sint32();
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 32) {
+                            break;
+                        }
+                        message.underlyingSecurityId = Long.fromString(reader.sint64().toString());
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 42) {
+                            break;
+                        }
+                        message.securitySymbol = reader.string();
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 50) {
+                            break;
+                        }
+                        message.underlyingSymbol = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
+    }
+};
+function createBaseInstrumentDefinition_ContractMetadata(): InstrumentDefinition_ContractMetadata {
+    return {
+        productCategory: "",
+        marketCode: "",
+        name: "",
+        term: "",
+        beginDate: 0,
+        endDate: 0,
+        deliveryPeriod: "",
+        priceType: "",
+    };
+}
+export const InstrumentDefinition_ContractMetadataEncode = {
+    encode(message: InstrumentDefinition_ContractMetadata, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.productCategory !== "") {
+            writer.uint32(10).string(message.productCategory);
+        }
+        if (message.marketCode !== "") {
+            writer.uint32(18).string(message.marketCode);
+        }
+        if (message.name !== "") {
+            writer.uint32(26).string(message.name);
+        }
+        if (message.term !== "") {
+            writer.uint32(34).string(message.term);
+        }
+        if (message.beginDate !== 0) {
+            writer.uint32(40).sint32(message.beginDate);
+        }
+        if (message.endDate !== 0) {
+            writer.uint32(48).sint32(message.endDate);
+        }
+        if (message.deliveryPeriod !== "") {
+            writer.uint32(58).string(message.deliveryPeriod);
+        }
+        if (message.priceType !== "") {
+            writer.uint32(66).string(message.priceType);
+        }
+        return writer;
+    }
+}, InstrumentDefinition_ContractMetadataDecode = {
+    decode(input: BinaryReader | Uint8Array, length?: number): InstrumentDefinition_ContractMetadata {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const previousRecursionDepth = (reader as any).__tsProtoDecodeDepth ?? 0;
+        if (previousRecursionDepth >= 100) {
+            throw new globalThis.Error("protobuf decode recursion limit exceeded");
+        }
+        (reader as any).__tsProtoDecodeDepth = previousRecursionDepth + 1;
+        try {
+            const end = length === undefined ? reader.len : reader.pos + length;
+            const message = createBaseInstrumentDefinition_ContractMetadata();
+            while (reader.pos < end) {
+                const tag = reader.uint32();
+                switch (tag >>> 3) {
+                    case 1: {
+                        if (tag !== 10) {
+                            break;
+                        }
+                        message.productCategory = reader.string();
+                        continue;
+                    }
+                    case 2: {
+                        if (tag !== 18) {
+                            break;
+                        }
+                        message.marketCode = reader.string();
+                        continue;
+                    }
+                    case 3: {
+                        if (tag !== 26) {
+                            break;
+                        }
+                        message.name = reader.string();
+                        continue;
+                    }
+                    case 4: {
+                        if (tag !== 34) {
+                            break;
+                        }
+                        message.term = reader.string();
+                        continue;
+                    }
+                    case 5: {
+                        if (tag !== 40) {
+                            break;
+                        }
+                        message.beginDate = reader.sint32();
+                        continue;
+                    }
+                    case 6: {
+                        if (tag !== 48) {
+                            break;
+                        }
+                        message.endDate = reader.sint32();
+                        continue;
+                    }
+                    case 7: {
+                        if (tag !== 58) {
+                            break;
+                        }
+                        message.deliveryPeriod = reader.string();
+                        continue;
+                    }
+                    case 8: {
+                        if (tag !== 66) {
+                            break;
+                        }
+                        message.priceType = reader.string();
+                        continue;
+                    }
+                }
+                if ((tag & 7) === 4 || tag === 0) {
+                    break;
+                }
+                reader.skip(tag & 7);
+            }
+            return message;
+        }
+        finally {
+            (reader as any).__tsProtoDecodeDepth = previousRecursionDepth;
+        }
     }
 };
