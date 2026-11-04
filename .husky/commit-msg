@@ -1,1 +1,6 @@
+# GUI git clients like Fork don't load the shell profile, so fnm's Node and Yarn aren't on their PATH
+if command -v fnm >/dev/null 2>&1; then
+    eval "$(fnm env --shell bash)"
+fi
+
 yarn commitlint --edit "$1"
