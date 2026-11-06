@@ -9,6 +9,7 @@ import {
     type InstrumentReferenceRequest,
     type InstrumentReferenceResponse,
     type InstrumentRequest,
+    type InstrumentResponse,
     type OpenfeedGatewayMessage,
     type OpenfeedGatewayRequest,
     type SubscriptionRequest,
@@ -24,7 +25,7 @@ import { CorrelationId } from "@src/utilities/correlation_id";
 import { TIME } from "@src/utilities/constants";
 import { IOpenFeedConnection, IOpenFeedLogger, OpenFeedInstrumentReferenceRequest, OpenFeedInstrumentRequest, OpenfeedRequest } from "./interfaces";
 import { OpenFeedListeners } from "./listeners";
-import { DuplicateLoginError, ConnectionDisposedError } from "./errors";
+import { DuplicateLoginError, ConnectionDisposedError, InstrumentLookupError } from "./errors";
 
 const toStringOrNumber = (id: Long): string | number => (id.isSafeInteger() ? id.toInt() : id.toString());
 
@@ -108,27 +109,7 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         }
 
         if (message.instrumentResponse) {
-            const { correlationId, instrumentDefinition, numberOfDefinitions } = message.instrumentResponse;
-            const id = toStringOrNumber(correlationId);
-            const request = this.#instrumentRequests.get(id);
-            if (!request) {
-                throw new Error(`Instrument request ID ${String(id)} not found`);
-            }
-            if (!instrumentDefinition) {
-                throw new Error(`Instrument definition not found in response ID ${String(id)}`);
-            }
-            let definitions = this.#definitionsInFlight.get(id);
-            if (definitions) {
-                definitions.push(instrumentDefinition);
-            } else {
-                definitions = [instrumentDefinition];
-            }
-            if (definitions.length === numberOfDefinitions) {
-                this.#definitionsInFlight.delete(id);
-                request.resolve(definitions);
-            } else {
-                this.#definitionsInFlight.set(id, definitions);
-            }
+            this.settleInstrumentRequest(message.instrumentResponse);
         }
 
         if (message.instrumentReferenceResponse) {
@@ -153,6 +134,35 @@ export class OpenFeedConnection implements IOpenFeedConnection {
 
         void this.listeners.onMessage(message);
         return true;
+    }
+
+    /** Settles the lookup a response belongs to. One that isn't a lookup's, such as a request made through `send`, is only passed on. */
+    private settleInstrumentRequest({ correlationId, instrumentDefinition, numberOfDefinitions, status }: InstrumentResponse) {
+        const id = toStringOrNumber(correlationId);
+        const request = this.#instrumentRequests.get(id);
+        if (!request) {
+            return;
+        }
+        if (instrumentDefinition) {
+            let definitions = this.#definitionsInFlight.get(id);
+            if (definitions) {
+                definitions.push(instrumentDefinition);
+            } else {
+                definitions = [instrumentDefinition];
+            }
+            if (definitions.length === numberOfDefinitions) {
+                this.#definitionsInFlight.delete(id);
+                request.resolve(definitions);
+            } else {
+                this.#definitionsInFlight.set(id, definitions);
+            }
+        } else if (status?.result === Result.SUCCESS && numberOfDefinitions === 0) {
+            request.resolve([]);
+        } else {
+            // a refusal, or nothing found: no definitions are coming
+            this.#definitionsInFlight.delete(id);
+            request.reject(new InstrumentLookupError(status?.result ?? Result.UNKNOWN_RESULT, status?.message ?? ""));
+        }
     }
 
     private disconnect(error: Error) {

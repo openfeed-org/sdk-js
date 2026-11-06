@@ -5,7 +5,8 @@ import { OpenFeedConnection } from "@src/connection/connection";
 import { OpenFeedListeners } from "@src/connection/listeners";
 import * as communicationModule from "@src/utilities/communication";
 import { Service } from "@gen/openfeed";
-import { SubscriptionType } from "@gen/openfeed_api";
+import { Result, SubscriptionType } from "@gen/openfeed_api";
+import { InstrumentLookupError } from "@src/connection/errors";
 import { asMessage, defined } from "./helpers";
 
 vi.mock("@src/utilities/communication", () => ({
@@ -67,6 +68,62 @@ describe("OpenFeedConnection", () => {
         expect(res.length).toBe(2);
         expect(res[0]).toBe(mockID);
         expect(res[1]).toBe(mockID);
+    });
+
+    const lookup = (connection: OpenFeedConnection) => {
+        const promise = connection.getInstrument({ symbol: "test-symbol", instrumentType: [], spreadType: [] });
+        const [[, sent]] = communication.send.mock.calls;
+        return { promise, id: defined(sent.instrumentRequest).correlationId };
+    };
+
+    it("should reject an instrument lookup the server refuses, and still pass the response on", async () => {
+        const { connection, mockSocket, listeners } = setup();
+        const messageSpy = vi.spyOn(listeners, "onMessage");
+        const { promise, id } = lookup(connection);
+
+        communication.receive.mockReturnValue([
+            asMessage({
+                instrumentResponse: {
+                    correlationId: id,
+                    status: { result: Result.INVALID_SYMBOL, message: "Symbol Not Found: test-symbol" },
+                    numberOfDefinitions: 0,
+                },
+            }),
+        ]);
+        mockSocket.onmessage?.(emptyEvent);
+
+        const error = await promise.catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(InstrumentLookupError);
+        expect((error as InstrumentLookupError).result).toBe(Result.INVALID_SYMBOL);
+        expect((error as InstrumentLookupError).serverMessage).toBe("Symbol Not Found: test-symbol");
+        expect((error as InstrumentLookupError).message).toBe(
+            'INVALID_SYMBOL: the instrument lookup failed. Server said: "Symbol Not Found: test-symbol"'
+        );
+        expect(messageSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("should give an empty list for a successful instrument lookup with no definitions", async () => {
+        const { connection, mockSocket } = setup();
+        const { promise, id } = lookup(connection);
+
+        communication.receive.mockReturnValue([
+            asMessage({ instrumentResponse: { correlationId: id, status: { result: Result.SUCCESS, message: "" }, numberOfDefinitions: 0 } }),
+        ]);
+        mockSocket.onmessage?.(emptyEvent);
+
+        await expect(promise).resolves.toEqual([]);
+    });
+
+    it("should pass on an instrument response that isn't a lookup's, such as one for a request made through send", () => {
+        const { connection, mockSocket, listeners } = setup();
+        const messageSpy = vi.spyOn(listeners, "onMessage");
+        const id = connection.send({ instrumentRequest: { symbol: "test-symbol", instrumentType: [], spreadType: [], version: 1 } });
+
+        const message = asMessage({ instrumentResponse: { correlationId: id, instrumentDefinition: {}, numberOfDefinitions: 1 } });
+        communication.receive.mockReturnValue([message]);
+        mockSocket.onmessage?.(emptyEvent);
+
+        expect(messageSpy).toHaveBeenCalledWith(message);
     });
 
     it("should handle instrumentReferenceResponse messages", async () => {
