@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.8.1](https://github.com/openfeed-org/sdk-js/compare/1.8.0...1.8.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* reject instrument lookups on error and pass responses to send ([944323d](https://github.com/openfeed-org/sdk-js/commit/944323df09255ff1bfc4eb03598d96f12053ee6d))
+
 ## [1.8.0](https://github.com/openfeed-org/sdk-js/compare/1.7.2...1.8.0) (2026-11-04)
 
 
