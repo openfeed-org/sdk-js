@@ -14,3 +14,14 @@ yarn-error.log*
 
 protoc.exe
 /generated/version.ts
+
+# cloned by `yarn fetch:proto`
+/.proto
+
+# Yarn 4 (we use the node-modules linker, so no PnP files or zero-install cache)
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

@@ -7,7 +7,7 @@ import tseslint from "typescript-eslint";
 // with type information, minus the rules turned off below.
 export default defineConfig(
     // generated/ is ts-proto output, rewritten on every `yarn generate`; src/test.ts is a local playground
-    { ignores: ["dist", "node_modules", "generated", "src/test.ts"] },
+    { ignores: ["dist", "node_modules", ".proto", "generated", "src/test.ts"] },
     js.configs.all,
     tseslint.configs.strictTypeChecked,
     {

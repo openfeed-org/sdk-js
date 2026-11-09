@@ -1,4 +1,5 @@
 dist
+.proto
 # ts-proto output, rewritten on every `yarn generate`
 generated
 *.md
