@@ -46,13 +46,13 @@ jobs:
               with:
                   node-version: "24"
 
-            # the proto dev dependency is installed over SSH from a private repository
-            - name: Reconfigure git
-              run: git config --global url.https://${{ secrets.API_TOKEN_GITHUB }}@github.com/.insteadOf ssh://git@github.com/
+            # Yarn's version comes from packageManager in package.json
+            - name: Enable Corepack
+              run: corepack enable
 
             - name: Build library
               run: |
-                  yarn --frozen-lockfile
+                  yarn install --immutable
                   yarn build:ts
                   yarn build:node
 
