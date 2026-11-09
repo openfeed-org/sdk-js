@@ -8,7 +8,44 @@ import dts from "vite-plugin-dts";
 const relativeImport = /(\bfrom\s+|\bimport\()(["'])(\.{1,2}\/[^"']+?)(?<!\.js)\2/g;
 const addJsExtensions = (content) => content.replace(relativeImport, "$1$2$3.js$2");
 
-export default defineConfig({
+const entry = path.resolve(import.meta.dirname, "src/index.ts");
+const aliases = {
+    "@src": path.resolve(import.meta.dirname, "src"),
+    "@gen": path.resolve(import.meta.dirname, "generated"),
+};
+
+/**
+ * `vite build --mode node` builds dist/node.js: the same library bundled for Node, dependencies included (ws instead
+ * of the browser WebSocket), with only Node's built-in modules left as imports. It runs after the browser build, which
+ * empties dist and emits the declarations for both.
+ */
+const nodeConfig = defineConfig({
+    build: {
+        minify: false,
+        outDir: "dist",
+        emptyOutDir: false,
+        target: "node16",
+        ssr: entry,
+        rolldownOptions: {
+            // ws's optional native speed-ups: kept as runtime requires (which ws wraps in try/catch), so they're used
+            // when the user has them installed, instead of being replaced by a stub that always throws
+            external: ["bufferutil", "utf-8-validate"],
+            output: {
+                entryFileNames: "node.js",
+                format: "esm",
+            },
+        },
+    },
+    ssr: {
+        target: "node",
+        noExternal: true,
+    },
+    resolve: {
+        alias: aliases,
+    },
+});
+
+const browserConfig = defineConfig({
     plugins: [
         checker({ typescript: true }),
         /**
@@ -29,10 +66,10 @@ export default defineConfig({
         outDir: "dist",
         lib: {
             name: "OpenfeedSDKJS",
-            entry: path.resolve(import.meta.dirname, "src/index.ts"),
+            entry,
         },
         rolldownOptions: {
-            input: path.resolve(import.meta.dirname, "src/index.ts"),
+            input: entry,
             output: [
                 {
                     entryFileNames: ({ name }) => `${name}.js`,
@@ -44,9 +81,10 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            "@src": path.resolve(import.meta.dirname, "src"),
-            "@gen": path.resolve(import.meta.dirname, "generated"),
+            ...aliases,
             os: path.resolve(import.meta.dirname, "src/utilities/empty.ts"),
         },
     },
 });
+
+export default defineConfig(({ mode }) => (mode === "node" ? nodeConfig : browserConfig));

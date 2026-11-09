@@ -28,12 +28,19 @@ This library uses [Conventional Commits](https://www.conventionalcommits.org/en/
 
 ### Setup
 
+The project uses Yarn 4, through [Corepack](https://github.com/nodejs/corepack): run `corepack enable` once (on Node 25 or later, install Corepack first with `npm i -g corepack`). Then:
+
 ```shell
 yarn
+yarn hooks:install
 yarn generate:version
 ```
 
-`generate:version` writes `generated/version.ts`, which isn't committed. The tests, the linter and the type checker all need it, so run it once after cloning (the build scripts run it themselves).
+`hooks:install` installs the git hooks (`.husky/`), which check each commit message with commitlint. `yarn` doesn't install them, since this repository runs no install scripts, its dependencies' included (`enableScripts: false` in `.yarnrc.yml`).
+
+`generate:version` writes `generated/version.ts`, which isn't committed. The tests, the linter and the type checker all need it, so run it once after cloning.
+
+`build:ts`, `run:browser` and `run:node` run both of these themselves.
 
 ### Checks
 
@@ -59,7 +66,7 @@ Both write to `dist`. Run `build:ts` first, as it clears `dist` before building.
 
 ### Updating the proto files
 
-The generated code in `generated/` comes from the [openfeed-org/proto](https://github.com/openfeed-org/proto) repository, which is installed over SSH, so you need SSH access to it. You also need `protoc` on your `PATH`: download it from the [protobuf releases](https://github.com/protocolbuffers/protobuf/releases), or on macOS run `brew install protobuf`.
+The generated code in `generated/` comes from the [openfeed-org/proto](https://github.com/openfeed-org/proto) repository, which `yarn generate` clones over SSH into `.proto/` (not committed), so you need SSH access to it. You also need `protoc` on your `PATH`: download it from the [protobuf releases](https://github.com/protocolbuffers/protobuf/releases), or on macOS run `brew install protobuf`.
 
 Then run:
 
@@ -67,7 +74,7 @@ Then run:
 yarn generate
 ```
 
-This pulls the latest proto files, generates the TypeScript code with `ts-proto`, and post-processes it (splitting encoders from decoders to keep the bundle small, and writing `generated/index.ts`). Commit the changes to `generated/` and `yarn.lock`.
+This pulls the latest proto files, generates the TypeScript code with `ts-proto`, and post-processes it (splitting encoders from decoders to keep the bundle small, and writing `generated/index.ts`). Commit the changes to `generated/`.
 
 ### Releasing
 
