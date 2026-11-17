@@ -12,5 +12,10 @@ export default defineConfig({
     test: {
         include: ["test/**/*.test.ts"],
         environment: "node",
+        // type tests (*.test-d.ts) are checked by tsc, not run
+        typecheck: {
+            enabled: true,
+            include: ["test/**/*.test-d.ts"],
+        },
     },
 });
