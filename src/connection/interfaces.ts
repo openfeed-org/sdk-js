@@ -20,7 +20,15 @@ type OmitDistributive<T, K extends PropertyKey> = T extends unknown ? (T extends
 type Id<T> = {} & { [P in keyof T]: T[P] };
 type OmitRecursively<T, K extends PropertyKey> = { [P in keyof T]: OmitDistributive<T[P], K> };
 
-export type OpenfeedRequest = OmitRecursively<Omit<OpenfeedGatewayRequest, "loginRequest" | "logoutRequest">, "correlationId" | "token">;
+type SendableRequests = OmitRecursively<Required<Omit<OpenfeedGatewayRequest, "loginRequest" | "logoutRequest">>, "correlationId" | "token">;
+
+/**
+ * What `send` takes: exactly one of the gateway request's kinds, other than login and logout, without the correlation id
+ * and token it fills in. `{}`, or two kinds at once, doesn't type-check.
+ */
+export type OpenfeedRequest = {
+    [K in keyof SendableRequests]: { [P in K]: SendableRequests[P] } & { [P in Exclude<keyof SendableRequests, K>]?: never };
+}[keyof SendableRequests];
 
 export interface IOpenFeedConnection {
     subscribe: (

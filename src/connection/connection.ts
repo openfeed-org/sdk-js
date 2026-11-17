@@ -307,18 +307,14 @@ export class OpenFeedConnection implements IOpenFeedConnection {
 
         const token = this.connectionToken;
 
-        const msg2: OpenfeedGatewayRequest = {};
-        if (msg.exchangeRequest !== undefined) {
-            msg2.exchangeRequest = { ...msg.exchangeRequest, correlationId, token };
-        } else if (msg.instrumentReferenceRequest !== undefined) {
-            msg2.instrumentReferenceRequest = { ...msg.instrumentReferenceRequest, correlationId, token };
-        } else if (msg.instrumentRequest !== undefined) {
-            msg2.instrumentRequest = { ...msg.instrumentRequest, correlationId, token };
-        } else if (msg.listSubscriptionsRequest !== undefined) {
-            msg2.listSubscriptionsRequest = { ...msg.listSubscriptionsRequest, correlationId, token };
-        } else if (msg.subscriptionRequest !== undefined) {
-            msg2.subscriptionRequest = { ...msg.subscriptionRequest, correlationId, token };
-        }
+        // OpenfeedRequest has exactly one of these; the others stay undefined, which the encoder leaves out
+        const msg2: OpenfeedGatewayRequest = {
+            exchangeRequest: msg.exchangeRequest && { ...msg.exchangeRequest, correlationId, token },
+            instrumentReferenceRequest: msg.instrumentReferenceRequest && { ...msg.instrumentReferenceRequest, correlationId, token },
+            instrumentRequest: msg.instrumentRequest && { ...msg.instrumentRequest, correlationId, token },
+            listSubscriptionsRequest: msg.listSubscriptionsRequest && { ...msg.listSubscriptionsRequest, correlationId, token },
+            subscriptionRequest: msg.subscriptionRequest && { ...msg.subscriptionRequest, correlationId, token },
+        };
 
         send(this.socket, msg2);
 
