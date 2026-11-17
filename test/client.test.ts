@@ -237,4 +237,74 @@ describe("OpenFeedClient", () => {
             unsubscribe: false,
         });
     });
+
+    describe("before login", () => {
+        // only setTimeout: the tests yield to the event loop through setImmediate
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        /** Answers the first socket's login request with this response. */
+        const answerLogin = async (mockSocket: WebSocket, loginResponse: object) => {
+            mockSocket.onopen?.(emptyMessageEvent);
+            await yieldToEventLoop();
+            communication.receive.mockReturnValue([asMessage({ loginResponse })]);
+            mockSocket.onmessage?.(emptyMessageEvent);
+        };
+
+        it("drops a socket that stays silent, and connects again", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+            const { client, mockSocketInstances, listeners } = setup();
+            const rejectedSpy = vi.spyOn(listeners, "onCredentialsRejected");
+            // never connected, so disposing at the end rejects it
+            client.connection.catch(() => undefined);
+
+            // the socket opens and the login goes out, but nothing comes back
+            mockSocketInstances[0].onopen?.(emptyMessageEvent);
+            await yieldToEventLoop();
+            expect(communication.send).toHaveBeenCalledTimes(1);
+
+            await vi.advanceTimersByTimeAsync(TIME.CONNECTION_TIMEOUT + TIME.RECONNECT_RANDOMIZE);
+            expect(vi.mocked(mockSocketInstances[0]).close.mock.calls).not.toHaveLength(0);
+            expect(mockSocketInstances).toHaveLength(1);
+
+            await vi.advanceTimersByTimeAsync(TIME.RECONNECT + TIME.RECONNECT_RANDOMIZE);
+            expect(mockSocketInstances).toHaveLength(2);
+            expect(rejectedSpy).not.toHaveBeenCalled();
+        });
+
+        it("tries again after a login that fails for a reason other than the credentials", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+            const { client, mockSocketInstances, listeners } = setup();
+            const rejectedSpy = vi.spyOn(listeners, "onCredentialsRejected");
+            let settled = false;
+            client.connection.then(
+                () => (settled = true),
+                () => (settled = true)
+            );
+
+            await answerLogin(mockSocketInstances[0], { status: { result: Result.UNKNOWN_RESULT, message: "Try again later" } });
+            await yieldToEventLoop();
+            expect(vi.mocked(mockSocketInstances[0]).close.mock.calls).not.toHaveLength(0);
+
+            await vi.advanceTimersByTimeAsync(TIME.RECONNECT + TIME.RECONNECT_RANDOMIZE);
+            expect(mockSocketInstances).toHaveLength(2);
+            expect(rejectedSpy).not.toHaveBeenCalled();
+            expect(settled).toBe(false);
+        });
+
+        it("doesn't drop a socket once logged in, however long the login took", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+            const { client, mockSocketInstances } = setup();
+
+            await vi.advanceTimersByTimeAsync(TIME.CONNECTION_TIMEOUT - 1);
+            await answerLogin(mockSocketInstances[0], { token: "test-token" });
+            await expect(client.connection).resolves.toBeDefined();
+
+            // past the longest time the login had; the connection's own silent check, which started at login, is still far off
+            await vi.advanceTimersByTimeAsync(TIME.RECONNECT_RANDOMIZE);
+            expect(vi.mocked(mockSocketInstances[0]).close.mock.calls).toHaveLength(0);
+            expect(mockSocketInstances).toHaveLength(1);
+        });
+    });
 });

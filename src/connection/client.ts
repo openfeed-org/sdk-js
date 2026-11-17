@@ -91,6 +91,13 @@ export class OpenFeedClient implements IOpenFeedClient {
             this.whenConnectedInternalSource.reject(
                 new InvalidCredentialsError("Invalid credentials provided. Please update credentials and try again.")
             );
+        } else if (message.loginResponse) {
+            // any other failed login: the connect loop drops the socket and tries again, rather than waiting for a close
+            const result = message.loginResponse.status?.result ?? Result.UNKNOWN_RESULT;
+            const name = (Result[result] as string | undefined) ?? String(result);
+            const serverMessage = message.loginResponse.status?.message ?? "";
+            this.logger?.warn("Login failed, trying again:", name, serverMessage);
+            this.whenConnectedInternalSource.reject(new Error(`Login failed: ${name} ${serverMessage}`.trim()));
         }
     };
 
@@ -106,6 +113,28 @@ export class OpenFeedClient implements IOpenFeedClient {
         if (!this.whenConnectedInternalSource.completed) {
             this.whenConnectedInternalSource.reject(new Error(`Socket closed: ${event.reason}`));
         }
+    };
+
+    /**
+     * Waits for the login, as long as the socket isn't silent. Once logged in, the connection watches for silence; until
+     * then this does, so a socket that connects and then goes quiet (a half-open connection, or a server that never
+     * answers the login) is dropped and tried again, instead of waiting for a close that may never come.
+     */
+    private whenLoggedInOrSilent = async (connecting: ResolutionSource<OpenFeedConnection>) => {
+        // as the connection's watch loop does: the timer only resolves `silent`, and the race decides
+        const silent = new ResolutionSource<void>();
+        const timeoutId = setTimeout(silent.resolve, TIME.CONNECTION_TIMEOUT + Math.floor(Math.random() * TIME.RECONNECT_RANDOMIZE));
+        try {
+            await Promise.race([connecting.whenCompleted, silent.whenCompleted]);
+        } finally {
+            clearTimeout(timeoutId);
+        }
+
+        if (!connecting.completed) {
+            this.logger?.warn("Connection silent before login, disconnecting");
+            connecting.reject(new Error("Socket closed: Connection silent"));
+        }
+        return connecting.whenCompleted;
     };
 
     private runConnectLoop = async () => {
@@ -128,7 +157,7 @@ export class OpenFeedClient implements IOpenFeedClient {
                 this.socket.onerror = this.onError;
                 this.socket.onclose = this.onClose;
 
-                await this.whenConnectedInternalSource.whenCompleted;
+                await this.whenLoggedInOrSilent(this.whenConnectedInternalSource);
 
                 await this.loopResetSource.whenCompleted;
             } catch (e) {
