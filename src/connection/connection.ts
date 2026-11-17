@@ -51,11 +51,18 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         void this.runConnectionWatchLoop();
     }
 
-    private messageTriggered = false;
+    // monotonic, so a change to the system clock doesn't make the connection look silent
+    private lastMessageAt = performance.now();
+
+    /**
+     * Drops the connection once it has been silent for `CONNECTION_TIMEOUT`. Messages only note when they came, and the
+     * timer, when it fires early, waits out the rest, so there's no timer to reset on every message.
+     */
     private runConnectionWatchLoop = async () => {
+        let delay = TIME.CONNECTION_TIMEOUT;
         for (;;) {
             const wait = new ResolutionSource<void>();
-            const timeoutId = setTimeout(wait.resolve, TIME.CONNECTION_TIMEOUT + Math.floor(Math.random() * TIME.RECONNECT_RANDOMIZE));
+            const timeoutId = setTimeout(wait.resolve, delay);
 
             try {
                 await Promise.race([wait.whenCompleted, this.whenDisconnectedSource.whenCompleted]);
@@ -68,20 +75,21 @@ export class OpenFeedConnection implements IOpenFeedConnection {
                 break;
             }
 
-            if (!this.messageTriggered) {
+            const silentFor = performance.now() - this.lastMessageAt;
+            if (silentFor >= TIME.CONNECTION_TIMEOUT) {
                 this.logger?.warn("Connection silent, disconnecting");
                 this.disconnect(new Error("Socket closed: Connection silent"));
 
                 break;
             }
 
-            this.messageTriggered = false;
+            delay = TIME.CONNECTION_TIMEOUT - silentFor;
         }
     };
 
     private onMessage = (event: WebSocket.MessageEvent) => {
         try {
-            this.messageTriggered = true;
+            this.lastMessageAt = performance.now();
 
             const messages = receive(event);
 
