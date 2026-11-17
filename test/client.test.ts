@@ -195,7 +195,7 @@ describe("OpenFeedClient", () => {
 
         // Use fake timers to fast-forward the reconnect delay
         vi.useFakeTimers();
-        await vi.advanceTimersByTimeAsync(TIME.RECONNECT + TIME.RECONNECT_RANDOMIZE);
+        await vi.advanceTimersByTimeAsync(2 * TIME.RECONNECT);
         vi.useRealTimers();
 
         expect(disconnectSpy).toHaveBeenCalledTimes(1);
@@ -264,11 +264,11 @@ describe("OpenFeedClient", () => {
             await yieldToEventLoop();
             expect(communication.send).toHaveBeenCalledTimes(1);
 
-            await vi.advanceTimersByTimeAsync(TIME.CONNECTION_TIMEOUT + TIME.RECONNECT_RANDOMIZE);
+            await vi.advanceTimersByTimeAsync(TIME.CONNECTION_TIMEOUT);
             expect(vi.mocked(mockSocketInstances[0]).close.mock.calls).not.toHaveLength(0);
             expect(mockSocketInstances).toHaveLength(1);
 
-            await vi.advanceTimersByTimeAsync(TIME.RECONNECT + TIME.RECONNECT_RANDOMIZE);
+            await vi.advanceTimersByTimeAsync(2 * TIME.RECONNECT);
             expect(mockSocketInstances).toHaveLength(2);
             expect(rejectedSpy).not.toHaveBeenCalled();
         });
@@ -287,10 +287,39 @@ describe("OpenFeedClient", () => {
             await yieldToEventLoop();
             expect(vi.mocked(mockSocketInstances[0]).close.mock.calls).not.toHaveLength(0);
 
-            await vi.advanceTimersByTimeAsync(TIME.RECONNECT + TIME.RECONNECT_RANDOMIZE);
+            await vi.advanceTimersByTimeAsync(2 * TIME.RECONNECT);
             expect(mockSocketInstances).toHaveLength(2);
             expect(rejectedSpy).not.toHaveBeenCalled();
             expect(settled).toBe(false);
+        });
+
+        it("waits longer after each failed attempt, and starts over once logged in", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+            // the shortest wait each time: 5s, then 10s
+            vi.spyOn(Math, "random").mockReturnValue(0);
+            onTestFinished(() => {
+                vi.mocked(Math.random).mockRestore();
+            });
+            const { client, mockSocketInstances } = setup();
+            const failLogin = { status: { result: Result.UNKNOWN_RESULT } };
+
+            await answerLogin(mockSocketInstances[0], failLogin);
+            await vi.advanceTimersByTimeAsync(TIME.RECONNECT);
+            expect(mockSocketInstances).toHaveLength(2);
+
+            await answerLogin(mockSocketInstances[1], failLogin);
+            await vi.advanceTimersByTimeAsync(TIME.RECONNECT);
+            expect(mockSocketInstances).toHaveLength(2);
+            await vi.advanceTimersByTimeAsync(TIME.RECONNECT);
+            expect(mockSocketInstances).toHaveLength(3);
+
+            await answerLogin(mockSocketInstances[2], { token: "test-token" });
+            await expect(client.connection).resolves.toBeDefined();
+            mockSocketInstances[2].onclose?.(emptyCloseEvent);
+            await vi.advanceTimersByTimeAsync(TIME.RECONNECT);
+            expect(mockSocketInstances).toHaveLength(4);
+            // not connected again, so disposing at the end rejects it
+            client.connection.catch(() => undefined);
         });
 
         it("doesn't drop a socket once logged in, however long the login took", async () => {
@@ -301,8 +330,8 @@ describe("OpenFeedClient", () => {
             await answerLogin(mockSocketInstances[0], { token: "test-token" });
             await expect(client.connection).resolves.toBeDefined();
 
-            // past the longest time the login had; the connection's own silent check, which started at login, is still far off
-            await vi.advanceTimersByTimeAsync(TIME.RECONNECT_RANDOMIZE);
+            // past the time the login had; the connection's own silent check, which started at login, is still far off
+            await vi.advanceTimersByTimeAsync(TIME.CONNECTION_TIMEOUT / 2);
             expect(vi.mocked(mockSocketInstances[0]).close.mock.calls).toHaveLength(0);
             expect(mockSocketInstances).toHaveLength(1);
         });

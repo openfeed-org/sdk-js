@@ -10,6 +10,7 @@ import { OpenFeedConnection } from "@src/connection/connection";
 import { receive, send } from "@src/utilities/communication";
 import { getClientVersion } from "@src/utilities/client_version";
 import { TIME } from "@src/utilities/constants";
+import { ReconnectBackoff } from "@src/utilities/reconnect_backoff";
 import { IOpenFeedClient, IOpenFeedConnection, IOpenFeedLogger } from "./interfaces";
 import { OpenFeedListeners } from "./listeners";
 import { ConnectionDisposedError, DuplicateLoginError, InvalidCredentialsError } from "./errors";
@@ -23,6 +24,7 @@ export class OpenFeedClient implements IOpenFeedClient {
     private whenConnectedSource = new ResolutionSource<IOpenFeedConnection>();
     private loopResetSource = new ResolutionSource<void>();
     private subscribeResetSource = new ResolutionSource<void>();
+    private readonly reconnectBackoff = new ReconnectBackoff();
 
     private readonly subscriptions: Map<string, ResolutionSource<void>> = new Map<string, ResolutionSource<void>>();
 
@@ -59,6 +61,7 @@ export class OpenFeedClient implements IOpenFeedClient {
     private onMessage = async (event: WebSocket.MessageEvent) => {
         const [message] = receive(event);
         if (message.loginResponse?.token && this.socket) {
+            this.reconnectBackoff.reset();
             this._connection = new OpenFeedConnection(message.loginResponse.token, this.socket, this.listeners, this.logger);
             this.whenConnectedInternalSource.resolve(this._connection);
             this.whenConnectedSource.resolve(this._connection);
@@ -123,7 +126,7 @@ export class OpenFeedClient implements IOpenFeedClient {
     private whenLoggedInOrSilent = async (connecting: ResolutionSource<OpenFeedConnection>) => {
         // as the connection's watch loop does: the timer only resolves `silent`, and the race decides
         const silent = new ResolutionSource<void>();
-        const timeoutId = setTimeout(silent.resolve, TIME.CONNECTION_TIMEOUT + Math.floor(Math.random() * TIME.RECONNECT_RANDOMIZE));
+        const timeoutId = setTimeout(silent.resolve, TIME.CONNECTION_TIMEOUT);
         try {
             await Promise.race([connecting.whenCompleted, silent.whenCompleted]);
         } finally {
@@ -204,8 +207,10 @@ export class OpenFeedClient implements IOpenFeedClient {
             this.subscribeResetSource.resolve();
             this.subscribeResetSource = new ResolutionSource<void>();
 
+            const delay = this.reconnectBackoff.nextDelay();
+            this.logger?.log(`Reconnecting in ${delay.toString()}ms`);
             await new Promise((resolve) => {
-                setTimeout(resolve, TIME.RECONNECT + Math.floor(Math.random() * TIME.RECONNECT_RANDOMIZE));
+                setTimeout(resolve, delay);
             });
         }
     };

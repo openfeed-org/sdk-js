@@ -7,6 +7,7 @@ import * as communicationModule from "@src/utilities/communication";
 import { Service } from "@gen/openfeed";
 import { Result, SubscriptionType } from "@gen/openfeed_api";
 import { InstrumentLookupError } from "@src/connection/errors";
+import { TIME } from "@src/utilities/constants";
 import { asMessage, defined } from "./helpers";
 
 vi.mock("@src/utilities/communication", () => ({
@@ -205,5 +206,47 @@ describe("OpenFeedConnection", () => {
 
         const [[message]] = messageSpy.mock.calls;
         expect(message.subscriptionResponse).toBe(mockSubscriptionResponse);
+    });
+
+    describe("silence", () => {
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        const heartBeat = (mockSocket: WebSocket) => {
+            communication.receive.mockReturnValue([asMessage({ heartBeat: true })]);
+            mockSocket.onmessage?.(emptyEvent);
+        };
+
+        it("drops the connection exactly CONNECTION_TIMEOUT after the last message", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+            const { connection, mockSocket } = setup();
+            let disconnected = false;
+            connection.whenDisconnected().catch(() => (disconnected = true));
+
+            // partway into the first check, so a check per window would wait until almost twice the timeout
+            await vi.advanceTimersByTimeAsync(TIME.CONNECTION_TIMEOUT / 4);
+            heartBeat(mockSocket);
+
+            await vi.advanceTimersByTimeAsync(TIME.CONNECTION_TIMEOUT - 1);
+            expect(disconnected).toBe(false);
+            expect(vi.mocked(mockSocket).close.mock.calls).toHaveLength(0);
+
+            await vi.advanceTimersByTimeAsync(1);
+            expect(disconnected).toBe(true);
+            expect(vi.mocked(mockSocket).close.mock.calls).toEqual([[1000, "Socket closed: Connection silent"]]);
+        });
+
+        it("keeps a connection that gets a message more often than the timeout", async () => {
+            vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "performance"] });
+            const { mockSocket } = setup();
+
+            for (let i = 0; i < 10; i += 1) {
+                await vi.advanceTimersByTimeAsync(TIME.CONNECTION_TIMEOUT - 1);
+                heartBeat(mockSocket);
+            }
+
+            expect(vi.mocked(mockSocket).close.mock.calls).toHaveLength(0);
+        });
     });
 });
