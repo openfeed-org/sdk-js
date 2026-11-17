@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.8.2](https://github.com/openfeed-org/sdk-js/compare/1.8.1...1.8.2) (2026-11-17)
+
+
+### Bug Fixes
+
+* improve reconnection logic ([d94ff07](https://github.com/openfeed-org/sdk-js/commit/d94ff07f753914e01bf88b149aaa04b97c6a3748))
+* retry silent connection before login, too ([5fd703e](https://github.com/openfeed-org/sdk-js/commit/5fd703ee5351f5aac1efe8470ba2279ce1d88ff5))
+* update send type so it excludes empty objects ([ad9b919](https://github.com/openfeed-org/sdk-js/commit/ad9b919458c93d7c453648e5df7c3a3f93c17c73))
+
 ## [1.8.1](https://github.com/openfeed-org/sdk-js/compare/1.8.0...1.8.1) (2026-11-06)
 
 
