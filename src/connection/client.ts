@@ -21,7 +21,7 @@ export class OpenFeedClient implements IOpenFeedClient {
 
     // We are going to throw errors internally, outside needs to know only when disposed
     private whenConnectedInternalSource = new ResolutionSource<OpenFeedConnection>();
-    private whenConnectedSource = new ResolutionSource<IOpenFeedConnection>();
+    private whenConnectedSource = new ResolutionSource<OpenFeedConnection>();
     private loopResetSource = new ResolutionSource<void>();
     private subscribeResetSource = new ResolutionSource<void>();
     private readonly reconnectBackoff = new ReconnectBackoff();
@@ -201,7 +201,7 @@ export class OpenFeedClient implements IOpenFeedClient {
                 this.whenConnectedInternalSource = new ResolutionSource<OpenFeedConnection>();
             }
             if (this.whenConnectedSource.completed) {
-                this.whenConnectedSource = new ResolutionSource<IOpenFeedConnection>();
+                this.whenConnectedSource = new ResolutionSource<OpenFeedConnection>();
             }
             this.loopResetSource = new ResolutionSource<void>();
             this.subscribeResetSource.resolve();
@@ -231,27 +231,22 @@ export class OpenFeedClient implements IOpenFeedClient {
         marketIds: Long[] | null,
         exchanges: string[] | null,
         channels: number[] | null,
-        cancelSource: ResolutionSource<void>
+        cancelSource: ResolutionSource<void>,
+        subscriptionId: Long
     ) => {
         // A function, so TypeScript doesn't carry an earlier answer across the awaits below
         const isCancelled = () => cancelSource.completed;
         for (;;) {
             try {
                 // race will trigger even if rejected, and resolves with nothing when cancelled
-                const connection = await Promise.race([this.connection, cancelSource.whenCompleted]);
+                const connection = await Promise.race([this.openConnection, cancelSource.whenCompleted]);
                 if (isCancelled() || !connection) {
                     return;
                 }
 
-                const subscriptionId = connection.subscribe(
-                    service,
-                    subscriptionType,
-                    snapshotIntervalSeconds,
-                    symbols,
-                    marketIds,
-                    exchanges,
-                    channels
-                );
+                // the subscription's own id is its correlation id on every connection, so its responses carry the id
+                // `subscribe` returned
+                connection.subscribe(service, subscriptionType, snapshotIntervalSeconds, symbols, marketIds, exchanges, channels, subscriptionId);
 
                 await Promise.race([this.subscribeResetSource.whenCompleted, cancelSource.whenCompleted]);
 
@@ -287,7 +282,7 @@ export class OpenFeedClient implements IOpenFeedClient {
         const cancelSource = new ResolutionSource<void>();
         this.subscriptions.set(id.toString(), cancelSource);
 
-        void this.runSubscribeLoop(service, subscriptionType, snapshotIntervalSeconds, symbols, marketIds, exchanges, channels, cancelSource);
+        void this.runSubscribeLoop(service, subscriptionType, snapshotIntervalSeconds, symbols, marketIds, exchanges, channels, cancelSource, id);
 
         return id;
     };
@@ -302,7 +297,12 @@ export class OpenFeedClient implements IOpenFeedClient {
         cancelSource.resolve();
     };
 
-    public get connection() {
+    public get connection(): Promise<IOpenFeedConnection> {
+        return this.openConnection;
+    }
+
+    /** `connection`, as the class: the subscribe loop sends its own correlation id, which the interface doesn't take. */
+    private get openConnection(): Promise<OpenFeedConnection> {
         if (this._connection) {
             return Promise.resolve(this._connection);
         }

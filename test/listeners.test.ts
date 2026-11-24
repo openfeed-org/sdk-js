@@ -161,6 +161,30 @@ describe("OpenFeedListeners", () => {
         expect(onMessageWithMetadataSpy).toHaveBeenCalledWith(MESSAGES.SUBSCRIPTION_RESPONSE_MESSAGE_NEW, [ALIAS_REGULAR_NEW], undefined);
     });
 
+    it("should name no market for a response without one", () => {
+        const { listeners, onMessageWithMetadataSpy } = setup();
+        // as the server sends it: a new Long, not Long.ZERO itself
+        const noMarket = (correlationId: number, symbol: string) =>
+            ({
+                subscriptionResponse: {
+                    correlationId: Long.fromNumber(correlationId),
+                    marketId: Long.fromNumber(0),
+                    symbol,
+                    unsubscribe: false,
+                    subscriptionType: SubscriptionType.ALL,
+                    status: { result: Result.SUCCESS },
+                },
+            }) as Partial<OpenfeedGatewayMessage> as OpenfeedGatewayMessage;
+        const first = noMarket(1, "ZC^UDS");
+        const second = noMarket(2, "ZS^UDS");
+        void listeners.onMessage(first);
+        void listeners.onMessage(second);
+
+        // the first response's symbol isn't kept for market 0, so the second doesn't get it
+        expect(onMessageWithMetadataSpy).toHaveBeenNthCalledWith(1, first, [], undefined);
+        expect(onMessageWithMetadataSpy).toHaveBeenNthCalledWith(2, second, [], undefined);
+    });
+
     it("should handle instrumentDefinition messages correctly", () => {
         const { listeners, onMessageWithMetadataSpy } = setup();
         // We require the subscriptionResponse message to arrive first

@@ -130,7 +130,7 @@ client.unsubscribe(id);
 
 This subscribes to all message types from the real-time service, for MSFT. The number 1 represents a snapshot interval, but as in this case we are subscribing to real-time data and not periodic snapshots it's unused.
 
-The call to Subscribe returns a subscription ID, which you can use to later unsubscribe by calling the `unsubscribe` function.
+The call to Subscribe returns a subscription ID, which you can use to later unsubscribe by calling the `unsubscribe` function. It's also the subscription request's correlation ID, on every connection, so the server's `subscriptionResponse` messages for it carry the same ID.
 
 The available services are:
 

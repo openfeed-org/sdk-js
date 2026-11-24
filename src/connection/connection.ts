@@ -210,12 +210,12 @@ export class OpenFeedConnection implements IOpenFeedConnection {
         symbols: string[] | null = null,
         marketIds: Long[] | null = null,
         exchanges: string[] | null = null,
-        channels: number[] | null = null
+        channels: number[] | null = null,
+        correlationId: Long = CorrelationId.create()
     ) => {
         if (this.whenDisconnectedSource.completed) {
             throw new ConnectionDisposedError("This connection was closed");
         }
-        const correlationId = CorrelationId.create();
 
         const requests: OptionalUndefined<SubscriptionRequest_Request>[] = [];
 
