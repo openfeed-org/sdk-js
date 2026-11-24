@@ -38,7 +38,7 @@ export class OpenFeedListeners {
         if (message.subscriptionResponse) {
             const { marketId, symbol, unsubscribe, status, correlationId } = message.subscriptionResponse;
             const corIdStr = correlationId.toString();
-            if (marketId !== Long.ZERO) {
+            if (!marketId.isZero()) {
                 [def, symbols] = getInstrumentDefinition(marketId);
                 if (status?.result === Result.SUCCESS) {
                     const currentEntry: [string, string] = [symbol, corIdStr];

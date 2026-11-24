@@ -186,10 +186,14 @@ describe("OpenFeedClient", () => {
         const snapshotIntervalSeconds = 9;
         const testSymbols = ["MSFT"];
 
-        client.subscribe(service, subscriptionType, snapshotIntervalSeconds, testSymbols);
+        const subscriptionId = client.subscribe(service, subscriptionType, snapshotIntervalSeconds, testSymbols);
 
         // Yield to the event loop to allow for subscribe to go through
         await yieldToEventLoop();
+
+        // the request's correlation id is the id subscribe returned, so its responses can be told apart by it
+        const [, [, firstSubscriptionRequest]] = sendSpy.mock.calls;
+        expect(defined(firstSubscriptionRequest.subscriptionRequest).correlationId).toEqual(subscriptionId);
 
         mockSocketInstances[0].onclose?.(emptyCloseEvent);
 
@@ -236,6 +240,8 @@ describe("OpenFeedClient", () => {
             service,
             unsubscribe: false,
         });
+        // and on the new connection too
+        expect(defined(subscriptionRequest.subscriptionRequest).correlationId).toEqual(subscriptionId);
     });
 
     describe("before login", () => {
