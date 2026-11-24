@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.8.3](https://github.com/openfeed-org/sdk-js/compare/1.8.2...1.8.3) (2026-11-24)
+
+
+### Bug Fixes
+
+* forward subscription id as correlation id, fix zero check ([2fd3640](https://github.com/openfeed-org/sdk-js/commit/2fd3640250f2adf411d3362ed7a669ac68b98d8e))
+
 ## [1.8.2](https://github.com/openfeed-org/sdk-js/compare/1.8.1...1.8.2) (2026-11-17)
 
 
