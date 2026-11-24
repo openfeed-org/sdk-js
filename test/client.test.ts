@@ -8,6 +8,7 @@ import { version } from "@gen/version";
 import { Result, SubscriptionType } from "@gen/openfeed_api";
 import { Service } from "@gen/openfeed";
 import { TIME } from "@src/utilities/constants";
+import { ResolutionSource } from "@src/utilities/async";
 import { asMessage, defined } from "./helpers";
 
 vi.mock("@src/utilities/communication", () => ({
@@ -55,8 +56,25 @@ vi.mock("@src/connection/connection", async (importOriginal) => {
     };
 });
 
-// Flush all active promises to advance the code stuck on awaits
-const yieldToEventLoop = () => new Promise(setImmediate);
+// The client sends and closes after awaits we can't count (the login waits on an async import), so the tests wait for
+// the send or close itself. Call these before the thing that triggers it.
+/** Resolves on the next send. */
+const nextSend = () => {
+    const sent = new ResolutionSource<void>();
+    communication.send.mockImplementationOnce(() => {
+        sent.resolve();
+    });
+    return sent.whenCompleted;
+};
+
+/** Resolves when this socket is next closed. */
+const nextClose = (socket: WebSocket) => {
+    const closed = new ResolutionSource<void>();
+    vi.mocked(socket).close.mockImplementationOnce(() => {
+        closed.resolve();
+    });
+    return closed.whenCompleted;
+};
 
 const setup = () => {
     const listeners = new OpenFeedListeners();
@@ -79,11 +97,10 @@ describe("OpenFeedClient", () => {
         const { client, mockSocket, listeners, connectionMock } = setup();
         const sendSpy = communication.send;
 
-        // Simulate socket open event
+        // Simulate socket open event, and wait for the login to go out
+        const loginSent = nextSend();
         mockSocket.onopen?.(emptyMessageEvent);
-
-        // Yield to allow the async import to resolve
-        await yieldToEventLoop();
+        await loginSent;
 
         // Check that the login request was sent
         expect(sendSpy).toHaveBeenCalledTimes(1);
@@ -127,11 +144,10 @@ describe("OpenFeedClient", () => {
         const { client, mockSocket } = setup();
         const sendSpy = communication.send;
 
-        // Simulate socket open event
+        // Simulate socket open event, and wait for the login to go out
+        const loginSent = nextSend();
         mockSocket.onopen?.(emptyMessageEvent);
-
-        // Yield to allow the async import to resolve
-        await yieldToEventLoop();
+        await loginSent;
 
         // Check that the login request was sent
         expect(sendSpy).toHaveBeenCalledTimes(1);
@@ -161,11 +177,10 @@ describe("OpenFeedClient", () => {
         const sendSpy = communication.send;
         const disconnectSpy = vi.spyOn(listeners, "onDisconnected");
 
-        // Simulate socket open event
+        // Simulate socket open event, and wait for the login to go out
+        const loginSent = nextSend();
         mockSocketInstances[0].onopen?.(emptyMessageEvent);
-
-        // Yield to the event loop to allow the async import to resolve
-        await yieldToEventLoop();
+        await loginSent;
 
         const [[, loginRequest]] = sendSpy.mock.calls;
         const { correlationId } = defined(loginRequest.loginRequest);
@@ -186,10 +201,9 @@ describe("OpenFeedClient", () => {
         const snapshotIntervalSeconds = 9;
         const testSymbols = ["MSFT"];
 
+        const subscriptionSent = nextSend();
         const subscriptionId = client.subscribe(service, subscriptionType, snapshotIntervalSeconds, testSymbols);
-
-        // Yield to the event loop to allow for subscribe to go through
-        await yieldToEventLoop();
+        await subscriptionSent;
 
         // the request's correlation id is the id subscribe returned, so its responses can be told apart by it
         const [, [, firstSubscriptionRequest]] = sendSpy.mock.calls;
@@ -204,11 +218,10 @@ describe("OpenFeedClient", () => {
 
         expect(disconnectSpy).toHaveBeenCalledTimes(1);
 
-        // Simulate socket open event
+        // Simulate socket open event, and wait for the login to go out
+        const loginSent2 = nextSend();
         mockSocketInstances[1].onopen?.(emptyMessageEvent);
-
-        // Yield to the event loop to allow the async import to resolve
-        await yieldToEventLoop();
+        await loginSent2;
 
         expect(sendSpy).toHaveBeenCalledTimes(3);
 
@@ -223,10 +236,11 @@ describe("OpenFeedClient", () => {
             },
         };
 
+        // the subscription goes out again on its own, once logged in
+        const resubscriptionSent = nextSend();
         communication.receive.mockReturnValue([asMessage(loginResponse2)]);
         mockSocketInstances[1].onmessage?.(emptyMessageEvent);
-
-        await yieldToEventLoop();
+        await resubscriptionSent;
 
         expect(sendSpy).toHaveBeenCalledTimes(4);
 
@@ -245,15 +259,16 @@ describe("OpenFeedClient", () => {
     });
 
     describe("before login", () => {
-        // only setTimeout: the tests yield to the event loop through setImmediate
+        // the tests fake only the timers the client uses
         afterEach(() => {
             vi.useRealTimers();
         });
 
         /** Answers the first socket's login request with this response. */
         const answerLogin = async (mockSocket: WebSocket, loginResponse: object) => {
+            const loginSent = nextSend();
             mockSocket.onopen?.(emptyMessageEvent);
-            await yieldToEventLoop();
+            await loginSent;
             communication.receive.mockReturnValue([asMessage({ loginResponse })]);
             mockSocket.onmessage?.(emptyMessageEvent);
         };
@@ -266,8 +281,9 @@ describe("OpenFeedClient", () => {
             client.connection.catch(() => undefined);
 
             // the socket opens and the login goes out, but nothing comes back
+            const loginSent = nextSend();
             mockSocketInstances[0].onopen?.(emptyMessageEvent);
-            await yieldToEventLoop();
+            await loginSent;
             expect(communication.send).toHaveBeenCalledTimes(1);
 
             await vi.advanceTimersByTimeAsync(TIME.CONNECTION_TIMEOUT);
@@ -289,9 +305,9 @@ describe("OpenFeedClient", () => {
                 () => (settled = true)
             );
 
+            const closed = nextClose(mockSocketInstances[0]);
             await answerLogin(mockSocketInstances[0], { status: { result: Result.UNKNOWN_RESULT, message: "Try again later" } });
-            await yieldToEventLoop();
-            expect(vi.mocked(mockSocketInstances[0]).close.mock.calls).not.toHaveLength(0);
+            await closed;
 
             await vi.advanceTimersByTimeAsync(2 * TIME.RECONNECT);
             expect(mockSocketInstances).toHaveLength(2);
