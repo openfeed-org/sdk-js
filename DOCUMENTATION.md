@@ -55,7 +55,7 @@ The `onMessageWithMetadata` callback will be called when a new message is receiv
 
 The last callback we wired is `onCredentialsRejected`, which will be called if you attempt to connect with wrong credentials or there was a second login with the same credentials. This is a terminal state - if you receive this callbacks no other callbacks will be called and no other connection attempts will be made. The only sensible thing to do in this case is to dispose the connection client object and then create a new one with the correct credentials.
 
-Any other failure is retried: the client drops the connection and connects again after a few seconds. That includes a login that fails for a reason other than the credentials, and a connection that stays silent for about 15 seconds, before logging in as well as after.
+Any other failure is retried: the client drops the connection and connects again, waiting longer after each failed attempt: 5-10 seconds at first, up to 30-60 seconds, and back to the shortest once logged in. That includes a login that fails for a reason other than the credentials, and a connection that stays silent for 20 seconds (`CONNECTION_TIMEOUT`), before logging in as well as after.
 
 Two callbacks aren't wired in the example. `onHeartBeat` is called with each heartbeat the server sends, if you want to track that the connection is alive. `onCleanup` is used internally to clear the instrument definitions and symbol names kept for `onMessageWithMetadata` when the connection drops, so leave it as it is.
 
